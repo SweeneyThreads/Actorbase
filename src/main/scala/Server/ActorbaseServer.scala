@@ -14,7 +14,7 @@ object ActorbaseServer extends App {
   var formatter : SimpleFormatter = new SimpleFormatter
   fileHandler.setFormatter(formatter)
 
-  myLog.info("Server Started correctly")
+  myLog.info("Server Started correctly! :) Have fun!")
 
   myLog.setUseParentHandlers(false);
 }
