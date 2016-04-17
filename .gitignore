@@ -1,1 +1,24 @@
-.idea/
+### Scala ###
+*.class
+*.log
+
+# sbt specific
+.cache/
+.history/
+.lib/
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+
+# IntelliJ specific
+*.iml
+*.ipr
+*.iws
+.idea
+out
+
+# Mac OSX
+.DS_Store
