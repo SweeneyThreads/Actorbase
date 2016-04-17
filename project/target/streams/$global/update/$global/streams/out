@@ -1,4 +1,4 @@
-[info] Updating {file:/C:/Users/lucan/Desktop/Actorbase/project/}actorbase-build...
+[info] Updating {file:/C:/Users/borto/Documents/GitHub/Actorbase/project/}actorbase-build...
 [debug] :: resolving dependencies :: default#actorbase-build;0.1-SNAPSHOT
 [debug] 	confs: [compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom, scala-tool]
 [debug] 	validate = true
@@ -16,7 +16,7 @@
 [debug] == resolving dependencies for default#actorbase-build;0.1-SNAPSHOT [provided]
 [debug] == resolving dependencies default#actorbase-build;0.1-SNAPSHOT->org.scala-lang#scala-library;2.10.4 [provided->default(compile)]
 [info] Resolving org.scala-lang#scala-library;2.10.4 ...
-[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@46539da1
+[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@165f8587
 [debug] sbt-chain: module revision found in cache: org.scala-lang#scala-library;2.10.4
 [debug] 	found org.scala-lang#scala-library;2.10.4 in sbt-chain
 [debug] 	[2.10.4] org.scala-lang#scala-library;2.10.4
@@ -1766,19 +1766,19 @@
 [debug] 	[NOT REQUIRED] org.scala-sbt#apply-macro;0.13.8!apply-macro.jar
 [debug] 	[NOT REQUIRED] org.scala-lang#jline;2.10.4!jline.jar
 [debug] 	[NOT REQUIRED] org.fusesource.jansi#jansi;1.4!jansi.jar
-[debug] :: resolution report :: resolve 1083ms :: artifacts dl 52ms
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT compile produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-compile.xml
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT runtime produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-runtime.xml
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT test produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-test.xml
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT provided produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-provided.xml
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT optional produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-optional.xml
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT compile-internal produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-compile-internal.xml
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT runtime-internal produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-runtime-internal.xml
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT test-internal produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-test-internal.xml
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT plugin produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-plugin.xml
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT sources produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-sources.xml
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT docs produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-docs.xml
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT pom produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-pom.xml
-[debug] 	report for default#actorbase-build;0.1-SNAPSHOT scala-tool produced in C:\Users\lucan\Desktop\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-scala-tool.xml
-[debug] 	resolve done (1083ms resolve - 52ms download)
+[debug] :: resolution report :: resolve 3058ms :: artifacts dl 72ms
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT compile produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-compile.xml
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT runtime produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-runtime.xml
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT test produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-test.xml
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT provided produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-provided.xml
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT optional produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-optional.xml
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT compile-internal produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-compile-internal.xml
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT runtime-internal produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-runtime-internal.xml
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT test-internal produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-test-internal.xml
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT plugin produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-plugin.xml
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT sources produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-sources.xml
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT docs produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-docs.xml
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT pom produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-pom.xml
+[debug] 	report for default#actorbase-build;0.1-SNAPSHOT scala-tool produced in C:\Users\borto\Documents\GitHub\Actorbase\project\target\resolution-cache\reports\default-actorbase-build-scala-tool.xml
+[debug] 	resolve done (3058ms resolve - 72ms download)
 [info] Done updating.

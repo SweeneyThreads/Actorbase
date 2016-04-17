@@ -4,7 +4,7 @@
 		module="actorbase-build"
 		revision="0.1-SNAPSHOT"
 		status="integration"
-		publication="20160415232854"
+		publication="20160417180638"
 		e:sbtVersion="0.13" e:scalaVersion="2.10"
 	>
 		<description>
