@@ -29,21 +29,23 @@ object Parser {
       val regex = result.get
       return parseSystemCommandWithParam(regex.group(1), regex.group(2))
     }
-    //System command without param
+    //System command without param OR Row command (no param)
     pattern = "(.+)".r
     result = pattern.findFirstMatchIn(query)
     if(result.isDefined) {
       val regex = result.get
-      return parseSystemCommandWithoutParam(regex.group(1))
+      return parseCommandWithoutParam(regex.group(1))
     }
 
     return new InvalidQueryMessage
   }
 
-  private def parseSystemCommandWithoutParam(command: String): ActorbaseMessage = {
+  private def parseCommandWithoutParam(command: String): ActorbaseMessage = {
+    //renamed due to query without params for row level
     command match {
       case "listdb" => return new ListDatabaseMessage
       case "list" => return new ListMapMessage
+      case "keys" => return new ListKeysMessage
 
       case _ => return new InvalidQueryMessage
     }

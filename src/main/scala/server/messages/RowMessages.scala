@@ -10,4 +10,6 @@ case class UpdateRowMessage(key: String, value: Array[Byte]) extends RowMessage
 case class RemoveRowMessage(key: String) extends RowMessage
 case class FindRowMessage(key: String) extends RowMessage
 
+case class ListKeysMessage() extends RowMessage
+
 case class StorefinderRowMessage(mapName: String, rowMessage: RowMessage) extends ActorbaseMessage

@@ -3,9 +3,10 @@ package server.actors
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{Actor, ActorRef, Props}
+import akka.event.Logging
 import server.messages._
-import collection.JavaConversions._
 
+import scala.collection.JavaConversions._
 import scala.util.matching.Regex
 
 /**
@@ -14,22 +15,34 @@ import scala.util.matching.Regex
 
 /** This actor represent a map */
 class Storefinder extends Actor {
+  val log = Logging(context.system, this)
   var storekeepers = new ConcurrentHashMap[Regex, ActorRef]()
   storekeepers.put(".*".r, context.actorOf(Props[Storekeeper])) //Storekeeper iniziale
 
   // It finds the right storefinder
   def receive = {
     case m:RowMessage => {
-      val storekeeper = m match {
-        case InsertRowMessage(key: String, value: Array[Byte]) => findActor(key)
-        case UpdateRowMessage(key: String, value: Array[Byte]) => findActor(key)
-        case RemoveRowMessage(key: String) => findActor(key)
-        case FindRowMessage(key: String) => findActor(key)
+      m match {
+        case ListKeysMessage() => {
+          for (r: Regex <- storekeepers.keys()) {
+            storekeepers.get(r) ! m
+          }
+        }
+        case _ => {
+          val storekeeper = m match {
+            case InsertRowMessage(key: String, value: Array[Byte]) => findActor(key)
+            case UpdateRowMessage(key: String, value: Array[Byte]) => findActor(key)
+            case RemoveRowMessage(key: String) => findActor(key)
+            case FindRowMessage(key: String) => findActor(key)
+          }
+          if (storekeeper != null)
+            storekeeper ! m
+          else
+            println("Storefinder not found")
+        }
       }
-      if(storekeeper != null)
-        storekeeper ! m
-      else
-        println("Storefinder not found")
+
+
     }
   }
 
