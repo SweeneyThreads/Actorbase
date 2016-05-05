@@ -20,8 +20,7 @@ class Storekeeper extends Actor {
   // Row level commands
   def receive = {
     case InsertRowMessage(key: String, value: Array[Byte]) => {
-      if (db.get(key) == null) {
-        //introduced the test (if key already exist, print an error and does not make the insert anymore)
+      if(!db.containsKey(key)) {
         db.put(key, value)
         println(key + " inserted")
       }
@@ -29,7 +28,7 @@ class Storekeeper extends Actor {
         println(key + " already exist")
     }
     case UpdateRowMessage(key: String, value: Array[Byte]) => {
-      if(db.get(key) != null) {
+      if(!db.containsKey(key)) {
         db.put(key, value)
         println(key + " updated")
       }
@@ -37,16 +36,18 @@ class Storekeeper extends Actor {
         println(key + " doesn't exist")
     }
     case RemoveRowMessage(key: String) => {
-      val value = db.remove(key)
-      if(value != null)
+      if(db.containsKey(key)) {
+        db.remove(key)
         println(key + " removed")
+      }
       else
         println(key + " doesn't exist")
     }
     case FindRowMessage(key: String) => {
-      val value = db.get(key)
-      if(value != null)
+      if(db.containsKey(key)) {
+        var value = db.get(key)
         println("The value of " + key + " is " + value.toString())
+      }
       else
         println(key + " doesn't exist")
     }

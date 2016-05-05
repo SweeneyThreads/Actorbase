@@ -34,7 +34,7 @@ object Client extends App {
             sendQuery(ln, out)
           }
           catch {
-            case e: IOException => println("Invalid address")
+            case e: IOException => println(e.getMessage)
             case e: SecurityException => println("Security error")
             case e: IllegalArgumentException => println("Invalid port number")
             case e: NullPointerException => println("The address is null")

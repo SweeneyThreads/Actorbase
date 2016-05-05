@@ -30,7 +30,7 @@ class Storefinder extends Actor {
         }
         case _ => {
           val storekeeper = m match {
-            case InsertRowMessage(key: String, value: Array[Byte]) => findActor(key)
+            case InsertRowMessage(key: String, value: Array[Byte ]) => findActor(key)
             case UpdateRowMessage(key: String, value: Array[Byte]) => findActor(key)
             case RemoveRowMessage(key: String) => findActor(key)
             case FindRowMessage(key: String) => findActor(key)
@@ -41,8 +41,6 @@ class Storefinder extends Actor {
             println("Storefinder not found")
         }
       }
-
-
     }
   }
 

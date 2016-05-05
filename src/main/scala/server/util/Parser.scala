@@ -5,7 +5,7 @@ import server.messages._
 /**
   * Created by matteobortolazzo on 02/05/2016.
   */
-object Parser {
+class Parser {
 
   def parseQuery(query: String) : ActorbaseMessage = {
     //Connect message

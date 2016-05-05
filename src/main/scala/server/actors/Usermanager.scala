@@ -23,6 +23,7 @@ class Usermanager extends Actor {
   var mainActor: ActorRef = null
   var user: String = null
   var userPermissions: ConcurrentHashMap[String, Permission] = null
+  var parser = new Parser()
 
   def receive = {
     case Received(data: ByteString) => {
@@ -33,7 +34,7 @@ class Usermanager extends Actor {
         // Takes the query
         val query  = data.slice(1, data.length).utf8String
         // Parse the query
-        val message = Parser.parseQuery(query)
+        val message = parser.parseQuery(query)
         message match {
           // If it's an invalid query
           case i: InvalidQueryMessage => println("Invalid query")

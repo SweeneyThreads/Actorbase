@@ -32,7 +32,7 @@ object Server extends App {
     // Test variables
     val defaultDatabaseName = "test"
     val defaultUsername = "admin"
-    var defaultPort = 8181
+    val defaultPort = 8181
 
     val system = ActorSystem("System")
 
