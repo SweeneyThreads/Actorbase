@@ -8,9 +8,16 @@ import server.messages._
 object Parser {
 
   def parseQuery(query: String) : ActorbaseMessage = {
-    //Row command (two param)
-    var pattern = "(.+)\\s\\'(.+)\\'\\s(.+)".r
+    //Connect message
+    var pattern = "connect\\s(.+):([0-9]*)\\s(.+)\\s(.+)".r
     var result = pattern.findFirstMatchIn(query)
+    if (result.isDefined) {
+      val regex = result.get
+      return new ConnectMessage(regex.group(3), regex.group(4))
+    }
+    //Row command (two param)
+    pattern = "(.+)\\s\\'(.+)\\'\\s(.+)".r
+    result = pattern.findFirstMatchIn(query)
     if(result.isDefined) {
       val regex = result.get
       return parseRowCommandTwoParams(regex.group(1), regex.group(2), regex.group(3))

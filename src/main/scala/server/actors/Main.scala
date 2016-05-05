@@ -1,21 +1,25 @@
 package server.actors
 
-import collection.JavaConversions._
+import java.util.concurrent.ConcurrentHashMap
+
 import akka.actor.{Actor, Props}
-import server.Server
+import server.EnumPermission.Permission
 import server.messages._
+import server.{EnumPermission, Server}
+
+import scala.collection.JavaConversions._
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
   */
 
-/** This actor execute client commands */
-class Main extends Actor {
+/** This actor executes client commands and checks permissions */
+class Main(permissions: ConcurrentHashMap[String, Permission]) extends Actor {
   var selectedDatabase = ""
   var selectedMap = ""
 
-  // Database level commands
   def receive = {
+    // Main actor responsibility
     case d:DatabaseMessage => {
       d match {
         case ListDatabaseMessage() => {
@@ -51,38 +55,62 @@ class Main extends Actor {
         }
       }
     }
+    // Storemanager responsibility
     case m:MapMessage => {
       if(selectedDatabase != "") {
-        val sm = Server.storemanagers.get(selectedDatabase)
-        if (sm != null) {
-          m match {
-            case SelectMapMessage(name: String) => {
-              selectedMap = name
-              println("Map " + name + " selected")
-            }
-            case _ =>
-          }
-          sm ! m
-
-        }
-        else
-          println("Database " + selectedDatabase + " doesn't exits")
-      }
-      else println("Please select a database")
-    }
-    case r:RowMessage => {
-      if(selectedDatabase != "") {
-        if(selectedMap != "") {
+        if (checkPermissions(m)) {
           val sm = Server.storemanagers.get(selectedDatabase)
           if (sm != null) {
-            sm ! StorefinderRowMessage(selectedMap, r)
+            m match {
+              case SelectMapMessage(name: String) => {
+                selectedMap = name
+                println("Map " + name + " selected")
+              }
+              case _ =>
+            }
+            sm ! m
           }
           else
             println("Database " + selectedDatabase + " doesn't exits")
         }
+        else
+          println("You do not have permission")
+      }
+      else println("Please select a database")
+    }
+    // Storefinder & storekeeper responsibility
+    case r:RowMessage => {
+      if(selectedDatabase != "") {
+        if(selectedMap != "") {
+          if (checkPermissions(r)) {
+            val sm = Server.storemanagers.get(selectedDatabase)
+            if (sm != null) {
+              sm ! StorefinderRowMessage(selectedMap, r)
+            }
+            else
+              println("Database " + selectedDatabase + " doesn't exits")
+          }
+          else
+            println("You do not have permission")
+        }
         else println("Please select a map")
       }
       else println("Please select a database")
+    }
+  }
+
+  /** Checks user permissions */
+  private def checkPermissions(m: ActorbaseMessage): Boolean = {
+    return m match {
+      case n: ReadWriteMessage => {
+        val p = permissions.get(selectedDatabase)
+        p != null && p == EnumPermission.ReadWrite
+      }
+      case n: ReadMessage => {
+        val p = permissions.get(selectedDatabase)
+        p != null && (p == EnumPermission.Read || p == EnumPermission.ReadWrite)
+      }
+      case n: NoPermissionMessage => true
     }
   }
 }
