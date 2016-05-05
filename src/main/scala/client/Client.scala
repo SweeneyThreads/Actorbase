@@ -10,6 +10,7 @@ object Client extends App {
 
     var socket: Socket = null
     var out: PrintStream = null
+    Welcome.printWelcomeMessage
 
     // Readline loop
     for (ln <- io.Source.stdin.getLines) {
