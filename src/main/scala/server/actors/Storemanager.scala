@@ -20,7 +20,7 @@ class Storemanager extends Actor {
   def receive = {
     // Replay to the main actor if there's a map with that name
     case AskMapMessage(mapName:String) => Some(sender).map(_ ! storefinders.containsKey(mapName))
-    // Message containing the real rowMessage
+    // Message that contains the real rowMessage
     case m: StorefinderRowMessage => {
       val sf = storefinders.get(m.mapName)
       if (sf != null)

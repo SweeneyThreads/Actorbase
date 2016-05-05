@@ -17,9 +17,8 @@ import scala.util.matching.Regex
 class Storefinder extends Actor {
   val log = Logging(context.system, this)
   var storekeepers = new ConcurrentHashMap[Regex, ActorRef]()
-  storekeepers.put(".*".r, context.actorOf(Props[Storekeeper])) //Storekeeper iniziale
+  storekeepers.put(".*".r, context.actorOf(Props[Storekeeper])) // Startup storekeeper
 
-  // It finds the right storefinder
   def receive = {
     case m:RowMessage => {
       m match {
@@ -44,6 +43,7 @@ class Storefinder extends Actor {
     }
   }
 
+  //** Finds the storekeeper that could contain the key */
   def findActor(key:String):ActorRef = {
     for(r:Regex <- storekeepers.keys()) {
       val m = r.findFirstIn(key)

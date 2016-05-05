@@ -2,7 +2,7 @@ package server.actors
 
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, ActorRef, Props}
 import server.EnumPermission.Permission
 import server.messages._
 import server.{EnumPermission, Server}
@@ -28,13 +28,12 @@ class Main(permissions: ConcurrentHashMap[String, Permission]) extends Actor {
   var selectedMap = ""
 
   def receive = {
-    // Main actor responsibility
-    case d:DatabaseMessage => manageDatabaseLevelMessage(d)
-    // Not a DatabaseMessage
-    case m:ActorbaseMessage => manageNotDatabaseLevelMessage(m)
+    case m: DatabaseMessage => manageDatabaseMessage(m)
+    case m: ActorbaseMessage => manageNotDatabaseMessage(m)
   }
 
-  private def manageDatabaseLevelMessage(message: DatabaseMessage): Unit = {
+  /** Manages database messages */
+  private def manageDatabaseMessage(message: DatabaseMessage): Unit = {
     message match {
       case ListDatabaseMessage() => {
         for (k: String <- Server.storemanagers.keys()) {
@@ -48,68 +47,68 @@ class Main(permissions: ConcurrentHashMap[String, Permission]) extends Actor {
           selectedMap = ""
           println("Database " + name + " selected")
         }
-        else println("Invalid database")
+        else println("Invalid operation")
       }
       case CreateDatabaseMessage(name: String) => {
         if (Server.storemanagers.containsKey(name) && checkPermissions(message, name)) {
           Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
           println("Database " + name + " created")
         }
-        else println("Invalid database")
+        else println("Invalid operation")
       }
       case DeleteDatabaseMessage(name: String) => {
         if (Server.storemanagers.containsKey(name) && checkPermissions(message, name)) {
           Server.storemanagers.remove(name)
           println("Database " + name + " removed")
         }
-        else println("Invalid database")
+        else println("Invalid operation")
       }
     }
   }
 
-  private def manageNotDatabaseLevelMessage(message: ActorbaseMessage): Unit ={
-    if(selectedDatabase != "") {
-      message match {
-        // Storemanager responsibility
-        case m: MapMessage => {
-          if (Server.storemanagers.containsKey(selectedDatabase) && checkPermissions(m, selectedDatabase)) {
-            val sm = Server.storemanagers.get(selectedDatabase)
-            m match {
-              case SelectMapMessage(name: String) => {
-                // Ask the storeManager if there's a map with that name
-                implicit val timeout = Timeout(25 seconds)
-                val future = sm ? new AskMapMessage(name)
-                future.map { result =>
-                  // If there's a map with that name
-                  if(result.asInstanceOf[Boolean]) {
-                    selectedMap = name
-                    println("Map " + name + " selected")
-                  }
-                  else println("Invalid map")
-                }
-              }
-              case _ => sm ! m
-            }
-          }
-          else println("You not allow to run this command")
-        }
-        // Storefinder & storekeeper responsibility
-        case r: RowMessage => {
-          if (selectedMap != "") {
-            if(Server.storemanagers.containsKey(selectedDatabase) && checkPermissions(r, selectedDatabase)) {
-              val sm = Server.storemanagers.get(selectedDatabase)
-              sm ! StorefinderRowMessage(selectedMap, r)
-            }
-            else println("You not allow to run this command")
-          }
-          else println("Please select a map")
+  /** Manages map or row messages */
+  private def manageNotDatabaseMessage(message: ActorbaseMessage): Unit = {
+    if (selectedDatabase != "") {
+      // If the database exists and the user has the permissions for the operation
+      if (Server.storemanagers.containsKey(selectedDatabase) && checkPermissions(message, selectedDatabase)) {
+        // Gets the right storemanager
+        val storemanager = Server.storemanagers.get(selectedDatabase)
+        message match {
+          case m: MapMessage => manageMapMessage(m, storemanager)
+          case m: RowMessage => manageRowMessage(m, storemanager)
         }
       }
-      if (checkPermissions(message, selectedDatabase)) {
-
-      }
-      else println("You do not have permission")
+      else println("Invalid operation")
     }
+    else println("Please select a database")
+  }
+
+  /** Manages map messages */
+  private def manageMapMessage(message: MapMessage, storemanager: ActorRef): Unit = {
+    message match {
+      // If it's a select command
+      case SelectMapMessage(name: String) => {
+        implicit val timeout = Timeout(25 seconds)
+        // Ask the storemanager if there's a map with that name
+        val future = storemanager ? new AskMapMessage(name)
+        // When the storemanager answers
+        future.map { result =>
+          // If the answer is yes
+          if (result.asInstanceOf[Boolean]) {
+            selectedMap = name
+            println("Map " + name + " selected")
+          }
+          else println("Invalid map")
+        }
+      }
+      case _ => storemanager ! message
+    }
+  }
+
+  /** Manages row messages */
+  private def manageRowMessage(message: RowMessage, storemanager: ActorRef): Unit = {
+    if (selectedMap != "")
+      storemanager ! StorefinderRowMessage(selectedMap, message)
   }
 
   /** Checks user permissions */

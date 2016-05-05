@@ -2,51 +2,50 @@ package server.util
 
 import server.messages._
 
+import scala.util.matching.Regex
+
 /**
   * Created by matteobortolazzo on 02/05/2016.
   */
 class Parser {
 
   def parseQuery(query: String) : ActorbaseMessage = {
-    //Connect message
+    // Connect command
     var pattern = "connect\\s(.+):([0-9]*)\\s(.+)\\s(.+)".r
-    var result = pattern.findFirstMatchIn(query)
-    if (result.isDefined) {
-      val regex = result.get
-      return new ConnectMessage(regex.group(3), regex.group(4))
-    }
-    //Row command (two param)
+    var m = getMatch(pattern, query)
+    if(m != null) return new ConnectMessage(m.group(3), m.group(4))
+
+    // Row command (two parameters)
     pattern = "(.+)\\s\\'(.+)\\'\\s(.+)".r
-    result = pattern.findFirstMatchIn(query)
-    if(result.isDefined) {
-      val regex = result.get
-      return parseRowCommandTwoParams(regex.group(1), regex.group(2), regex.group(3))
-    }
-    //Row command (one param)
+    m = getMatch(pattern, query)
+    if(m != null) return parseRowCommandTwoParams(m.group(1), m.group(2), m.group(3))
+
+    // Row command (one parameter)
     pattern = "(.+)\\s\\'(.+)\\'".r
-    result = pattern.findFirstMatchIn(query)
-    if(result.isDefined) {
-      val regex = result.get
-      return parseRowCommandOneParam(regex.group(1), regex.group(2))
-    }
-    //System command with param
+    m = getMatch(pattern, query)
+    if(m != null) return parseRowCommandOneParam(m.group(1), m.group(2))
+
+    // Command with parameters
     pattern = "(.+)\\s(.+)".r
-    result = pattern.findFirstMatchIn(query)
-    if(result.isDefined) {
-      val regex = result.get
-      return parseSystemCommandWithParam(regex.group(1), regex.group(2))
-    }
-    //System command without param OR Row command (no param)
+    m = getMatch(pattern, query)
+    if(m != null) return parseCommandWithParam(m.group(1), m.group(2))
+
+    // Command without parameters
     pattern = "(.+)".r
-    result = pattern.findFirstMatchIn(query)
-    if(result.isDefined) {
-      val regex = result.get
-      return parseCommandWithoutParam(regex.group(1))
-    }
+    m = getMatch(pattern, query)
+    if(m != null) return parseCommandWithoutParam(m.group(1))
 
     return new InvalidQueryMessage
   }
 
+  /** Finds pattern matches on the command */
+  private def getMatch(pattern:Regex, command:String): Regex.Match = {
+    val result = pattern.findFirstMatchIn(command)
+    if (result.isDefined) return result.get
+    return null
+  }
+
+  /** Parses commands without parameters */
   private def parseCommandWithoutParam(command: String): ActorbaseMessage = {
     //renamed due to query without params for row level
     command match {
@@ -58,7 +57,8 @@ class Parser {
     }
   }
 
-  private def parseSystemCommandWithParam(command: String, arg: String): ActorbaseMessage = {
+  /** Parses commands with parameters */
+  private def parseCommandWithParam(command: String, arg: String): ActorbaseMessage = {
     command match {
       case "selectdb" => return new SelectDatabaseMessage(arg)
       case "createdb" => return new CreateDatabaseMessage(arg)
@@ -72,6 +72,7 @@ class Parser {
     }
   }
 
+  /** Parses row level commands with one parameter */
   private def parseRowCommandOneParam(command: String, key: String): ActorbaseMessage = {
     command match {
       case "find" => return new FindRowMessage(key)
@@ -81,6 +82,7 @@ class Parser {
     }
   }
 
+  /** Parses row level commands with two parameters */
   private def parseRowCommandTwoParams(command: String, key: String, value: String): ActorbaseMessage = {
     command match {
       case "insert" => return new InsertRowMessage(key, value.getBytes())

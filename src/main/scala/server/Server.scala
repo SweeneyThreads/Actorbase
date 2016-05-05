@@ -29,31 +29,32 @@ object Server extends App {
   var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, Permission]] = null
 
   override def main(args: Array[String]) {
-    // Test variables
-    val defaultDatabaseName = "test"
-    val defaultUsername = "admin"
-    val defaultPort = 8181
-
     val system = ActorSystem("System")
+    loadUsers()
+    loadUsersPermissions()
+    loadDatabases(system)
+    system.actorOf(Props(classOf[Doorkeeper], 8181))
+    println("Server started")
+  }
 
-    // Add a default database 'test'
-    storemanagers = new ConcurrentHashMap[String, ActorRef]()
-    storemanagers.put(defaultDatabaseName, system.actorOf(Props[Storemanager]))
-
-    // Add a default user 'admin'
+  //* Loads system users */
+  private def loadUsers(): Unit = {
     users = new ConcurrentHashMap[String, String]()
-    users.put(defaultUsername, defaultUsername)
+    users.put("admin", "admin")
+  }
 
-    // Add read/write permissions for 'admin' on 'test'
+  //* Loads users permissions */
+  private def loadUsersPermissions(): Unit = {
     permissions = new ConcurrentHashMap[String, ConcurrentHashMap[String, Permission]]()
     val adminPermissions = new ConcurrentHashMap[String, Permission]()
-    adminPermissions.put(defaultDatabaseName, EnumPermission.ReadWrite)
-    permissions.put(defaultUsername, adminPermissions)
+    adminPermissions.put("test", EnumPermission.ReadWrite)
+    permissions.put("admin", adminPermissions)
+  }
 
-    // Create a doorkeeper on port '8181'
-    system.actorOf(Props(classOf[Doorkeeper], defaultPort))
-
-    println("Server started")
+  //* Loads databases */
+  private def loadDatabases(s:ActorSystem): Unit = {
+    storemanagers = new ConcurrentHashMap[String, ActorRef]()
+    storemanagers.put("test", s.actorOf(Props[Storemanager]))
   }
 }
 

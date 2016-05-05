@@ -45,18 +45,16 @@ class Storekeeper extends Actor {
     }
     case FindRowMessage(key: String) => {
       if(db.containsKey(key)) {
-        var value = db.get(key)
-        println("The value of " + key + " is " + value.toString())
+        println("The value of " + key + " is " + db.get(key).toString())
       }
       else
         println(key + " doesn't exist")
     }
     case ListKeysMessage() => {
-      //print all the keys on the map
+      // Prints all the keys on the map
       if (db.isEmpty)
-        log.warning("Map is empty, please fill with some entries")
+        log.warning("Map is empty, please fill it with some entries")
       else {
-        log.info("The keys on this map are:")
         for (k: String <- db.keys()) {
           log.info(k)
         }
