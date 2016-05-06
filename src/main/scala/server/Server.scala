@@ -1,7 +1,9 @@
 package server
+
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, ActorSystem, Props}
+import org.json._
 import server.EnumPermission.Permission
 import server.actors.{Doorkeeper, Storemanager}
 
@@ -40,19 +42,61 @@ object Server extends App {
   //* Loads system users */
   private def loadUsers(): Unit = {
     users = new ConcurrentHashMap[String, String]()
-    users.put("admin", "admin")
+
+    //* Open the file that should be on the same level as SRC folder */
+    val source = scala.io.Source.fromFile("accounts.json")
+    //* Loads the list of user from the file and close the file */
+    val lista = try source.getLines().mkString finally source.close()
+
+    try {
+      val jsonObject = new JSONObject(lista)
+      val accounts = jsonObject.getJSONArray("accounts")
+      for (i <- 0 until accounts.length()) {
+        val singleAccount = accounts.getJSONObject(i)
+        val id = singleAccount.getString("id")
+        val pw = singleAccount.getString("pw")
+        users.put(id, pw)
+      }
+    } catch {
+      case e: JSONException => e.printStackTrace()
+    }
   }
 
   //* Loads users permissions */
   private def loadUsersPermissions(): Unit = {
     permissions = new ConcurrentHashMap[String, ConcurrentHashMap[String, Permission]]()
-    val adminPermissions = new ConcurrentHashMap[String, Permission]()
-    adminPermissions.put("test", EnumPermission.ReadWrite)
-    permissions.put("admin", adminPermissions)
+
+    //* Open the file that should be on the same level as SRC folder */
+    val source = scala.io.Source.fromFile("permissions.json")
+    //* Loads the list of user from the file and close the file */
+    val lista = try source.getLines().mkString finally source.close()
+
+    try {
+      val jsonObject = new JSONObject(lista)
+      val permissionsList = jsonObject.getJSONArray("permissions")
+      for (i <- 0 until permissionsList.length()) {
+        val singleUserEntry = permissionsList.getJSONObject(i)
+        val accountID = singleUserEntry.getString("id")
+        val permissionList = singleUserEntry.getJSONArray("list")
+        val permissionsMap = new ConcurrentHashMap[String, Permission]()
+        for (j <- 0 until permissionList.length()) {
+          val singleDbPerm = permissionList.getJSONObject(j)
+          val DBName = singleDbPerm.getString("name")
+          val permOnDB = singleDbPerm.getInt("perm")
+          if (permOnDB == 0)
+            permissionsMap.put(DBName, EnumPermission.Read)
+          else
+            permissionsMap.put(DBName, EnumPermission.ReadWrite)
+          permissions.put(accountID, permissionsMap)
+        }
+      }
+    } catch {
+      case e: JSONException => e.printStackTrace()
+    }
   }
 
   //* Loads databases */
-  private def loadDatabases(s:ActorSystem): Unit = {
+  private def loadDatabases(s: ActorSystem): Unit = {
     storemanagers = new ConcurrentHashMap[String, ActorRef]()
     storemanagers.put("test", s.actorOf(Props[Storemanager]))
   }
