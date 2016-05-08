@@ -15,6 +15,25 @@ object Client extends App {
 
     // Readline loop
     for (ln <- io.Source.stdin.getLines) {
+      executeLine(ln)
+    }
+
+    /** Send the query to the server and wait for a response*/
+    def sendQuery(query: String): Unit = {
+      out.write(1) // 01 = query
+      out.print(query)
+      out.flush()
+      while(in.available() < 1) Thread.sleep(100)
+      val buf = new Array[Byte](in.available())
+      in.read(buf)
+      val input = new String(buf)
+      println(input)
+    }
+
+    /**
+      *
+      */
+    def executeLine(ln: String): Unit = {
       // If the client is connected
       if (socket != null && socket.isConnected) {
         // Close the socket when the user write 'disconnect'
@@ -48,18 +67,6 @@ object Client extends App {
           println("Please connect first")
         }
       }
-    }
-
-    /** Send the query to the server and wait for a response*/
-    def sendQuery(query: String): Unit = {
-      out.write(1) // 01 = query
-      out.print(query)
-      out.flush()
-      while(in.available() < 1) Thread.sleep(100)
-      val buf = new Array[Byte](in.available())
-      in.read(buf)
-      val input = new String(buf)
-      println(input)
     }
   }
 }
