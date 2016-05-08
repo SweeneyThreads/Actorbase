@@ -4,26 +4,26 @@ import java.net.InetSocketAddress
 
 import akka.actor.{Actor, Props}
 import akka.io.{IO, Tcp}
+import akka.util.ByteString
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
   */
 
 /** Actor who manage new connections */
-class Doorkeeper(port: Integer) extends Actor {
+class Doorkeeper(port: Integer) extends Actor with akka.actor.ActorLogging {
 
   import Tcp._
   import context.system
-
   IO(Tcp) ! Bind(self, new InetSocketAddress("localhost", port))
 
   def receive = {
-    case b@Bound(localAddress) => println("Port " + port + " opened")
+    case b@Bound(localAddress) => log.info("Port " + port + " opened")
     case CommandFailed(_: Bind) => context stop self
     case c@Connected(remote, local) =>
       val connectionKeeper = context.actorOf(Props[Usermanager])
       val connection = sender()
       connection ! Register(connectionKeeper)
-      println("Client connected")
+      log.info(remote.getHostName + " connected")
   }
 }

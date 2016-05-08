@@ -2,8 +2,9 @@ package server
 
 import java.io.FileNotFoundException
 import java.util.concurrent.ConcurrentHashMap
+import java.util.logging.Logger
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props}
 import org.json._
 import server.EnumPermission.Permission
 import server.actors.{Doorkeeper, Storemanager}
@@ -26,7 +27,6 @@ object EnumPermission {
 
 /** Startup class */
 object Server extends App {
-
   var storemanagers: ConcurrentHashMap[String, ActorRef] = null
   var users: ConcurrentHashMap[String, String] = null
   var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, Permission]] = null
@@ -60,7 +60,6 @@ object Server extends App {
     } catch {
       case e: Exception => {
         addDefaultUser()
-        e.printStackTrace()
       }
     }
   }
@@ -96,7 +95,6 @@ object Server extends App {
     } catch {
       case e: Exception => {
         addDefaultPermissions()
-        e.printStackTrace()
       }
     }
   }

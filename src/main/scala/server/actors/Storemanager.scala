@@ -6,13 +6,23 @@ import akka.actor.{Actor, ActorRef, Props}
 import server.messages._
 
 import collection.JavaConversions._
+import scala.util.{Failure, Success}
 
 /**
   * Created by matteobortolazzo on 02/05/2016.
   */
 
 /** This actor represent a database */
-class Storemanager extends Actor {
+class Storemanager extends Actor with akka.actor.ActorLogging {
+
+  import akka.util.Timeout
+  import scala.concurrent.duration._
+  import akka.pattern.ask
+  import akka.dispatch.ExecutionContexts._
+
+  implicit val timeout = Timeout(25 seconds)
+  implicit val ec = global
+
   var storefinders = new ConcurrentHashMap[String, ActorRef]()
   storefinders.put("defaultMap", context.actorOf(Props[Storekeeper]))
 
@@ -23,32 +33,44 @@ class Storemanager extends Actor {
     // Message that contains the real rowMessage
     case m: StorefinderRowMessage => {
       val sf = storefinders.get(m.mapName)
-      if (sf != null)
-        sf ! m.rowMessage
-      else
-        println("Map " + m.mapName + " doesn't exist")
+      if (sf != null) {
+        val origSender = sender
+        val future = sf ? m.rowMessage
+        future.onComplete {
+          case Success(result) => reply(result.toString, origSender)
+          case Failure(t) => log.error("Error sending message: " + t.getMessage)
+        }
+      }
+      else reply("Map " + m.mapName + " doesn't exist")
     }
     case ListMapMessage() => {
+      var maps = ""
       for (k:String <- storefinders.keys())
-        println(k)
+        maps += k
+      if(maps == "") reply("No maps")
+      else reply(maps)
     }
     case CreateMapMessage(name: String) => {
       val sf = storefinders.get(name)
       if (sf == null) {
         storefinders.put(name, context.actorOf(Props[Storefinder]))
-        println("Map " + name + " created")
+        reply("Map " + name + " created")
+        log.info("Map " + name + " created")
       }
-      else
-        println("Map " + name + " already exists")
+      else reply("Map " + name + " already exists")
     }
     case DeleteMapMessage(name: String) => {
       val sf = storefinders.get(name)
       if (sf != null) {
         storefinders.remove(name)
-        println("Map " + name + " deleted")
+        reply("Map " + name + " deleted")
+        log.info("Map " + name + " deleted")
       }
-      else
-        println("Map " + name + " doesn't exits")
+      else reply("Map " + name + " doesn't exits")
     }
+  }
+
+  private def reply(str:String, sender: ActorRef = sender): Unit = {
+    Some(sender).map(_ ! str)
   }
 }

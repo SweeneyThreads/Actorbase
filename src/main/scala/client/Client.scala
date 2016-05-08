@@ -35,7 +35,7 @@ object Client extends App {
       */
     def executeLine(ln: String): Unit = {
       // If the client is connected
-      if (socket != null && socket.isConnected) {
+      if (socket != null && !socket.isClosed && socket.isConnected) {
         // Close the socket when the user write 'disconnect'
         if (ln == "disconnect") socket.close()
         // Send the query to the server

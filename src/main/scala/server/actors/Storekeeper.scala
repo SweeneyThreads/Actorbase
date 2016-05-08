@@ -2,7 +2,7 @@ package server.actors
 
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorRef}
 import akka.event.Logging
 import server.messages._
 
@@ -13,8 +13,7 @@ import scala.collection.JavaConversions._
   */
 
 /** This actor represent a map partition */
-class Storekeeper extends Actor {
-  val log = Logging(context.system, "StorekeeperLog")
+class Storekeeper extends Actor with akka.actor.ActorLogging  {
   var db = new ConcurrentHashMap[String, Array[Byte]]()
 
   // Row level commands
@@ -22,43 +21,47 @@ class Storekeeper extends Actor {
     case InsertRowMessage(key: String, value: Array[Byte]) => {
       if(!db.containsKey(key)) {
         db.put(key, value)
-        println(key + " inserted")
+        reply(key + " inserted")
+        log.info(key + "inserted")
       }
       else
-        println(key + " already exist")
+        reply(key + " already exist")
     }
     case UpdateRowMessage(key: String, value: Array[Byte]) => {
       if(!db.containsKey(key)) {
         db.put(key, value)
-        println(key + " updated")
+        reply(key + " updated")
+        log.info(key + "updated")
       }
       else
-        println(key + " doesn't exist")
+        reply(key + " doesn't exist")
     }
     case RemoveRowMessage(key: String) => {
       if(db.containsKey(key)) {
         db.remove(key)
-        println(key + " removed")
+        reply(key + " removed")
+        log.info(key + "removed")
       }
       else
-        println(key + " doesn't exist")
+        reply(key + " doesn't exist")
     }
     case FindRowMessage(key: String) => {
       if(db.containsKey(key)) {
-        println("The value of " + key + " is " + db.get(key).toString())
+        reply("The value of " + key + " is " + db.get(key).toString())
       }
       else
-        println(key + " doesn't exist")
+        reply(key + " doesn't exist")
     }
     case ListKeysMessage() => {
-      // Prints all the keys on the map
-      if (db.isEmpty)
-        log.warning("Map is empty, please fill it with some entries")
-      else {
-        for (k: String <- db.keys()) {
-          log.info(k)
-        }
+      var keys =""
+      for (k: String <- db.keys()) {
+        keys += k + "\n"
       }
+      reply(keys)
     }
+  }
+
+  private def reply(str:String, sender: ActorRef = sender): Unit = {
+    Some(sender).map(_ ! str)
   }
 }

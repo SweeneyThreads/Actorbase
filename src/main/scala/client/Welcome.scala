@@ -26,6 +26,7 @@ object Welcome {
     println(banner)
     println("Hello " + user + "! And welcome to ACTORBASE \n")
     println("You are using " + os + " " + version + " with Java " + javaVersion + "\n " )
-    println("Connect to a server using: connect address username password \n \n")
+    println("Connect to a server using: connect address:port username password \n ")
+    println("-----------------------------------------------------------------\n \n")
   }
 }

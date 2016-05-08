@@ -8,20 +8,21 @@ import server.messages._
 import server.{EnumPermission, Server}
 
 import scala.collection.JavaConversions._
-import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
   */
 
 /** This actor executes client commands and checks permissions */
-class Main(permissions: ConcurrentHashMap[String, Permission]) extends Actor {
+class Main(permissions: ConcurrentHashMap[String, Permission]) extends Actor with akka.actor.ActorLogging {
 
   import akka.util.Timeout
   import scala.concurrent.duration._
   import akka.pattern.ask
   import akka.dispatch.ExecutionContexts._
 
+  implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
 
   var selectedDatabase = ""
@@ -29,39 +30,45 @@ class Main(permissions: ConcurrentHashMap[String, Permission]) extends Actor {
 
   def receive = {
     case m: DatabaseMessage => manageDatabaseMessage(m)
-    case m: ActorbaseMessage => manageNotDatabaseMessage(m)
+    case m: MapMessage => manageNotDatabaseMessage(m)
+    case m: RowMessage => manageNotDatabaseMessage(m)
   }
 
   /** Manages database messages */
   private def manageDatabaseMessage(message: DatabaseMessage): Unit = {
     message match {
       case ListDatabaseMessage() => {
+        var str:String = ""
         for (k: String <- Server.storemanagers.keys()) {
           if (permissions.get(k) != null)
-            println(k)
+            str += k + " "
         }
+        if(str == "") reply("No databases")
+        else reply(str)
       }
       case SelectDatabaseMessage(name: String) => {
         if (Server.storemanagers.containsKey(name) && checkPermissions(message, name)) {
           selectedDatabase = name
           selectedMap = ""
-          println("Database " + name + " selected")
+          reply("Database " + name + " selected")
         }
-        else println("Invalid operation")
+        reply("Invalid operation")
       }
       case CreateDatabaseMessage(name: String) => {
         if (Server.storemanagers.containsKey(name) && checkPermissions(message, name)) {
           Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
-          println("Database " + name + " created")
+          reply("Database " + name + " created")
+          log.info("Database " + name + " created")
         }
-        else println("Invalid operation")
+        reply("Invalid operation")
       }
       case DeleteDatabaseMessage(name: String) => {
         if (Server.storemanagers.containsKey(name) && checkPermissions(message, name)) {
           Server.storemanagers.remove(name)
-          println("Database " + name + " removed")
+          reply("Database " + name + " deleted")
+          log.info("Database " + name + " deleted")
         }
-        else println("Invalid operation")
+        reply("Invalid operation")
       }
     }
   }
@@ -78,9 +85,9 @@ class Main(permissions: ConcurrentHashMap[String, Permission]) extends Actor {
           case m: RowMessage => manageRowMessage(m, storemanager)
         }
       }
-      else println("Invalid operation")
+      else reply("Invalid operation")
     }
-    else println("Please select a database")
+    else reply("Please select a database")
   }
 
   /** Manages map messages */
@@ -88,27 +95,44 @@ class Main(permissions: ConcurrentHashMap[String, Permission]) extends Actor {
     message match {
       // If it's a select command
       case SelectMapMessage(name: String) => {
-        implicit val timeout = Timeout(25 seconds)
         // Ask the storemanager if there's a map with that name
         val future = storemanager ? new AskMapMessage(name)
-        // When the storemanager answers
-        future.map { result =>
-          // If the answer is yes
-          if (result.asInstanceOf[Boolean]) {
-            selectedMap = name
-            println("Map " + name + " selected")
+        // Save the original sender
+        val oldSender = sender
+        future.onComplete {
+          case Success(result) => {
+            // If the storemanager contains the map
+            if (result.asInstanceOf[Boolean]) {
+              selectedMap = name
+              reply("Map " + name + " selected", oldSender)
+            }
+            else reply("Invalid map", oldSender)
           }
-          else println("Invalid map")
+          case Failure(t) => log.error("Error sending message: " + t.getMessage)
         }
       }
-      case _ => storemanager ! message
+      case _ => {
+        val origSender = sender
+        val future = storemanager ? message
+        future.onComplete {
+          case Success(result) => reply(result.toString, origSender)
+          case Failure(t) => log.error("Error sending message: " + t.getMessage)
+        }
+      }
     }
   }
 
   /** Manages row messages */
   private def manageRowMessage(message: RowMessage, storemanager: ActorRef): Unit = {
-    if (selectedMap != "")
-      storemanager ! StorefinderRowMessage(selectedMap, message)
+    if (selectedMap != "") {
+      val origSender = sender
+      val future = storemanager ? StorefinderRowMessage(selectedMap, message)
+      future.onComplete {
+        case Success(result) => reply(result.toString, origSender)
+        case Failure(t) => log.error("Error sending message: " + t.getMessage)
+      }
+    }
+    else reply("Please select a map first")
   }
 
   /** Checks user permissions */
@@ -124,5 +148,9 @@ class Main(permissions: ConcurrentHashMap[String, Permission]) extends Actor {
       }
       case n: NoPermissionMessage => true
     }
+  }
+
+  private def reply(str:String, sender: ActorRef = sender): Unit = {
+    Some(sender).map(_ ! str)
   }
 }

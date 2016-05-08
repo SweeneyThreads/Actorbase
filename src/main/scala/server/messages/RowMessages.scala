@@ -3,7 +3,7 @@ package server.messages
 /**
   * Created by matteobortolazzo on 02/05/2016.
   */
-trait RowMessage extends ActorbaseMessage {}
+trait RowMessage extends ActorbaseMessage
 
 case class InsertRowMessage(key: String, value: Array[Byte]) extends RowMessage with ReadWriteMessage
 

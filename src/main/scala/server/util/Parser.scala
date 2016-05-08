@@ -11,27 +11,27 @@ class Parser {
 
   def parseQuery(query: String) : ActorbaseMessage = {
     // Connect command
-    var pattern = "connect\\s(.+):([0-9]*)\\s(.+)\\s(.+)".r
+    var pattern = "connect\\s(\\S+):([0-9]+)\\s(\\S+)\\s(\\S+)$".r
     var m = getMatch(pattern, query)
     if(m != null) return new ConnectMessage(m.group(3), m.group(4))
 
     // Row command (two parameters)
-    pattern = "(.+)\\s\\'(.+)\\'\\s(.+)".r
+    pattern = "(\\S+)\\s\\'(\\S+)\\'\\s(\\S+)$".r
     m = getMatch(pattern, query)
     if(m != null) return parseRowCommandTwoParams(m.group(1), m.group(2), m.group(3))
 
     // Row command (one parameter)
-    pattern = "(.+)\\s\\'(.+)\\'".r
+    pattern = "(\\S+)\\s\\'(\\S+)\\'$".r
     m = getMatch(pattern, query)
     if(m != null) return parseRowCommandOneParam(m.group(1), m.group(2))
 
     // Command with parameters
-    pattern = "(.+)\\s(.+)".r
+    pattern = "(\\S+)\\s(\\S+)$".r
     m = getMatch(pattern, query)
     if(m != null) return parseCommandWithParam(m.group(1), m.group(2))
 
     // Command without parameters
-    pattern = "(.+)".r
+    pattern = "(\\S+)$".r
     m = getMatch(pattern, query)
     if(m != null) return parseCommandWithoutParam(m.group(1))
 

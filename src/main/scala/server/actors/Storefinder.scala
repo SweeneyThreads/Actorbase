@@ -1,12 +1,14 @@
 package server.actors
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.Logging
 import server.messages._
 
 import scala.collection.JavaConversions._
+import scala.util.{Failure, Success}
 import scala.util.matching.Regex
 
 /**
@@ -14,8 +16,16 @@ import scala.util.matching.Regex
   */
 
 /** This actor represent a map */
-class Storefinder extends Actor {
-  val log = Logging(context.system, this)
+class Storefinder extends Actor with akka.actor.ActorLogging {
+
+  import akka.util.Timeout
+  import scala.concurrent.duration._
+  import akka.pattern.ask
+  import akka.dispatch.ExecutionContexts._
+
+  implicit val timeout = Timeout(25 seconds)
+  implicit val ec = global
+
   var storekeepers = new ConcurrentHashMap[Regex, ActorRef]()
   storekeepers.put(".*".r, context.actorOf(Props[Storekeeper])) // Startup storekeeper
 
@@ -23,8 +33,26 @@ class Storefinder extends Actor {
     case m:RowMessage => {
       m match {
         case ListKeysMessage() => {
+          val origSender = sender
+          val storeKeeperNumber = storekeepers.keys().length
+          var messagesReceived = 0
+          var keys = ""
           for (r: Regex <- storekeepers.keys()) {
-            storekeepers.get(r) ! m
+            val future = storekeepers.get(r) ? m
+            future.onComplete {
+              case Success(result) => {
+                messagesReceived = messagesReceived + 1
+                keys += result
+                if(messagesReceived == storeKeeperNumber) {
+                  if(keys == "") reply("No keys in this map")
+                  else reply(result.toString, origSender)
+                }
+              }
+              case Failure(t) => {
+                messagesReceived = messagesReceived + 1
+                log.error("Error sending message: " + t.getMessage)
+              }
+            }
           }
         }
         case _ => {
@@ -34,10 +62,16 @@ class Storefinder extends Actor {
             case RemoveRowMessage(key: String) => findActor(key)
             case FindRowMessage(key: String) => findActor(key)
           }
-          if (storekeeper != null)
-            storekeeper ! m
+          if (storekeeper != null){
+            val origSender = sender
+            val future = storekeeper ? m
+            future.onComplete {
+              case Success(result) => reply(result.toString, origSender)
+              case Failure(t) => log.error("Error sending message: " + t.getMessage)
+            }
+          }
           else
-            println("Storefinder not found")
+            reply("Storefinder not found")
         }
       }
     }
@@ -51,5 +85,9 @@ class Storefinder extends Actor {
         return storekeepers.get(r)
     }
     return null
+  }
+
+  private def reply(str:String, sender: ActorRef = sender): Unit = {
+    Some(sender).map(_ ! str)
   }
 }
