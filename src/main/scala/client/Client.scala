@@ -10,6 +10,7 @@ object Client extends App {
 
     var socket: Socket = null
     var out: PrintStream = null
+    var in: BufferedInputStream = null
     Welcome.printWelcomeMessage
 
     // Readline loop
@@ -19,7 +20,7 @@ object Client extends App {
         // Close the socket when the user write 'disconnect'
         if (ln == "disconnect") socket.close()
         // Send the query to the server
-        else sendQuery(ln, out)
+        else sendQuery(ln)
       }
       else {
         // Connection command pattern (connect address:port username password)
@@ -32,7 +33,8 @@ object Client extends App {
             // Create the socket, the output stream and send the connection command to the server
             socket = new Socket(InetAddress.getByName(regex.group(1)), Integer.parseInt(regex.group(2)))
             out = new PrintStream(socket.getOutputStream)
-            sendQuery(ln, out)
+            in = new BufferedInputStream(socket.getInputStream)
+            sendQuery(ln)
           }
           catch {
             case e: IOException => println(e.getMessage)
@@ -48,11 +50,16 @@ object Client extends App {
       }
     }
 
-    /** Send the query to the server */
-    def sendQuery(query: String, out: PrintStream): Unit = {
+    /** Send the query to the server and wait for a response*/
+    def sendQuery(query: String): Unit = {
       out.write(1) // 01 = query
       out.print(query)
       out.flush()
+      while(in.available() < 1) Thread.sleep(100)
+      val buf = new Array[Byte](in.available())
+      in.read(buf)
+      val input = new String(buf)
+      println(input)
     }
   }
 }

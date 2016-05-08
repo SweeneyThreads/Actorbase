@@ -37,6 +37,7 @@ class Usermanager extends Actor {
           case _ => manageValidMessage(message)
         }
       }
+      sender() ! Write(data)
     }
     case PeerClosed => {
       println("Client disconnected")
@@ -72,5 +73,3 @@ class Usermanager extends Actor {
     else println("You're already connected")
   }
 }
-
-//sender() ! Write(data) // risponde al client

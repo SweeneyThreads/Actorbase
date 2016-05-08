@@ -1,5 +1,6 @@
 package server
 
+import java.io.FileNotFoundException
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, ActorSystem, Props}
@@ -43,13 +44,12 @@ object Server extends App {
   private def loadUsers(): Unit = {
     users = new ConcurrentHashMap[String, String]()
 
-    //* Open the file that should be on the same level as SRC folder */
-    val source = scala.io.Source.fromFile("accounts.json")
-    //* Loads the list of user from the file and close the file */
-    val lista = try source.getLines().mkString finally source.close()
-
     try {
-      val jsonObject = new JSONObject(lista)
+      //* Open the file that should be on the same level as SRC folder */
+      val source = scala.io.Source.fromFile("accounts.json")
+      //* Loads the list of user from the file and close the file */
+      val list = try source.getLines().mkString finally source.close()
+      val jsonObject = new JSONObject(list)
       val accounts = jsonObject.getJSONArray("accounts")
       for (i <- 0 until accounts.length()) {
         val singleAccount = accounts.getJSONObject(i)
@@ -58,7 +58,10 @@ object Server extends App {
         users.put(id, pw)
       }
     } catch {
-      case e: JSONException => e.printStackTrace()
+      case e: Exception => {
+        addDefaultUser()
+        e.printStackTrace()
+      }
     }
   }
 
@@ -66,13 +69,13 @@ object Server extends App {
   private def loadUsersPermissions(): Unit = {
     permissions = new ConcurrentHashMap[String, ConcurrentHashMap[String, Permission]]()
 
-    //* Open the file that should be on the same level as SRC folder */
-    val source = scala.io.Source.fromFile("permissions.json")
-    //* Loads the list of user from the file and close the file */
-    val lista = try source.getLines().mkString finally source.close()
-
     try {
-      val jsonObject = new JSONObject(lista)
+      //* Open the file that should be on the same level as SRC folder */
+      val source = scala.io.Source.fromFile("permissions.json")
+      //* Loads the list of user from the file and close the file */
+      val list = try source.getLines().mkString finally source.close()
+
+      val jsonObject = new JSONObject(list)
       val permissionsList = jsonObject.getJSONArray("permissions")
       for (i <- 0 until permissionsList.length()) {
         val singleUserEntry = permissionsList.getJSONObject(i)
@@ -91,7 +94,10 @@ object Server extends App {
         }
       }
     } catch {
-      case e: JSONException => e.printStackTrace()
+      case e: Exception => {
+        addDefaultPermissions()
+        e.printStackTrace()
+      }
     }
   }
 
@@ -99,6 +105,16 @@ object Server extends App {
   private def loadDatabases(s: ActorSystem): Unit = {
     storemanagers = new ConcurrentHashMap[String, ActorRef]()
     storemanagers.put("test", s.actorOf(Props[Storemanager]))
+  }
+
+  private def addDefaultUser(): Unit = {
+    users.put("admin", "admin")
+  }
+
+  private def addDefaultPermissions(): Unit = {
+    val perm = new ConcurrentHashMap[String, Permission]()
+    perm.put("test", EnumPermission.ReadWrite)
+    permissions.put("admin", perm)
   }
 }
 
