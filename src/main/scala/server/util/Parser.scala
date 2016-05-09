@@ -1,5 +1,6 @@
 package server.util
 
+import akka.event.LoggingAdapter
 import server.messages._
 
 import scala.util.matching.Regex
@@ -9,7 +10,7 @@ import scala.util.matching.Regex
   */
 class Parser {
 
-  def parseQuery(query: String) : ActorbaseMessage = {
+  def parseQuery(query: String, log:LoggingAdapter = null) : ActorbaseMessage = {
     // Connect command
     var pattern = "connect\\s(\\S+):([0-9]+)\\s(\\S+)\\s(\\S+)$".r
     var m = getMatch(pattern, query)

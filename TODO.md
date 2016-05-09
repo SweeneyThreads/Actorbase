@@ -10,10 +10,10 @@ Robe da sviluppare
 ## Per RQ
 * Driver
 * Client
-* Risposte al client
-* Loggin' attori
+* Risposte al client **(fatto)**
+* Loggin' attori **(fatto)**
 * Più storefinder per mappa
-* 'Superuser'
+* 'Superuser' **(fatto)**
 
 ## Dopo RQ
 * Warehouseman
@@ -23,3 +23,5 @@ Robe da sviluppare
 * Creazione dinamica storefinder
 * Spegnimento / accensione server
 * Comandi server
+* Timeout connessione client/server
+* Help

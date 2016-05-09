@@ -82,7 +82,10 @@ class Usermanager extends Actor with akka.actor.ActorLogging {
       if (psw != null && psw == password) {
         // If the login is valid it creates a main actor that contains the user permissions
         connected = true
-        mainActor = context.actorOf(Props(new Main(Server.permissions.get(username))))
+        
+        if(username == "admin") mainActor = context.actorOf(Props(new Main()))
+        else mainActor = context.actorOf(Props(new Main(Server.permissions.get(username))))
+
         reply("You're connected")
         log.info(username + " is connected")
       }

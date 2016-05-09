@@ -15,7 +15,7 @@ import scala.util.{Failure, Success}
   */
 
 /** This actor executes client commands and checks permissions */
-class Main(permissions: ConcurrentHashMap[String, Permission]) extends Actor with akka.actor.ActorLogging {
+class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Actor with akka.actor.ActorLogging {
 
   import akka.util.Timeout
   import scala.concurrent.duration._
@@ -40,7 +40,7 @@ class Main(permissions: ConcurrentHashMap[String, Permission]) extends Actor wit
       case ListDatabaseMessage() => {
         var str:String = ""
         for (k: String <- Server.storemanagers.keys()) {
-          if (permissions.get(k) != null)
+          if (permissions == null || permissions.get(k) != null)
             str += k + " "
         }
         if(str == "") reply("No databases")
@@ -137,6 +137,8 @@ class Main(permissions: ConcurrentHashMap[String, Permission]) extends Actor wit
 
   /** Checks user permissions */
   private def checkPermissions(message: ActorbaseMessage, dbName:String): Boolean = {
+    if(permissions == null)
+      return true
     return message match {
       case n: ReadWriteMessage => {
         val p = permissions.get(dbName)
