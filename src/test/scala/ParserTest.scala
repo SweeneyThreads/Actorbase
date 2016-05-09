@@ -21,29 +21,20 @@ class ParserTest extends FlatSpec with Matchers{
 
 
 
-  //test dei comandi listdb, list, e keys
-  "'listdb' command" should "generate a ListDatabaseMessage" in {
-    parser.parseQuery("listdb") should be (new ListDatabaseMessage)
-  }
-  it should "have 0 parameters" in {
-    parser.parseQuery("listdb databaseName") should be (new InvalidQueryMessage)
-    parser.parseQuery("listdb databaseName mapName") should be (new InvalidQueryMessage)
-  }
-
-  "'list' command" should "generate a ListMapMessage" in {
-    parser.parseQuery("list") should be (new ListMapMessage)
-  }
-  it should "have 0 parameters" in {
-    parser.parseQuery("list databaseName") should be (new InvalidQueryMessage)
-    parser.parseQuery("list databaseName mapName") should be (new InvalidQueryMessage)
-  }
-
-  "'keys' command" should "generate a ListKeysMessage" in {
-    parser.parseQuery("keys") should be (new ListKeysMessage)
-  }
-  it should "have 0 parameters" in {
-    parser.parseQuery("keys databaseName") should be (new InvalidQueryMessage)
-    parser.parseQuery("keys databaseName mapName") should be (new InvalidQueryMessage)
+  //test dei comandi a zero parametri
+  val zeroParamCommands = Array(
+    new SampleCommand("listdb","ListDatabaseMessage",new ListDatabaseMessage),
+    new SampleCommand("list","ListMapMessage",new ListMapMessage),
+    new SampleCommand("keys","ListKeysMessage",new ListKeysMessage)
+  )
+  for (cmd <- zeroParamCommands) {
+    "'"+cmd.command+"' command" should "generate a "+cmd.strMessage in {
+      parser.parseQuery(cmd.command) should be (cmd.message1)
+    }
+    it should "have 0 parameters" in {
+      parser.parseQuery(cmd.command+" lightside") should be (new InvalidQueryMessage)
+      parser.parseQuery(cmd.command+" dark side") should be (new InvalidQueryMessage)
+    }
   }
 
 
@@ -54,9 +45,7 @@ class ParserTest extends FlatSpec with Matchers{
     new SampleCommand("deletedb","DeleteDatabaseMessage",new DeleteDatabaseMessage("aParam"), new DeleteDatabaseMessage("anotherParam")),
     new SampleCommand("select","SelectMapMessage",new SelectMapMessage("aParam"), new SelectMapMessage("anotherParam")),
     new SampleCommand("create","CreateMapMessage",new CreateMapMessage("aParam"), new CreateMapMessage("anotherParam")),
-    new SampleCommand("delete","DeleteMapMessage",new DeleteMapMessage("aParam"), new DeleteMapMessage("anotherParam")),
-    new SampleCommand("find","FindRowMessage",new FindRowMessage("aParam"), new FindRowMessage("anotherParam")),
-    new SampleCommand("remove","RemoveRowMessage",new RemoveRowMessage("aParam"), new RemoveRowMessage("anotherParam"))
+    new SampleCommand("delete","DeleteMapMessage",new DeleteMapMessage("aParam"), new DeleteMapMessage("anotherParam"))
   )
   for (cmd <- oneParamCommands) {
     "'"+cmd.command+"' command" should "generate a "+cmd.strMessage in {
@@ -71,15 +60,38 @@ class ParserTest extends FlatSpec with Matchers{
   }
 
 
+  //test dei comandi virgolettati
+  val culo = Array (
+    new SampleCommand("find","FindRowMessage",new FindRowMessage("fourwordsalluppercase"), new FindRowMessage("ONE WORD ALL LOWERCASE")),
+    new SampleCommand("remove","RemoveRowMessage",new RemoveRowMessage("fourwordsalluppercase"), new RemoveRowMessage("ONE WORD ALL LOWERCASE"))
+  )
+  for (cmd <- culo) {
+    "'"+cmd.command+"' command" should "generate a "+cmd.strMessage in {
+      parser.parseQuery(cmd.command+" 'fourwordsalluppercase'") should be (cmd.message1)
+    }
+    it should "accept multiple words as parameter and generate the correct message" in {
+      parser.parseQuery(cmd.command+" 'ONE WORD ALL LOWERCASE'") should be (cmd.message2)
+    }
+    it should "have exactly 1 parameter" in {
+      parser.parseQuery(cmd.command) should be (new InvalidQueryMessage)
+      parser.parseQuery(cmd.command+" 'something' something") should be (new InvalidQueryMessage)
+      parser.parseQuery(cmd.command+" 'some things' 'somethingelse'") should be (new InvalidQueryMessage)
+      parser.parseQuery(cmd.command+" 'something' 'something' something") should be (new InvalidQueryMessage)
+    }
+  }
+
+
   //test dei comandi con 2 parametri
   val twoParamCommands = Array(
-    new SampleCommand("insert","InsertRowMessage", new InsertRowMessage("aKey","aValue".getBytes()), new InsertRowMessage("anotherKey","anotherValue".getBytes())),
-    new SampleCommand("update","UpdateRowMessage", new UpdateRowMessage("aKey","aValue".getBytes()), new UpdateRowMessage("anotherKey","anotherValue".getBytes()))
+    new SampleCommand("insert","InsertRowMessage", new InsertRowMessage("aKey","aValue".getBytes("UTF-8")), new InsertRowMessage("one word is not enough for that key","anotherValue".getBytes("UTF-8"))),
+    new SampleCommand("update","UpdateRowMessage", new UpdateRowMessage("aKey","aValue".getBytes("UTF-8")), new UpdateRowMessage("one word is not enough for that key","anotherValue".getBytes("UTF-8")))
   )
   for (cmd <- twoParamCommands) {
-    "'"+cmd.command+"' command" should "generate a "+cmd.strMessage in {
-      parser.parseQuery(cmd.command+" aKey aValue") should be (cmd.message1)
-      parser.parseQuery(cmd.command+" anotherKey anotherValue") should be (cmd.message2)
+    "'"+cmd.command+"' command" should "generate a "+cmd.strMessage+ " using first param as Key and bytes-value of second param as Value" in {
+      parser.parseQuery(cmd.command+" 'aKey' aValue") should be (cmd.message1)
+    }
+    it should "accept multiple words as first param and generate the correct message" in {
+      parser.parseQuery(cmd.command+" 'one word is not enough for that key' anotherValue") should be (cmd.message2)
     }
     it should "have exactly 2 parameters" in {
       parser.parseQuery(cmd.command) should be (new InvalidQueryMessage)
@@ -96,7 +108,7 @@ class ParserTest extends FlatSpec with Matchers{
 class SampleCommand(val command: String,
                    val strMessage: String,
                    val message1: ActorbaseMessage,
-                   val message2: ActorbaseMessage)
+                   val message2: ActorbaseMessage = null)
 
 
 

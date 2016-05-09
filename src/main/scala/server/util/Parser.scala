@@ -17,12 +17,12 @@ class Parser {
     if(m != null) return new ConnectMessage(m.group(3), m.group(4))
 
     // Row command (two parameters)
-    pattern = "(\\S+)\\s\\'(\\S+)\\'\\s(\\S+)$".r
+    pattern = "(\\S+)\\s\\'(.+)\\'\\s(\\S+)$".r
     m = getMatch(pattern, query)
     if(m != null) return parseRowCommandTwoParams(m.group(1), m.group(2), m.group(3))
 
     // Row command (one parameter)
-    pattern = "(\\S+)\\s\\'(\\S+)\\'$".r
+    pattern = "(\\S+)\\s\\'(.+)\\'$".r
     m = getMatch(pattern, query)
     if(m != null) return parseRowCommandOneParam(m.group(1), m.group(2))
 
@@ -86,8 +86,8 @@ class Parser {
   /** Parses row level commands with two parameters */
   private def parseRowCommandTwoParams(command: String, key: String, value: String): ActorbaseMessage = {
     command match {
-      case "insert" => return new InsertRowMessage(key, value.getBytes())
-      case "update" => return new UpdateRowMessage(key, value.getBytes())
+      case "insert" => return new InsertRowMessage(key, value.getBytes("UTF-8"))
+      case "update" => return new UpdateRowMessage(key, value.getBytes("UTF-8"))
 
       case _ => return new InvalidQueryMessage
     }
