@@ -27,7 +27,9 @@ object Client extends App {
       if (ln == "disconnect") socket.close()
       else sendQuery(ln)
     }
-    else {
+    else checkLogin()
+
+    def checkLogin():Unit = {
       // Connection command pattern (connect address:port username password)
       val pattern = "connect\\s(.+):([0-9]*)\\s(.+)\\s(.+)".r
       val result = pattern.findFirstMatchIn(ln)
@@ -39,7 +41,7 @@ object Client extends App {
           socket = new Socket(InetAddress.getByName(regex.group(1)), Integer.parseInt(regex.group(2)))
           out = new PrintStream(socket.getOutputStream)
           in = new BufferedInputStream(socket.getInputStream)
-          sendQuery(ln)
+          sendQuery("login " + regex.group(3) + " " + regex.group(4))
         }
         catch {
           case e: IOException => println(e.getMessage)

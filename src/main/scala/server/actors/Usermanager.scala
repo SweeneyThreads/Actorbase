@@ -8,7 +8,7 @@ import akka.util.{ByteString, Timeout}
 import server.EnumPermission.Permission
 import server.Server
 import server.messages.ErrorMessages.InvalidQueryMessage
-import server.messages.{ActorbaseMessage, ConnectMessage, ErrorMessages}
+import server.messages.{ActorbaseMessage, LoginMessage, ErrorMessages}
 import server.util.Parser
 
 import scala.util.{Failure, Success}
@@ -58,7 +58,7 @@ class Usermanager extends Actor with akka.actor.ActorLogging {
   /** Manage valid messages */
   private def manageValidMessage(message: ActorbaseMessage): Unit = {
     message match {
-      case ConnectMessage(username, password) => manageLogin(username, password)
+      case LoginMessage(username, password) => manageLogin(username, password)
       case _ => {
         // If the user is connected it sends the message to the main actor
         if (connected) {

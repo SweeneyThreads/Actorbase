@@ -18,9 +18,9 @@ class Parser {
 
   def parseQuery(query: String, log:LoggingAdapter = null) : ActorbaseMessage = {
     // Connect command
-    var pattern = "connect\\s(\\S+):([0-9]+)\\s(\\S+)\\s(\\S+)$".r
+    var pattern = "login\\s(\\S+)\\s(\\S+)$".r
     var m = getMatch(pattern, query)
-    if(m != null) return new ConnectMessage(m.group(3), m.group(4))
+    if(m != null) return new LoginMessage(m.group(1), m.group(2))
 
     // Row command (two parameters)
     pattern = "(\\S+)\\s\\'(.+)\\'\\s(\\S+)$".r

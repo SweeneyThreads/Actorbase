@@ -16,15 +16,14 @@ case class SampleCommand(command: String,strMessage: String,message1: ActorbaseM
 class ParserTest extends FlatSpec with Matchers {
   val parser = new Parser()
 
-  "'connect' command" should "generate a ConnectMessage with 3rd and 4th param" in {
-    parser.parseQuery("connect localhost:8181 admin admin") should be(new ConnectMessage("admin", "admin"))
-    parser.parseQuery("connect 192.168.1.110:8080 tpadovan psw") should be(new ConnectMessage("tpadovan", "psw"))
+  "'login' command" should "generate a LoginMessage with 1rd and 2th param" in {
+    parser.parseQuery("login admin admin") should be(new LoginMessage("admin", "admin"))
+    parser.parseQuery("login tpadovan psw") should be(new LoginMessage("tpadovan", "psw"))
   }
-  it should "have 3, well formed, parameters" in {
-    parser.parseQuery("connect localhost:8181") should be(new InvalidQueryMessage)
-    parser.parseQuery("connect localhost:8181 admin") should be(new InvalidQueryMessage)
-    parser.parseQuery("connect localhost:8181 admin admin admin") should be(new InvalidQueryMessage)
-    parser.parseQuery("connect localhost admin admin") should be(new InvalidQueryMessage)
+  it should "have 2, well formed, parameters" in {
+    parser.parseQuery("login") should be(new InvalidQueryMessage)
+    parser.parseQuery("login admin") should be(new InvalidQueryMessage)
+    parser.parseQuery("login admin admin admin") should be(new InvalidQueryMessage)
   }
 
   //test dei comandi a zero parametri
