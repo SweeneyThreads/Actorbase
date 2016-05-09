@@ -7,7 +7,8 @@ import akka.io.Tcp
 import akka.util.{ByteString, Timeout}
 import server.EnumPermission.Permission
 import server.Server
-import server.messages.{ActorbaseMessage, AskMapMessage, ConnectMessage, InvalidQueryMessage}
+import server.messages.ErrorMessages.InvalidQueryMessage
+import server.messages.{ActorbaseMessage, ConnectMessage, ErrorMessages}
 import server.util.Parser
 
 import scala.util.{Failure, Success}

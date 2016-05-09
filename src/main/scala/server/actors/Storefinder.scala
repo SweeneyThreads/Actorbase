@@ -6,6 +6,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.Logging
 import server.messages._
+import server.messages.query.RowMessages._
+import server.messages.query._
 
 import scala.collection.JavaConversions._
 import scala.util.{Failure, Success}

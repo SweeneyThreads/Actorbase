@@ -1,4 +1,6 @@
-package server.messages
+package server.messages.internal
+
+import server.messages.ActorbaseMessage
 
 /**
   * Created by matteobortolazzo on 05/05/2016.

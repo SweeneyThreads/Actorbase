@@ -25,7 +25,7 @@ object Client extends App {
     if (socket != null && !socket.isClosed && socket.isConnected) {
       // Close the socket when the user write 'disconnect'
       if (ln == "disconnect") socket.close()
-      else sendQuery(convertQuery(ln))
+      else sendQuery(ln)
     }
     else {
       // Connection command pattern (connect address:port username password)
@@ -66,7 +66,7 @@ object Client extends App {
       println(input)
     }
 
-    def convertQuery(query:String): String = {
+    /*def convertQuery(query:String): String = {
       var command = query
       import java.util.Base64
       import java.nio.charset.StandardCharsets
@@ -86,6 +86,6 @@ object Client extends App {
       if (result.isDefined)
         return (result.get.group(1), result.get.group(2), result.get.group(3))
         return null
-    }
+    }*/
   }
 }

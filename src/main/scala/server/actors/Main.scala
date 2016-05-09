@@ -5,6 +5,12 @@ import java.util.concurrent.ConcurrentHashMap
 import akka.actor.{Actor, ActorRef, Props}
 import server.EnumPermission.Permission
 import server.messages._
+import server.messages.internal.AskMapMessage
+import server.messages.query.DatabaseMessages._
+import server.messages.query.MapMessages.{MapMessage, SelectMapMessage}
+import server.messages.query.PermissionMessages.{NoPermissionMessage, ReadMessage, ReadWriteMessage}
+import server.messages.query.RowMessages.{RowMessage, StorefinderRowMessage}
+import server.messages.query._
 import server.{EnumPermission, Server}
 
 import scala.collection.JavaConversions._

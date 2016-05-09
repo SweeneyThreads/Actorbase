@@ -3,7 +3,9 @@ package server.actors
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{Actor, ActorRef, Props}
-import server.messages._
+import server.messages.internal.AskMapMessage
+import server.messages.query.MapMessages.{CreateMapMessage, DeleteMapMessage, ListMapMessage}
+import server.messages.query.RowMessages.StorefinderRowMessage
 
 import collection.JavaConversions._
 import scala.util.{Failure, Success}

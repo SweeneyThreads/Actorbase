@@ -2,6 +2,10 @@ import java.util
 
 import org.scalatest.{FlatSpec, Matchers}
 import server.messages._
+import server.messages.query.DatabaseMessages._
+import server.messages.query.MapMessages._
+import server.messages.query.RowMessages._
+import ErrorMessages.InvalidQueryMessage
 import server.util.Parser
 
 /**
