@@ -1,5 +1,7 @@
 package server.util
 
+import java.util
+
 import akka.event.LoggingAdapter
 import server.messages._
 
@@ -86,8 +88,8 @@ class Parser {
   /** Parses row level commands with two parameters */
   private def parseRowCommandTwoParams(command: String, key: String, value: String): ActorbaseMessage = {
     command match {
-      case "insert" => return new InsertRowMessage(key, value.getBytes("UTF-8"))
-      case "update" => return new UpdateRowMessage(key, value.getBytes("UTF-8"))
+      case "insert" => return new InsertRowMessage(key, util.Arrays.toString(value.getBytes("UTF-8")))
+      case "update" => return new UpdateRowMessage(key, util.Arrays.toString(value.getBytes("UTF-8")))
 
       case _ => return new InvalidQueryMessage
     }

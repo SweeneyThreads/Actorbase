@@ -14,11 +14,11 @@ import scala.collection.JavaConversions._
 
 /** This actor represent a map partition */
 class Storekeeper extends Actor with akka.actor.ActorLogging  {
-  var db = new ConcurrentHashMap[String, Array[Byte]]()
+  var db = new ConcurrentHashMap[String, String]()
 
   // Row level commands
   def receive = {
-    case InsertRowMessage(key: String, value: Array[Byte]) => {
+    case InsertRowMessage(key: String, value: String) => {
       if(!db.containsKey(key)) {
         db.put(key, value)
         reply(key + " inserted")
@@ -27,7 +27,7 @@ class Storekeeper extends Actor with akka.actor.ActorLogging  {
       else
         reply(key + " already exist")
     }
-    case UpdateRowMessage(key: String, value: Array[Byte]) => {
+    case UpdateRowMessage(key: String, value: String) => {
       if(!db.containsKey(key)) {
         db.put(key, value)
         reply(key + " updated")

@@ -57,8 +57,8 @@ class Storefinder extends Actor with akka.actor.ActorLogging {
         }
         case _ => {
           val storekeeper = m match {
-            case InsertRowMessage(key: String, value: Array[Byte ]) => findActor(key)
-            case UpdateRowMessage(key: String, value: Array[Byte]) => findActor(key)
+            case InsertRowMessage(key: String, value:String) => findActor(key)
+            case UpdateRowMessage(key: String, value:String) => findActor(key)
             case RemoveRowMessage(key: String) => findActor(key)
             case FindRowMessage(key: String) => findActor(key)
           }

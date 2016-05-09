@@ -25,3 +25,4 @@ Robe da sviluppare
 * Comandi server
 * Timeout connessione client/server
 * Help
+* Conversione oggetti in base64

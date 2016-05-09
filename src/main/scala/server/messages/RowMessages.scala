@@ -5,9 +5,9 @@ package server.messages
   */
 trait RowMessage extends ActorbaseMessage
 
-case class InsertRowMessage(key: String, value: Array[Byte]) extends RowMessage with ReadWriteMessage
+case class InsertRowMessage(key: String, value:String) extends RowMessage with ReadWriteMessage
 
-case class UpdateRowMessage(key: String, value: Array[Byte]) extends RowMessage with ReadWriteMessage
+case class UpdateRowMessage(key: String, value:String) extends RowMessage with ReadWriteMessage
 
 case class RemoveRowMessage(key: String) extends RowMessage with ReadWriteMessage
 
