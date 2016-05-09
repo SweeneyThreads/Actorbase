@@ -22,7 +22,7 @@ class Storekeeper extends Actor with akka.actor.ActorLogging  {
       if(!db.containsKey(key)) {
         db.put(key, value)
         reply(key + " inserted")
-        log.info(key + "inserted")
+        log.info(key + " inserted")
       }
       else
         reply(key + " already exist")
@@ -31,7 +31,7 @@ class Storekeeper extends Actor with akka.actor.ActorLogging  {
       if(!db.containsKey(key)) {
         db.put(key, value)
         reply(key + " updated")
-        log.info(key + "updated")
+        log.info(key + " updated")
       }
       else
         reply(key + " doesn't exist")
@@ -40,14 +40,14 @@ class Storekeeper extends Actor with akka.actor.ActorLogging  {
       if(db.containsKey(key)) {
         db.remove(key)
         reply(key + " removed")
-        log.info(key + "removed")
+        log.info(key + " removed")
       }
       else
         reply(key + " doesn't exist")
     }
     case FindRowMessage(key: String) => {
       if(db.containsKey(key)) {
-        reply("The value of " + key + " is " + db.get(key).toString())
+        reply("The value of " + key + " is " + db.get(key))
       }
       else
         reply(key + " doesn't exist")

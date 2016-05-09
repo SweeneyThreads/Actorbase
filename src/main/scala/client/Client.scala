@@ -18,21 +18,7 @@ object Client extends App {
       executeLine(ln)
     }
 
-    /** Send the query to the server and wait for a response*/
-    def sendQuery(query: String): Unit = {
-      out.write(1) // 01 = query
-      out.print(query)
-      out.flush()
-      while(in.available() < 1) Thread.sleep(100)
-      val buf = new Array[Byte](in.available())
-      in.read(buf)
-      val input = new String(buf)
-      println(input)
-    }
-
-    /**
-      *
-      */
+    /** */
     def executeLine(ln: String): Unit = {
       // If the client is connected
       if (socket != null && !socket.isClosed && socket.isConnected) {
@@ -68,12 +54,35 @@ object Client extends App {
         }
       }
     }
+
+    /** Send the query to the server and wait for a response*/
+    def sendQuery(query: String): Unit = {
+      var command = query
+      import java.util.Base64
+      import java.nio.charset.StandardCharsets
+
+      val keyvalue = getKeyValue(query)
+      // If the command is an insert or an udpdate, change the command to send to the server
+      if(keyvalue != null)
+        command = keyvalue._1 + " '" + keyvalue._2 + "' " + Base64.getEncoder.encodeToString(keyvalue._3.getBytes(StandardCharsets.UTF_8))
+
+      out.write(1) // 01 = query
+      out.print(command)
+      out.flush()
+      while(in.available() < 1) Thread.sleep(100)
+      val buf = new Array[Byte](in.available())
+      in.read(buf)
+      val input = new String(buf)
+      println(input)
+    }
+
+    /** Returns the key and the value if it's an insert or update command*/
+    def getKeyValue(query:String): (String, String, String) = {
+      val pattern = "(\\S+)\\s\\'(.+)\\'\\s(\\S+)$".r
+      val result = pattern.findFirstMatchIn(query)
+      if (result.isDefined)
+        return (result.get.group(1), result.get.group(2), result.get.group(3))
+        return null
+    }
   }
 }
-
-
-//val in = new BufferedSource(socket.getInputStream)
-//while (in.hasNext) {
-//  print(in.next())
-//}
-//in.close()
