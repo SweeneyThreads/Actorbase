@@ -1,6 +1,9 @@
+import java.net.{InetAddress, Socket}
+
 import client.Client
 import org.scalatest.{Matchers, FlatSpec}
 import org.scalamock.scalatest.MockFactory
+
 
 
 /**
