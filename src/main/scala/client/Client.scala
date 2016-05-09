@@ -74,6 +74,7 @@ object Client extends App {
       val keyvalue = getKeyValue(query)
       // If the command is an insert or an udpdate, change the command to send to the server
       if(keyvalue != null)
+        // Convert the value to Base64
         command = keyvalue._1 + " '" + keyvalue._2 + "' " + Base64.getEncoder.encodeToString(keyvalue._3.getBytes(StandardCharsets.UTF_8))
       return command
     }
