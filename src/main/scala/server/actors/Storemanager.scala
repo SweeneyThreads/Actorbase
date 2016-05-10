@@ -4,10 +4,10 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{Actor, ActorRef, Props}
 import server.messages.internal.AskMapMessage
-import server.messages.query.MapMessages.{CreateMapMessage, DeleteMapMessage, ListMapMessage}
-import server.messages.query.RowMessages.StorefinderRowMessage
+import server.messages.query.user.MapMessages.{CreateMapMessage, DeleteMapMessage, ListMapMessage}
+import server.messages.query.user.RowMessages.StorefinderRowMessage
 
-import collection.JavaConversions._
+import scala.collection.JavaConversions._
 import scala.util.{Failure, Success}
 
 /**
@@ -17,10 +17,11 @@ import scala.util.{Failure, Success}
 /** This actor represent a database */
 class Storemanager extends Actor with akka.actor.ActorLogging {
 
-  import akka.util.Timeout
-  import scala.concurrent.duration._
-  import akka.pattern.ask
   import akka.dispatch.ExecutionContexts._
+  import akka.pattern.ask
+  import akka.util.Timeout
+
+  import scala.concurrent.duration._
 
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global

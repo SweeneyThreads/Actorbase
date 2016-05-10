@@ -7,4 +7,5 @@ object PermissionMessages {
   trait NoPermissionMessage
   trait ReadMessage extends NoPermissionMessage
   trait ReadWriteMessage extends ReadMessage
+  trait AdminPermissionMessage
 }

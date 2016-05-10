@@ -4,7 +4,6 @@ import java.net.InetSocketAddress
 
 import akka.actor.{Actor, Props}
 import akka.io.{IO, Tcp}
-import akka.util.ByteString
 
 /**
   * Created by matteobortolazzo on 01/05/2016.

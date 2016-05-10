@@ -1,0 +1,30 @@
+{
+  "permissions": [
+    {
+      "id": "admin",
+      "list": [
+        {
+          "name": "test",
+          "perm": 1
+        },
+        {
+          "name": "test2",
+          "perm": 1
+        }
+      ]
+    },
+    {
+      "id": "borto",
+      "list": [
+        {
+          "name": "test",
+          "perm": 1
+        },
+        {
+          "name": "test2",
+          "perm": 0
+        }
+      ]
+    }
+  ]
+}

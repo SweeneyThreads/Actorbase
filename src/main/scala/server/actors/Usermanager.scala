@@ -1,15 +1,12 @@
 package server.actors
 
-import java.util.concurrent.ConcurrentHashMap
-
 import akka.actor.{Actor, ActorRef, Props}
 import akka.io.Tcp
-import akka.util.{ByteString, Timeout}
-import server.EnumPermission.Permission
+import akka.util.ByteString
 import server.Server
-import server.messages.ErrorMessages.InvalidQueryMessage
+import server.messages.ActorbaseMessage
+import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.LoginMessage
-import server.messages.{ActorbaseMessage, ErrorMessages}
 import server.util.Parser
 
 import scala.util.{Failure, Success}
@@ -23,10 +20,11 @@ import scala.util.{Failure, Success}
   * */
 class Usermanager extends Actor with akka.actor.ActorLogging {
 
-  import akka.util.Timeout
-  import scala.concurrent.duration._
-  import akka.pattern.ask
   import akka.dispatch.ExecutionContexts._
+  import akka.pattern.ask
+  import akka.util.Timeout
+
+  import scala.concurrent.duration._
 
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global

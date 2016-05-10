@@ -6,11 +6,10 @@ import akka.actor.{Actor, ActorRef, Props}
 import server.EnumPermission.Permission
 import server.messages._
 import server.messages.internal.AskMapMessage
-import server.messages.query.DatabaseMessages._
-import server.messages.query.MapMessages.{MapMessage, SelectMapMessage}
 import server.messages.query.PermissionMessages.{NoPermissionMessage, ReadMessage, ReadWriteMessage}
-import server.messages.query.RowMessages.{RowMessage, StorefinderRowMessage}
-import server.messages.query._
+import server.messages.query.user.DatabaseMessages._
+import server.messages.query.user.MapMessages.{MapMessage, SelectMapMessage}
+import server.messages.query.user.RowMessages.{RowMessage, StorefinderRowMessage}
 import server.{EnumPermission, Server}
 
 import scala.collection.JavaConversions._
@@ -23,10 +22,11 @@ import scala.util.{Failure, Success}
 /** This actor executes client commands and checks permissions */
 class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Actor with akka.actor.ActorLogging {
 
-  import akka.util.Timeout
-  import scala.concurrent.duration._
-  import akka.pattern.ask
   import akka.dispatch.ExecutionContexts._
+  import akka.pattern.ask
+  import akka.util.Timeout
+
+  import scala.concurrent.duration._
 
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global

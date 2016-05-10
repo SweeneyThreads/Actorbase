@@ -1,12 +1,9 @@
 package client
 
-import java.io.{OutputStream, PrintStream, BufferedInputStream}
-import java.net.{InetAddress, Socket}
+import java.net.Socket
 
-import client._
-import org.scalatest.{Matchers, FlatSpec}
-import org.scalamock.scalatest._
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.{FlatSpec, Matchers}
 
 
 /**

@@ -1,12 +1,10 @@
-import java.util
-
 import org.scalatest.{FlatSpec, Matchers}
 import server.messages._
-import server.messages.query.DatabaseMessages._
-import server.messages.query.MapMessages._
-import server.messages.query.RowMessages._
-import ErrorMessages.InvalidQueryMessage
+import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.LoginMessage
+import server.messages.query.user.DatabaseMessages.{CreateDatabaseMessage, DeleteDatabaseMessage, ListDatabaseMessage, SelectDatabaseMessage}
+import server.messages.query.user.MapMessages.{CreateMapMessage, DeleteMapMessage, ListMapMessage, SelectMapMessage}
+import server.messages.query.user.RowMessages._
 import server.util.Parser
 
 /**

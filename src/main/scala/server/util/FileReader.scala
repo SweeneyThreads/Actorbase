@@ -5,8 +5,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.event.LoggingAdapter
 import org.json.JSONObject
+import server.EnumPermission
 import server.EnumPermission.Permission
-import server.{EnumPermission}
 
 /**
   * Created by matteobortolazzo on 09/05/2016.

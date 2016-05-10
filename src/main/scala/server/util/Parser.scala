@@ -1,14 +1,12 @@
 package server.util
 
-import java.util
-
 import akka.event.LoggingAdapter
 import server.messages._
-import server.messages.query.DatabaseMessages._
-import server.messages.query.MapMessages._
-import server.messages.query.RowMessages._
-import ErrorMessages.InvalidQueryMessage
+import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.LoginMessage
+import server.messages.query.user.DatabaseMessages.{CreateDatabaseMessage, DeleteDatabaseMessage, ListDatabaseMessage, SelectDatabaseMessage}
+import server.messages.query.user.MapMessages.{CreateMapMessage, DeleteMapMessage, ListMapMessage, SelectMapMessage}
+import server.messages.query.user.RowMessages._
 
 import scala.util.matching.Regex
 

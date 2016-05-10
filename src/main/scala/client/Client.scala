@@ -1,11 +1,7 @@
 package client
 import java.io._
-import java.net._
-import java.util
 
-import driver.{Driver, Connection}
-
-import scala.util.matching.Regex
+import driver.{Connection, Driver}
 
 /**
   * Created by matteobortolazzo on 01/05/2016.

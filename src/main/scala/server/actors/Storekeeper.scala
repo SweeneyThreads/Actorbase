@@ -3,7 +3,7 @@ package server.actors
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{Actor, ActorRef}
-import server.messages.query.RowMessages._
+import server.messages.query.user.RowMessages._
 
 import scala.collection.JavaConversions._
 

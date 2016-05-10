@@ -1,4 +1,4 @@
-package server.messages.query
+package server.messages.query.user
 
 import server.messages.ActorbaseMessage
 import server.messages.query.PermissionMessages.{ReadMessage, ReadWriteMessage}
@@ -7,7 +7,7 @@ import server.messages.query.PermissionMessages.{ReadMessage, ReadWriteMessage}
   * Created by matteobortolazzo on 02/05/2016.
   */
 object RowMessages {
-  trait RowMessage extends ActorbaseMessage
+  trait RowMessage extends UserMessage
   case class InsertRowMessage(key: String, value: String) extends RowMessage with ReadWriteMessage
   case class UpdateRowMessage(key: String, value: String) extends RowMessage with ReadWriteMessage
   case class RemoveRowMessage(key: String) extends RowMessage with ReadWriteMessage

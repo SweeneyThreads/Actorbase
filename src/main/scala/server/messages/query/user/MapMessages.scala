@@ -1,6 +1,5 @@
-package server.messages.query
+package server.messages.query.user
 
-import server.messages.ActorbaseMessage
 import server.messages.query.PermissionMessages.{ReadMessage, ReadWriteMessage}
 
 /**
@@ -8,7 +7,7 @@ import server.messages.query.PermissionMessages.{ReadMessage, ReadWriteMessage}
   */
 
 object MapMessages {
-  trait MapMessage extends ActorbaseMessage
+  trait MapMessage extends UserMessage
   case class CreateMapMessage(name: String) extends MapMessage with ReadWriteMessage
   case class DeleteMapMessage(name: String) extends MapMessage with ReadWriteMessage
   case class SelectMapMessage(name: String) extends MapMessage with ReadMessage

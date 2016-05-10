@@ -1,17 +1,13 @@
 package server.actors
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{Actor, ActorRef, Props}
-import akka.event.Logging
-import server.messages._
-import server.messages.query.RowMessages._
-import server.messages.query._
+import server.messages.query.user.RowMessages._
 
 import scala.collection.JavaConversions._
-import scala.util.{Failure, Success}
 import scala.util.matching.Regex
+import scala.util.{Failure, Success}
 
 /**
   * Created by matteobortolazzo on 02/05/2016.
@@ -20,10 +16,11 @@ import scala.util.matching.Regex
 /** This actor represent a map */
 class Storefinder extends Actor with akka.actor.ActorLogging {
 
-  import akka.util.Timeout
-  import scala.concurrent.duration._
-  import akka.pattern.ask
   import akka.dispatch.ExecutionContexts._
+  import akka.pattern.ask
+  import akka.util.Timeout
+
+  import scala.concurrent.duration._
 
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
