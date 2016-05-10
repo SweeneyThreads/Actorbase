@@ -6,6 +6,6 @@ package Driver
 object ActorbaseClient {
 
   def connect(host: String, port: Integer, username: String, password: String): ActorbaseConnectionProxy = {
-    new ActorbaseConnectionProxy()(host,port,username,password)
+    new ActorbaseConnectionProxy(host,port,username,password)
   }
 }

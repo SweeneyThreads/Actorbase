@@ -3,7 +3,7 @@ import java.io._
 import java.net._
 import java.util
 
-import Driver.{ActorbaseClient, ActorbaseConnection}
+import Driver.{Connection, ActorbaseClient, ActorbaseConnection}
 
 import scala.util.matching.Regex
 
@@ -12,7 +12,7 @@ import scala.util.matching.Regex
   */
 object Client extends App {
 
-  var connection: ActorbaseConnection = null
+  var connection: Connection = null
 
   override def main(args: Array[String]): Unit = {
     Welcome.printWelcomeMessage

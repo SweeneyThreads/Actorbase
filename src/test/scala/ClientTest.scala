@@ -3,6 +3,7 @@ package client
 import java.io.{OutputStream, PrintStream, BufferedInputStream}
 import java.net.{InetAddress, Socket}
 
+import Driver.{ActorbaseConnectionProxy, Connection}
 import client._
 import org.scalatest.{Matchers, FlatSpec}
 import org.scalamock.scalatest._
