@@ -6,6 +6,6 @@ package driver
 object Driver {
 
   def connect(host: String, port: Integer, username: String, password: String): Connection = {
-    new Connection(host,port,username,password)
+    new ConcreteConnectionProxy(host,port,username,password)
   }
 }

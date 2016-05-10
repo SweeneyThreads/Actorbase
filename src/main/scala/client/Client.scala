@@ -24,7 +24,7 @@ object Client extends App {
 
   def executeLine(ln: String): Unit = {
     // If the client is connected
-    if (connection != null)  {
+    if (connection != null) {
       // Close the connection when the user write 'disconnect'
       if (ln == "disconnect") {
         connection.closeConnection()
@@ -35,35 +35,35 @@ object Client extends App {
         println(connection.executeQuery(ln))
       }
     }
-    else checkLogin()
+    else checkLogin(ln)
+  }
 
-    def checkLogin():Unit = {
-      // Connection command pattern (connect address:port username password)
-      val pattern = "connect\\s(.+):([0-9]*)\\s(.+)\\s(.+)".r
-      val result = pattern.findFirstMatchIn(ln)
-      // If it's a connection command
-      if (result.isDefined) {
-        val regex = result.get
-        try {
-          // Create a connection object
-          connection = Driver.connect(regex.group(1), Integer.parseInt(regex.group(2)), regex.group(3), regex.group(4))
-        }
-        catch {
-          case e: IOException => println(e.getMessage)
-          case e: SecurityException => println("Security error")
-          case e: IllegalArgumentException => println("Invalid port number")
-          case e: NullPointerException => println("The address is null")
-          case _: Throwable => println("There was an error")
-        }
+  def checkLogin(ln:String): Unit = {
+    // Connection command pattern (connect address:port username password)
+    val pattern = "connect\\s(.+):([0-9]*)\\s(.+)\\s(.+)".r
+    val result = pattern.findFirstMatchIn(ln)
+    // If it's a connection command
+    if (result.isDefined) {
+      val regex = result.get
+      try {
+        // Create a connection object
+        connection = Driver.connect(regex.group(1), Integer.parseInt(regex.group(2)), regex.group(3), regex.group(4))
       }
-      else {
-        println("Please connect first")
+      catch {
+        case e: IOException => println(e.getMessage)
+        case e: SecurityException => println("Security error")
+        case e: IllegalArgumentException => println("Invalid port number")
+        case e: NullPointerException => println("The address is null")
+        case _: Throwable => println("There was an error")
       }
     }
+    else {
+      println("Please connect first")
+    }
+  }
 
 
-
-    /*def convertQuery(query:String): String = {
+  /*def convertQuery(query:String): String = {
       var command = query
       import java.util.Base64
       import java.nio.charset.StandardCharsets
@@ -84,5 +84,4 @@ object Client extends App {
         return (result.get.group(1), result.get.group(2), result.get.group(3))
         return null
     }*/
-  }
 }
