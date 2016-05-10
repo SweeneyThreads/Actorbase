@@ -8,7 +8,7 @@ import sun.management.counter.Units
   */
 class Manager extends Actor with ActorLogging{
 
-  def receive() : Unit = {
-
+  def receive = {
+    case _ => ()
   }
 }
