@@ -6,13 +6,37 @@ import java.net.{InetAddress, Socket}
 /**
   * Created by eliamaino on 10/05/16.
   */
-class ActorbaseConnection(host: String, port: Integer, username: String, password: String) {
+trait Connection {
+  def closeConnection(): Unit
+  def executeQuery(query: String): String
+}
+
+class ActorbaseConnectionProxy(val host: String,val port: Integer,val username: String,val password: String) extends Connection {
+  var instance: ActorbaseConnection = null
+
+  def closeConnection(): Unit = {
+    if (instance != null) {
+      instance.closeConnection()
+    }
+  }
+
+
+  def executeQuery(query: String): String = {
+    if (instance == null) {
+      instance = new ActorbaseConnection(host,port,username,password)
+    }
+    instance.executeQuery(query)
+  }
+}
+
+
+class ActorbaseConnection(val host: String,val port: Integer,val username: String,val password: String) extends Connection {
 
   val socket = new Socket(InetAddress.getByName(host), port)
   val out = new PrintStream(socket.getOutputStream)
   val in = new BufferedInputStream(socket.getInputStream)
-
   println(executeQuery("login " + username + " " + password))
+
 
   def closeConnection(): Unit = {
     socket.close()

@@ -5,7 +5,7 @@ package Driver
   */
 object ActorbaseClient {
 
-  def connect(host: String, port: Integer, username: String, password: String): ActorbaseConnection = {
-    new ActorbaseConnection(host,port,username,password)
+  def connect(host: String, port: Integer, username: String, password: String): ActorbaseConnectionProxy = {
+    new ActorbaseConnectionProxy()(host,port,username,password)
   }
 }
