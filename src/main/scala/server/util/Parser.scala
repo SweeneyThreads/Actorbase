@@ -1,8 +1,8 @@
 package server.util
 
-import akka.event.LoggingAdapter
 import server.messages._
 import server.messages.query.ErrorMessages.InvalidQueryMessage
+import server.messages.query.HelpMessages._
 import server.messages.query.LoginMessage
 import server.messages.query.user.DatabaseMessages.{CreateDatabaseMessage, DeleteDatabaseMessage, ListDatabaseMessage, SelectDatabaseMessage}
 import server.messages.query.user.MapMessages.{CreateMapMessage, DeleteMapMessage, ListMapMessage, SelectMapMessage}
@@ -58,6 +58,7 @@ class Parser {
       case "listdb" => return new ListDatabaseMessage
       case "list" => return new ListMapMessage
       case "keys" => return new ListKeysMessage
+      case "help" => return new CompleteHelp
 
       case _ => return new InvalidQueryMessage
     }
@@ -73,6 +74,8 @@ class Parser {
       case "select" => return new SelectMapMessage(arg)
       case "create" => return new CreateMapMessage(arg)
       case "delete" => return new DeleteMapMessage(arg)
+
+      case "help" => return new SpecificHelp(arg)
 
       case _ => return new InvalidQueryMessage
     }

@@ -1,0 +1,17 @@
+package server.messages.query
+
+import server.messages.ActorbaseMessage
+import server.messages.query.PermissionMessages.ReadMessage
+
+/**
+  * Created by DavideTommasin on 11/05/16.
+  */
+object HelpMessages {
+
+  trait HelpMessage extends ActorbaseMessage
+
+  case class CompleteHelp() extends HelpMessage with ReadMessage
+
+  case class SpecificHelp(command: String) extends HelpMessage with ReadMessage
+
+}

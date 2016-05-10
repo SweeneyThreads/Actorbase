@@ -2,10 +2,10 @@ package server.actors
 
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{Actor, ActorRef, Props}
 import server.EnumPermission.Permission
 import server.messages._
 import server.messages.internal.AskMapMessage
+import server.messages.query.HelpMessages.{CompleteHelp, SpecificHelp}
 import server.messages.query.PermissionMessages.{NoPermissionMessage, ReadMessage, ReadWriteMessage}
 import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.MapMessages.{MapMessage, SelectMapMessage}
@@ -160,5 +160,14 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
 
   private def reply(str:String, sender: ActorRef = sender): Unit = {
     Some(sender).map(_ ! str)
+  }
+
+  /** command Help */
+  private def messageHelp(message: ActorbaseMessage): Unit ={
+    message match {
+      case CompleteHelp() => reply(server.util.Help.CompleteHelp())
+
+      case SpecificHelp(command: String) => reply(server.util.Help.SpecificHelp(command))
+    }
   }
 }
