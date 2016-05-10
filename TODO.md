@@ -8,8 +8,8 @@ Robe da sviluppare
 >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;~Sasha Gray
 
 ## Per RQ
-* Driver
-* Client
+* Driver **(fatto)**
+* Client **(fatto)**
 * Risposte al client **(fatto)**
 * Loggin' attori **(fatto)**
 * Più storefinder per mappa

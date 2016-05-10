@@ -86,12 +86,12 @@ class Usermanager extends Actor with akka.actor.ActorLogging {
         if(username == "admin") mainActor = context.actorOf(Props(new Main()))
         else mainActor = context.actorOf(Props(new Main(Server.permissions.get(username))))
 
-        reply("You're connected")
+        reply("Y")
         log.info(username + " is connected")
       }
-      else reply("Invalid login")
+      else reply("N")
     }
-    else reply("You're already connected")
+    else reply("N")
   }
 
   private def reply(str: String, sender: ActorRef = sender): Unit = {
