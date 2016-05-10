@@ -8,7 +8,7 @@ import akka.util.{ByteString, Timeout}
 import server.EnumPermission.Permission
 import server.Server
 import server.messages.ErrorMessages.InvalidQueryMessage
-import server.messages.{ActorbaseMessage, LoginMessage, ErrorMessages}
+import server.messages.{ActorbaseMessage, ErrorMessages}
 import server.util.Parser
 
 import scala.util.{Failure, Success}

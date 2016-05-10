@@ -8,6 +8,7 @@ import server.messages.query.DatabaseMessages._
 import server.messages.query.MapMessages._
 import server.messages.query.RowMessages._
 import ErrorMessages.InvalidQueryMessage
+import server.messages.query.LoginMessage
 
 import scala.util.matching.Regex
 
