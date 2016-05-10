@@ -2,15 +2,17 @@ package client
 import java.io._
 import java.net._
 import java.util
+
+import Driver.{ActorbaseClient, ActorbaseConnection}
+
 import scala.util.matching.Regex
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
   */
 object Client extends App {
-  var socket: Socket = null
-  var out: PrintStream = null
-  var in: BufferedInputStream = null
+
+  var connection: ActorbaseConnection = null
 
   override def main(args: Array[String]): Unit = {
     Welcome.printWelcomeMessage
@@ -22,10 +24,16 @@ object Client extends App {
 
   def executeLine(ln: String): Unit = {
     // If the client is connected
-    if (socket != null && !socket.isClosed && socket.isConnected) {
-      // Close the socket when the user write 'disconnect'
-      if (ln == "disconnect") socket.close()
-      else sendQuery(ln)
+    if (connection != null)  {
+      // Close the connection when the user write 'disconnect'
+      if (ln == "disconnect") {
+        connection.closeConnection()
+        connection = null
+        println("You are disconnected!")
+      }
+      else {
+        println(connection.executeQuery(ln))
+      }
     }
     else checkLogin()
 
@@ -37,11 +45,8 @@ object Client extends App {
       if (result.isDefined) {
         val regex = result.get
         try {
-          // Create the socket, the output stream and send the connection command to the server
-          socket = new Socket(InetAddress.getByName(regex.group(1)), Integer.parseInt(regex.group(2)))
-          out = new PrintStream(socket.getOutputStream)
-          in = new BufferedInputStream(socket.getInputStream)
-          sendQuery("login " + regex.group(3) + " " + regex.group(4))
+          // Create a connection object
+          connection = ActorbaseClient.connect(regex.group(1), Integer.parseInt(regex.group(2)), regex.group(3), regex.group(4))
         }
         catch {
           case e: IOException => println(e.getMessage)
@@ -56,17 +61,7 @@ object Client extends App {
       }
     }
 
-    /** Send the query to the server and wait for a response*/
-    def sendQuery(query: String): Unit = {
-      out.write(1) // 01 = query
-      out.print(query)
-      out.flush()
-      while(in.available() < 1) Thread.sleep(100)
-      val buf = new Array[Byte](in.available())
-      in.read(buf)
-      val input = new String(buf)
-      println(input)
-    }
+
 
     /*def convertQuery(query:String): String = {
       var command = query
