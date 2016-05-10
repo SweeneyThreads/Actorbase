@@ -1,4 +1,4 @@
-package Driver
+package driver
 
 import java.io.{BufferedInputStream, PrintStream}
 import java.net.{InetAddress, Socket}
@@ -6,7 +6,7 @@ import java.net.{InetAddress, Socket}
 /**
   * Created by eliamaino on 10/05/16.
   */
-class ActorbaseConnection(host: String, port: Integer, username: String, password: String) {
+class Connection(host: String, port: Integer, username: String, password: String) {
 
   val socket = new Socket(InetAddress.getByName(host), port)
   val out = new PrintStream(socket.getOutputStream)
