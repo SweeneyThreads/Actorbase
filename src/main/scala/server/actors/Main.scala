@@ -98,8 +98,20 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null, val server
         reply("Database " + name + " selected")
       }
       case CreateDatabaseMessage(name: String) => {
+<<<<<<< HEAD
         if (!isValidStoremanager(name, message)) return
         server.getStoremanagers.put(name, context.actorOf(Props[Storemanager]))
+=======
+        if(checkPermissions(message, name)) {
+          reply(invalidOperationMessage)
+          return
+        }
+        if(Server.storemanagers.containsKey(name)) {
+          reply("A server with that name already exists")
+          return
+        }
+        Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
+>>>>>>> prototype
         logAndReply("Database " + name + " created")
       }
       case DeleteDatabaseMessage(name: String) => {
