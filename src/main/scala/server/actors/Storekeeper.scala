@@ -14,53 +14,59 @@ import scala.collection.JavaConversions._
 /** This actor represent a map partition */
 class Storekeeper extends Actor with akka.actor.ActorLogging  {
   var db = new ConcurrentHashMap[String, String]()
+  val unhandledMessage = "Unhandled message in storefinder "
 
   // Row level commands
   def receive = {
-    case InsertRowMessage(key: String, value: String) => {
-      if(!db.containsKey(key)) {
+    case m:RowMessage => handleRowMessage(m)
+    case other => log.error(unhandledMessage + ", receive: " + other)
+  }
+
+  private def handleRowMessage(message: RowMessage): Unit = {
+    message match {
+      case InsertRowMessage(key: String, value: String) => {
+        if (db.containsKey(key)) {
+          reply(key + " already exist")
+          return
+        }
         db.put(key, value)
-        reply(key + " inserted")
-        log.info(key + " inserted")
+        logAndReply(key + " inserted")
       }
-      else
-        reply(key + " already exist")
-    }
-    case UpdateRowMessage(key: String, value: String) => {
-      if(!db.containsKey(key)) {
+      case UpdateRowMessage(key: String, value: String) => {
+        if (exists(key)) return
         db.put(key, value)
-        reply(key + " updated")
-        log.info(key + " updated")
+        logAndReply(key + " updated")
       }
-      else
-        reply(key + " doesn't exist")
-    }
-    case RemoveRowMessage(key: String) => {
-      if(db.containsKey(key)) {
+      case RemoveRowMessage(key: String) => {
+        if (!exists(key)) return
         db.remove(key)
-        reply(key + " removed")
-        log.info(key + " removed")
+        logAndReply(key + " removed")
       }
-      else
-        reply(key + " doesn't exist")
-    }
-    case FindRowMessage(key: String) => {
-      if(db.containsKey(key)) {
+      case FindRowMessage(key: String) => {
+        if (!exists(key)) return
         reply("The value of " + key + " is " + db.get(key))
       }
-      else
-        reply(key + " doesn't exist")
-    }
-    case ListKeysMessage() => {
-      var keys =""
-      for (k: String <- db.keys()) {
-        keys += k + "\n"
+      case ListKeysMessage() => {
+        var keys = ""
+        for (k: String <- db.keys())
+          keys += k + "\n"
+        if (keys != "") keys = keys.substring(0, keys.length - 1)
+        reply(keys)
       }
-      reply(keys)
+      case _ => log.error(unhandledMessage + ", handleRowMessage: " + message)
     }
   }
 
-  private def reply(str:String, sender: ActorRef = sender): Unit = {
-    Some(sender).map(_ ! str)
+  private def exists(key:String): Boolean = {
+    val ris = db.contains(key)
+    if(!ris) reply(key +  "doesn't exist")
+    return ris
   }
+
+  private def logAndReply(str:String, sender: ActorRef = sender): Unit = {
+    log.info(str)
+    reply(str, sender)
+  }
+
+  private def reply(str:String, sender: ActorRef = sender): Unit = Some(sender).map(_ ! str)
 }

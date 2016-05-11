@@ -1,10 +1,10 @@
 package server.messages.query.admin
 
-import server.messages.query.QueryMessages
+import server.messages.query.QueryMessage
 
 /**
   * Created by lucan on 10/05/2016.
   */
-trait AdminMessage  extends QueryMessages{
+trait AdminMessage  extends QueryMessage{
 
 }

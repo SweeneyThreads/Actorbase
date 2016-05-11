@@ -75,7 +75,7 @@ object Server extends App {
 * Divertiti con i comandi che Borto ha implementato per te!
 *
 * listdb, selectdb nome, createdb nome, deletedb nome,
-* list, select nome, create nome, delete nome,
+* listmap, selectmap nome, createmap nome, deletemap nome,
 * insert 'key' value, update 'key' value, remove 'key', find 'key', keys.
 *
 * Quando vuoi disconnetterti scrivi 'disconnect'

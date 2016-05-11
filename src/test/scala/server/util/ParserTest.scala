@@ -1,17 +1,16 @@
 package server.util
 
 import org.scalatest.{FlatSpec, Matchers}
-import server.messages._
 import server.messages.query.ErrorMessages.InvalidQueryMessage
-import server.messages.query.LoginMessage
-import server.messages.query.user.DatabaseMessages.{CreateDatabaseMessage, DeleteDatabaseMessage, ListDatabaseMessage, SelectDatabaseMessage}
-import server.messages.query.user.MapMessages.{CreateMapMessage, DeleteMapMessage, ListMapMessage, SelectMapMessage}
+import server.messages.query._
+import server.messages.query.user.DatabaseMessages._
+import server.messages.query.user.MapMessages._
 import server.messages.query.user.RowMessages._
 
 /**
   * Created by kurt on 08/05/2016.
   */
-case class SampleCommand(command: String,strMessage: String,message1: ActorbaseMessage,message2: ActorbaseMessage = null)
+case class SampleCommand(command: String,strMessage: String,message1: QueryMessage,message2: QueryMessage = null)
 
 class ParserTest extends FlatSpec with Matchers {
   val parser = new Parser()
@@ -29,7 +28,7 @@ class ParserTest extends FlatSpec with Matchers {
   //test dei comandi a zero parametri
   val zeroParamCommands = Array(
     new SampleCommand("listdb", "ListDatabaseMessage", new ListDatabaseMessage),
-    new SampleCommand("list", "ListMapMessage", new ListMapMessage),
+    new SampleCommand("listmap", "ListMapMessage", new ListMapMessage),
     new SampleCommand("keys", "ListKeysMessage", new ListKeysMessage)
   )
   for (cmd <- zeroParamCommands) {
@@ -47,9 +46,9 @@ class ParserTest extends FlatSpec with Matchers {
     new SampleCommand("selectdb", "SelectDatabaseMessage", new SelectDatabaseMessage("aParam"), new SelectDatabaseMessage("anotherParam")),
     new SampleCommand("createdb", "CreateDatabaseMessage", new CreateDatabaseMessage("aParam"), new CreateDatabaseMessage("anotherParam")),
     new SampleCommand("deletedb", "DeleteDatabaseMessage", new DeleteDatabaseMessage("aParam"), new DeleteDatabaseMessage("anotherParam")),
-    new SampleCommand("select", "SelectMapMessage", new SelectMapMessage("aParam"), new SelectMapMessage("anotherParam")),
-    new SampleCommand("create", "CreateMapMessage", new CreateMapMessage("aParam"), new CreateMapMessage("anotherParam")),
-    new SampleCommand("delete", "DeleteMapMessage", new DeleteMapMessage("aParam"), new DeleteMapMessage("anotherParam"))
+    new SampleCommand("selectmap", "SelectMapMessage", new SelectMapMessage("aParam"), new SelectMapMessage("anotherParam")),
+    new SampleCommand("createmap", "CreateMapMessage", new CreateMapMessage("aParam"), new CreateMapMessage("anotherParam")),
+    new SampleCommand("deletemap", "DeleteMapMessage", new DeleteMapMessage("aParam"), new DeleteMapMessage("anotherParam"))
   )
   for (cmd <- oneParamCommands) {
     "'" + cmd.command + "' command" should "generate a " + cmd.strMessage in {

@@ -4,9 +4,8 @@ import akka.actor.{Actor, ActorRef, Props}
 import akka.io.Tcp
 import akka.util.ByteString
 import server.Server
-import server.messages.ActorbaseMessage
 import server.messages.query.ErrorMessages.InvalidQueryMessage
-import server.messages.query.LoginMessage
+import server.messages.query.{LoginMessage, QueryMessage}
 import server.util.Parser
 
 import scala.util.{Failure, Success}
@@ -36,16 +35,11 @@ class Usermanager extends Actor with akka.actor.ActorLogging {
 
   def receive = {
     case Received(data: ByteString) => {
-      // Takes the first byte
+      // The first byte represents the operation type (1 = query)
       val op = data.slice(0, 1).toArray
-      if (op(0) == 1) {
-        // Takes the query
-        val query = data.slice(1, data.length).utf8String
-        val message = parser.parseQuery(query)
-        message match {
-          case i: InvalidQueryMessage => reply("Invalid query")
-          case _ => manageValidMessage(message)
-        }
+      op(0) match {
+        case 1 => parseQuery(data.slice(1, data.length).utf8String)
+        case _ => reply("Invalid command")
       }
     }
     case PeerClosed => {
@@ -54,10 +48,19 @@ class Usermanager extends Actor with akka.actor.ActorLogging {
     }
   }
 
-  /** Manage valid messages */
-  private def manageValidMessage(message: ActorbaseMessage): Unit = {
+  private def parseQuery(query: String): Unit = {
+    val message = parser.parseQuery(query)
     message match {
-      case LoginMessage(username, password) => manageLogin(username, password)
+      case m:InvalidQueryMessage => reply("Invalid query")
+      case m:QueryMessage => handleQueryMessage(m)
+      case _ => log.error("Unhandled message in usermanager: " + message)
+    }
+  }
+
+  /** Handles query messages */
+  private def handleQueryMessage(message: QueryMessage): Unit = {
+    message match {
+      case LoginMessage(username, password) => handleLogin(username, password)
       case _ => {
         // If the user is connected it sends the message to the main actor
         if (connected) {
@@ -75,8 +78,8 @@ class Usermanager extends Actor with akka.actor.ActorLogging {
     }
   }
 
-  /** Manage connection messages */
-  private def manageLogin(username: String, password: String): Unit = {
+  /** Handles login messages */
+  private def handleLogin(username: String, password: String): Unit = {
     if (!connected) {
       val psw = Server.users.get(username)
       if (psw != null && psw == password) {

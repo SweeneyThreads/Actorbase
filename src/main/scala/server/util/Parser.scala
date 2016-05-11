@@ -3,8 +3,8 @@ package server.util
 import akka.event.LoggingAdapter
 import server.messages._
 import server.messages.query.ErrorMessages.InvalidQueryMessage
-import server.messages.query.HelpMessages._
-import server.messages.query.LoginMessage
+import server.messages.query.HelpMessages.{CompleteHelp, SpecificHelp}
+import server.messages.query.{ErrorMessages, LoginMessage, QueryMessage}
 import server.messages.query.user.DatabaseMessages.{CreateDatabaseMessage, DeleteDatabaseMessage, ListDatabaseMessage, SelectDatabaseMessage}
 import server.messages.query.user.MapMessages.{CreateMapMessage, DeleteMapMessage, ListMapMessage, SelectMapMessage}
 import server.messages.query.user.RowMessages._
@@ -16,7 +16,7 @@ import scala.util.matching.Regex
   */
 class Parser {
 
-  def parseQuery(query: String, log:LoggingAdapter = null) : ActorbaseMessage = {
+  def parseQuery(query: String, log:LoggingAdapter = null) : QueryMessage = {
     // Connect command
     var pattern = "login\\s(\\S+)\\s(\\S+)$".r
     var m = getMatch(pattern, query)
@@ -53,11 +53,11 @@ class Parser {
   }
 
   /** Parses commands without parameters */
-  private def parseCommandWithoutParam(command: String): ActorbaseMessage = {
+  private def parseCommandWithoutParam(command: String): QueryMessage = {
     //renamed due to query without params for row level
     command match {
       case "listdb" => return new ListDatabaseMessage
-      case "list" => return new ListMapMessage
+      case "listmap" => return new ListMapMessage
       case "keys" => return new ListKeysMessage
       case "help" => return new CompleteHelp
 
@@ -66,15 +66,15 @@ class Parser {
   }
 
   /** Parses commands with parameters */
-  private def parseCommandWithParam(command: String, arg: String): ActorbaseMessage = {
+  private def parseCommandWithParam(command: String, arg: String): QueryMessage = {
     command match {
       case "selectdb" => return new SelectDatabaseMessage(arg)
       case "createdb" => return new CreateDatabaseMessage(arg)
       case "deletedb" => return new DeleteDatabaseMessage(arg)
 
-      case "select" => return new SelectMapMessage(arg)
-      case "create" => return new CreateMapMessage(arg)
-      case "delete" => return new DeleteMapMessage(arg)
+      case "selectmap" => return new SelectMapMessage(arg)
+      case "createmap" => return new CreateMapMessage(arg)
+      case "deletemap" => return new DeleteMapMessage(arg)
 
       case "help" => return new SpecificHelp(arg)
 
@@ -83,7 +83,7 @@ class Parser {
   }
 
   /** Parses row level commands with one parameter */
-  private def parseRowCommandOneParam(command: String, key: String): ActorbaseMessage = {
+  private def parseRowCommandOneParam(command: String, key: String): QueryMessage = {
     command match {
       case "find" => return new FindRowMessage(key)
       case "remove" => return new RemoveRowMessage(key)
@@ -93,7 +93,7 @@ class Parser {
   }
 
   /** Parses row level commands with two parameters */
-  private def parseRowCommandTwoParams(command: String, key: String, value: String): ActorbaseMessage = {
+  def parseRowCommandTwoParams(command: String, key: String, value: String): QueryMessage = {
     command match {
       case "insert" => return new InsertRowMessage(key, value)
       case "update" => return new UpdateRowMessage(key, value)

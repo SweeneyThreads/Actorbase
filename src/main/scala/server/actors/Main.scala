@@ -8,9 +8,12 @@ import server.messages._
 import server.messages.internal.AskMapMessage
 import server.messages.query.HelpMessages.{CompleteHelp, HelpMessage, SpecificHelp}
 import server.messages.query.PermissionMessages.{NoPermissionMessage, ReadMessage, ReadWriteMessage}
+import server.messages.query.QueryMessage
+import server.messages.query.admin.AdminMessage
 import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.MapMessages.{MapMessage, SelectMapMessage}
 import server.messages.query.user.RowMessages.{RowMessage, StorefinderRowMessage}
+import server.messages.query.user.UserMessage
 import server.util.Helper
 import server.{EnumPermission, Server}
 
@@ -29,7 +32,6 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
   import akka.util.Timeout
 
   import scala.concurrent.duration._
-
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
 
@@ -38,76 +40,93 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
   var selectedDatabase = ""
   var selectedMap = ""
 
+  val invalidOperationMessage = "Invalid operation"
+  val unhandledMessage = "Unhandled message in main "
+
   def receive = {
-    case m: HelpMessage => manageHelpMessage(m)
-    case m: DatabaseMessage => manageDatabaseMessage(m)
-    case m: MapMessage => manageNotDatabaseMessage(m)
-    case m: RowMessage => manageNotDatabaseMessage(m)
+    case m:QueryMessage => handleQueryMessage(m)
+    case other => log.error(unhandledMessage + ", receive: " + other)
+  }
+
+  private def handleQueryMessage(message: QueryMessage) = {
+    message match {
+      case m: UserMessage => handleUserMessage(m)
+      case m: AdminMessage => handleAdminMessage(m)
+      case _ => log.error(unhandledMessage + ", handleQueryMessage: " + message)
+    }
+  }
+
+  private def handleUserMessage(message: UserMessage) = {
+    message match {
+      case m: HelpMessage => handleHelpMessage(m)
+      case m: DatabaseMessage => handleDatabaseMessage(m)
+      case m: MapMessage => handleMapMessage(m)
+      case m: RowMessage => handleRowMessage(m)
+      case _ => log.error(unhandledMessage + ", handleUserMessage: " + message)
+    }
+  }
+
+  private def handleAdminMessage(message: AdminMessage) = {
+    //TODO admin commands
+  }
+
+  /** Manage help messages */
+  private def handleHelpMessage(message: HelpMessage): Unit ={
+    message match {
+      case CompleteHelp() => reply(helper.CompleteHelp())
+      case SpecificHelp(command: String) => reply(helper.SpecificHelp(command))
+      case _ => log.error(unhandledMessage + ", handleHelpMessage: " + message)
+    }
   }
 
   /** Manages database messages */
-  private def manageDatabaseMessage(message: DatabaseMessage): Unit = {
+  private def handleDatabaseMessage(message: DatabaseMessage): Unit = {
     message match {
       case ListDatabaseMessage() => {
-        var str:String = ""
-        for (k: String <- Server.storemanagers.keys()) {
+        var str: String = ""
+        for (k: String <- Server.storemanagers.keys())
           if (permissions == null || permissions.get(k) != null)
             str += k + " "
-        }
-        if(str == "") reply("No databases")
+        if (str == "")
+          reply("The server is empty")
         else reply(str)
       }
       case SelectDatabaseMessage(name: String) => {
-        if (Server.storemanagers.containsKey(name) && checkPermissions(message, name)) {
-          selectedDatabase = name
-          selectedMap = ""
-          reply("Database " + name + " selected")
-        }
-        reply("Invalid operation")
+        if (!isValidStoremanager(name, message)) return
+        selectedDatabase = name
+        selectedMap = ""
+        reply("Database " + name + " selected")
       }
       case CreateDatabaseMessage(name: String) => {
-        if (Server.storemanagers.containsKey(name) && checkPermissions(message, name)) {
-          Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
-          reply("Database " + name + " created")
-          log.info("Database " + name + " created")
-        }
-        reply("Invalid operation")
+        if (!isValidStoremanager(name, message)) return
+        Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
+        logAndReply("Database " + name + " created")
       }
       case DeleteDatabaseMessage(name: String) => {
-        if (Server.storemanagers.containsKey(name) && checkPermissions(message, name)) {
-          Server.storemanagers.remove(name)
-          reply("Database " + name + " deleted")
-          log.info("Database " + name + " deleted")
-        }
-        reply("Invalid operation")
+        if (!isValidStoremanager(name, message)) return
+        Server.storemanagers.remove(name)
+        logAndReply("Database " + name + " deleted")
       }
     }
-  }
-
-  /** Manages map or row messages */
-  private def manageNotDatabaseMessage(message: ActorbaseMessage): Unit = {
-    if (selectedDatabase != "") {
-      // If the database exists and the user has the permissions for the operation
-      if (Server.storemanagers.containsKey(selectedDatabase) && checkPermissions(message, selectedDatabase)) {
-        // Gets the right storemanager
-        val storemanager = Server.storemanagers.get(selectedDatabase)
-        message match {
-          case m: MapMessage => manageMapMessage(m, storemanager)
-          case m: RowMessage => manageRowMessage(m, storemanager)
-        }
-      }
-      else reply("Invalid operation")
-    }
-    else reply("Please select a database")
   }
 
   /** Manages map messages */
-  private def manageMapMessage(message: MapMessage, storemanager: ActorRef): Unit = {
+  private def handleMapMessage(message: MapMessage): Unit = {
+    if(selectedDatabase == "") {
+      reply("Please select a database")
+      return
+    }
+    if(!isValidStoremanager(selectedDatabase, message)) {
+      reply(invalidOperationMessage)
+      return
+    }
+    val sm = Server.storemanagers.get(selectedDatabase)
+
     message match {
       // If it's a select command
       case SelectMapMessage(name: String) => {
         // Ask the storemanager if there's a map with that name
-        val future = storemanager ? new AskMapMessage(name)
+        val future = sm ? new AskMapMessage(name)
         // Save the original sender
         val oldSender = sender
         future.onComplete {
@@ -124,9 +143,9 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
       }
       case _ => {
         val origSender = sender
-        val future = storemanager ? message
+        val future = sm ? message
         future.onComplete {
-          case Success(result) => reply(result.toString, origSender)
+          case Success(result) => logAndReply(result.toString, origSender)
           case Failure(t) => log.error("Error sending message: " + t.getMessage)
         }
       }
@@ -134,28 +153,39 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
   }
 
   /** Manages row messages */
-  private def manageRowMessage(message: RowMessage, storemanager: ActorRef): Unit = {
-    if (selectedMap != "") {
-      val origSender = sender
-      val future = storemanager ? StorefinderRowMessage(selectedMap, message)
-      future.onComplete {
-        case Success(result) => reply(result.toString, origSender)
-        case Failure(t) => log.error("Error sending message: " + t.getMessage)
-      }
+  private def handleRowMessage(message: RowMessage): Unit = {
+    if (selectedDatabase == "") {
+      reply("Please select a database")
+      return
     }
-    else reply("Please select a map first")
+    if (selectedMap == "") {
+      reply("Please select a database")
+      return
+    }
+    if (!isValidStoremanager(selectedDatabase, message)) {
+      reply(invalidOperationMessage)
+      return
+    }
+    val sm = Server.storemanagers.get(selectedDatabase)
+
+    val origSender = sender
+    val future = sm ? StorefinderRowMessage(selectedMap, message)
+    future.onComplete {
+      case Success(result) => reply(result.toString, origSender)
+      case Failure(t) => log.error("Error sending message: " + t.getMessage)
+    }
   }
 
-  /** Manage help messages */
-  private def manageHelpMessage(message: ActorbaseMessage): Unit ={
-    message match {
-      case CompleteHelp() => reply(helper.CompleteHelp())
-      case SpecificHelp(command: String) => reply(helper.SpecificHelp(command))
-    }
+  private def isValidStoremanager(name:String, message:QueryMessage): Boolean = {
+    val ris = Server.storemanagers.containsKey(name) && checkPermissions(message, name)
+    if(!ris) reply(invalidOperationMessage)
+    return ris
   }
 
   /** Checks user permissions */
-  private def checkPermissions(message: ActorbaseMessage, dbName:String): Boolean = {
+  private def checkPermissions(message: QueryMessage, dbName:String): Boolean = {
+    //TODO admin permissions
+
     if(permissions == null)
       return true
     return message match {
@@ -171,7 +201,10 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
     }
   }
 
-  private def reply(str:String, sender: ActorRef = sender): Unit = {
-    Some(sender).map(_ ! str)
+  private def logAndReply(str:String, sender: ActorRef = sender): Unit = {
+    log.info(str)
+    reply(str, sender)
   }
+
+  private def reply(str:String, sender: ActorRef = sender): Unit = Some(sender).map(_ ! str)
 }

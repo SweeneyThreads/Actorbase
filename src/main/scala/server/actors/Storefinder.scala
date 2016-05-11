@@ -24,60 +24,65 @@ class Storefinder extends Actor with akka.actor.ActorLogging {
 
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
+  val unhandledMessage = "Unhandled message in storefinder "
 
   var storekeepers = new ConcurrentHashMap[Regex, ActorRef]()
   storekeepers.put(".*".r, context.actorOf(Props[Storekeeper])) // Startup storekeeper
 
   def receive = {
-    case m:RowMessage => {
-      m match {
-        case ListKeysMessage() => {
-          val origSender = sender
-          val storeKeeperNumber = storekeepers.keys().length
-          var messagesReceived = 0
-          var keys = ""
-          for (r: Regex <- storekeepers.keys()) {
-            val future = storekeepers.get(r) ? m
-            future.onComplete {
-              case Success(result) => {
-                messagesReceived = messagesReceived + 1
-                keys += result
-                if(messagesReceived == storeKeeperNumber) {
-                  if(keys == "") reply("No keys in this map")
-                  else reply(result.toString, origSender)
-                }
-              }
-              case Failure(t) => {
-                messagesReceived = messagesReceived + 1
-                log.error("Error sending message: " + t.getMessage)
+    case m:RowMessage => handleRowMessage(m)
+    case other => log.error(unhandledMessage + ", receive: " + other)
+  }
+
+  private def handleRowMessage(message: RowMessage) : Unit = {
+    message match {
+      case ListKeysMessage() => {
+        val origSender = sender
+        val storeKeeperNumber = storekeepers.keys().length
+        var messagesReceived = 0
+        var keys = ""
+        for (r: Regex <- storekeepers.keys()) {
+          val future = storekeepers.get(r) ? message
+          future.onComplete {
+            case Success(result) => {
+              messagesReceived = messagesReceived + 1
+              keys += result
+              if (messagesReceived == storeKeeperNumber) {
+                if (keys == "") reply("No keys in this map")
+                else reply(result.toString, origSender)
               }
             }
-          }
-        }
-        case _ => {
-          val storekeeper = m match {
-            case InsertRowMessage(key: String, value:String) => findActor(key)
-            case UpdateRowMessage(key: String, value:String) => findActor(key)
-            case RemoveRowMessage(key: String) => findActor(key)
-            case FindRowMessage(key: String) => findActor(key)
-          }
-          if (storekeeper != null){
-            val origSender = sender
-            val future = storekeeper ? m
-            future.onComplete {
-              case Success(result) => reply(result.toString, origSender)
-              case Failure(t) => log.error("Error sending message: " + t.getMessage)
+            case Failure(t) => {
+              messagesReceived = messagesReceived + 1
+              log.error("Error sending message: " + t.getMessage)
             }
           }
-          else
-            reply("Storefinder not found")
         }
       }
+      case InsertRowMessage(key: String, value: String) => sendToStorekeeper(key, message)
+      case UpdateRowMessage(key: String, value: String) => sendToStorekeeper(key, message)
+      case RemoveRowMessage(key: String) => sendToStorekeeper(key, message)
+      case FindRowMessage(key: String) => sendToStorekeeper(key, message)
+      case _ => log.error(unhandledMessage + ", handleRowMessage: " + message)
+    }
+  }
+
+  private def sendToStorekeeper(key:String, message: RowMessage): Unit = {
+    val sk = findActor(key)
+    if (sk == null) {
+      reply("Storefinder not found")
+      return
+    }
+    val origSender = sender
+    val future = sk ? message
+    future.onComplete {
+      case Success(result) => reply(result.toString, origSender)
+      case Failure(t) => log.error("Error sending message: " + t.getMessage)
     }
   }
 
   //** Finds the storekeeper that could contain the key */
-  def findActor(key:String):ActorRef = {
+  private def findActor(key:String):ActorRef = {
     for(r:Regex <- storekeepers.keys()) {
       val m = r.findFirstIn(key)
       if(m.isDefined)

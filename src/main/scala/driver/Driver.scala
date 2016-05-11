@@ -1,7 +1,6 @@
 package driver
 
 import java.net.SocketException
-import org.scalamock.annotation.mock
 /**
   * Created by eliamaino on 10/05/16.
   */

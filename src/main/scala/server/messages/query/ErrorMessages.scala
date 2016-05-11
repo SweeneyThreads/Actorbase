@@ -1,9 +1,11 @@
 package server.messages.query
 
+import server.messages.ActorbaseMessage
+
 /**
   * Created by matteobortolazzo on 02/05/2016.
   */
 object ErrorMessages {
-  trait ErrorMessages extends QueryMessages {}
-  case class InvalidQueryMessage() extends ErrorMessages
+  trait ErrorMessage {}
+  case class InvalidQueryMessage() extends QueryMessage with ErrorMessage
 }
