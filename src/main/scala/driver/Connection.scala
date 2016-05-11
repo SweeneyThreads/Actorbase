@@ -11,49 +11,18 @@ trait Connection {
 
   def executeQuery(query: String): String
 
-  def isConnected(): Boolean
-
-  def connectionStatus(): String
 }
-
-class FailedConnection(val host: String,val port: Integer,val username: String,val password: String) extends Connection {
-  def isConnected(): Boolean = {
-    false
-  }
-
-  def closeConnection(): Unit = {
-  }
-
-  def connectionStatus(): String ={
-    "Failed to connect to host "+host+" port "+port
-  }
-
-  def executeQuery(query: String): String = {
-    "non dovrebbe andare"
-  }
-}
-
 
 class ConcreteConnection(val host: String, val port: Integer, val username: String, val password: String) extends Connection {
 
   val socket = new Socket(InetAddress.getByName(host), port)
   val out = new PrintStream(socket.getOutputStream)
   val in = new BufferedInputStream(socket.getInputStream)
-  var connected: Boolean = false
 
   login(username,password)
 
-  def connectionStatus(): String ={
-    "Successful connection to host "+host+" port "+port
-  }
-
-  def isConnected(): Boolean = {
-    connected
-  }
-
   def closeConnection(): Unit = {
     socket.close()
-    connected = false
   }
 
   def executeQuery(query: String): String = {
@@ -79,9 +48,9 @@ class ConcreteConnection(val host: String, val port: Integer, val username: Stri
     val buf = new Array[Byte](in.available())
     in.read(buf)
     val result = new String(buf)
-    if(result == "Y")
-      connected = true
-    else
-      connected = false
+    if(result != "Y") {
+      socket.close()
+      throw new RuntimeException
+    }
   }
 }

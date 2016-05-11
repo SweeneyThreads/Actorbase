@@ -11,9 +11,8 @@ object Driver {
       new ConcreteConnection(host, port, username, password)
     }
     catch {
-      case se:Exception => {new FailedConnection(host,port,username,password)}
+      case se:Exception => null
     }
   }
-
 
 }

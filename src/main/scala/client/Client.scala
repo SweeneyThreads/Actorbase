@@ -41,24 +41,11 @@ object Client extends App {
     // If it's a connection command
     if (result.isDefined) {
       val regex = result.get
-      try {
-        // Create a connection object
-        connection = Driver.connect(regex.group(1), Integer.parseInt(regex.group(2)), regex.group(3), regex.group(4))
-      }
-      catch {
-        case e: IOException => println(e.getMessage)
-        case e: SecurityException => println("Security error")
-        case e: IllegalArgumentException => println("Invalid port number")
-        case e: NullPointerException => println("The address is null")
-        case _: Throwable => println("There was an error")
-      }
-      println(connection.connectionStatus())
-      if (connection.isConnected()) {
+      connection = Driver.connect(regex.group(1), Integer.parseInt(regex.group(2)), regex.group(3), regex.group(4))
+      if (connection != null) {
         println("You are connected!")
       }
       else {
-        connection.closeConnection()
-        connection = null
         println("Connection failed")
       }
     }
