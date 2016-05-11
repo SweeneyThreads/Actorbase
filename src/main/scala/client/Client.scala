@@ -3,6 +3,8 @@ import java.io._
 
 import driver.{Connection, Driver}
 
+import scala.util.matching.Regex
+
 /**
   * Created by matteobortolazzo on 01/05/2016.
   */
@@ -53,6 +55,9 @@ object Client extends App {
       println("Please connect first")
     }
   }
+
+
+
 
 
   /*def convertQuery(query:String): String = {
