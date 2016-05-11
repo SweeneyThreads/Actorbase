@@ -4,13 +4,14 @@ import akka.actor.Actor.Receive
 import akka.dispatch.ExecutionContexts._
 import akka.util.Timeout
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, FlatSpec}
 import java.util.concurrent.ConcurrentHashMap
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
 import server.EnumPermission.Permission
 import server.actors.{Doorkeeper, Storemanager}
-import server.messages.query.user.DatabaseMessages.ListDatabaseMessage
+import server.messages.query.user.DatabaseMessages.{CreateDatabaseMessage, SelectDatabaseMessage, ListDatabaseMessage}
 import server.util.{ServerDependencyInjector, FileReader}
 import server.{Server, EnumPermission}
 
@@ -34,63 +35,101 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   implicit val ec = global
 
 
+  /*########################################################################
+    Testing ListDatabaseMessage() receiving
+    ########################################################################*/
 
-
-  //a couple fake map with fake Storemanagers
+  //creating a map that simulates a plausible list of databasename=>Storemanager
   val fakeStoremanagersMap=new ConcurrentHashMap[String,ActorRef]
   fakeStoremanagersMap.put("test", system.actorOf(Props[Storemanager]))
   fakeStoremanagersMap.put("biggetMapEu", system.actorOf(Props[Storemanager]))
   fakeStoremanagersMap.put("lastMapForNow", system.actorOf(Props[Storemanager]))
-  //val fakeEmptyStoremanagersMap = new ConcurrentHashMap[String,ActorRef]
-  //a couple of fake server
+  //creating a fake server
   object FakeServer {
     var fakeStoremanagers: ConcurrentHashMap[String, ActorRef] = fakeStoremanagersMap
   }
-  /*object FakeEmptyServer {
-    var fakeStoremanagers: ConcurrentHashMap[String, ActorRef] = fakeEmptyStoremanagersMap
-  }*/
-  //the injector for the fake servers
+  //creating the injector (the traits that tells the main actor i'll create soon to use FakeServer instead of the real server)
   trait FakeServerInjector extends ServerDependencyInjector {
     override def getStoremanagers : ConcurrentHashMap[String, ActorRef] = {
       FakeServer.fakeStoremanagers
     }
   }
-  /*trait FakeEmptyServerInjector extends ServerDependencyInjector {
-    override def getStoremanagers : ConcurrentHashMap[String, ActorRef] = {
-      FakeEmptyServer.fakeStoremanagers
-    }
-  }*/
-
+  /*
+  the test starts now:
+  - first of all i put inside the system a new actor of tipe Main injecting it with the directive to use our FakeServer
+  - then i send a ListDatabaseMessage to him and i store the result in a Future
+  - when future is complete (this blocks the execution and waits the future to be completed) i check that the result is
+    what i am expecting: the list of the names of the databases
+   */
   "Main" should "reply correctly to a ListDatabaseMessage()" in {
     //creating a MainActor into system, injecting a dependency to a fake server that is defined above
     val main = system.actorOf(Props(new Main(null, new FakeServerInjector {})))
     val future = main ? new ListDatabaseMessage()
-    future.onComplete {
-      case Success(result) => {
-        //result.toString should be("random string")
-        result should be("sdasdasdsadasad")
-      }
-      case Failure(t) => {
-        print("culo")
-      }
+    ScalaFutures.whenReady(future) {
+      result => result should be("test biggetMapEu lastMapForNow ")
     }
   }
-/*
-  it should "reply 'The server is empty' to a ListDatabaseMessage() if the server is really empty" in {
-    val anotherMain = system.actorOf(Props(new Main(null, new FakeEmptyServerInjector {})))
+
+
+  //like above
+  //creating the fake server
+  object FakeEmptyServer {
+    var fakeStoremanagers=new ConcurrentHashMap[String,ActorRef] ()
+  }
+  //creating the injector for the fake server
+  trait FakeEmptyServerInjector extends ServerDependencyInjector {
+    override def getStoremanagers : ConcurrentHashMap[String, ActorRef] = {
+      FakeEmptyServer.fakeStoremanagers
+    }
+  }
+  //testing that the servers reacts well to ListDatabaseMessage even if empty
+  it should "reply 'The server is empty' to a ListDatabaseMessage() if the server is in fact empty" in {
+    val anotherMain = system.actorOf(Props(new Main(null, new FakeEmptyServerInjector {} )))
     val future2 = anotherMain ? new ListDatabaseMessage()
-    future2.onComplete {
-      case Success(res) => {
-        res should be("The server is empty")
+    ScalaFutures.whenReady(future2) {
+      result => result should be("The server is empty")
+    }
+  }
+
+
+
+  /*########################################################################
+    Testing SelectDatabaseMessage() receiving
+    ########################################################################*/
+
+  /**
+    * @todo qui controllo solo che il risponda una roba tipo "Database test selected", ma non che
+    *       effettivamente selezioni il databse corretto, testa questa cosa è parecchio difficile
+    *       segue la mia idea:
+    *       -overridare il metodo <code>receive</code> dentro la classe <code>FakeTest</code>
+    *       -fare in modo che questo override:
+    *             -faccia quello che farebbe l'attore Main vero se riceve un SelectDataBaseMessage
+    *             -inserire due nuovi messaggi uno per richiedere la mappa selezionata e uno per richiedere
+    *              il database selzionato.
+    */
+  case class TestMessage(){}
+  it should "select the correct database when recive a SelectDatabaseMessage(s: String)" in {
+    class FakeMain extends Main(null, new FakeServerInjector {})
+    val main3 = system.actorOf(Props(new FakeMain))
+    val future3 = main3 ? SelectDatabaseMessage("test")
+    ScalaFutures.whenReady(future3) {
+      result => {
+        result should be("Database test selected")
       }
-      case Failure(t) => {
-        //fail("messager never replyed")
+    }
+    //now i try to select a database that isn't actually inside our FakeServer
+    val future = main3 ? SelectDatabaseMessage("aRandomDatabaseThatDontActuallyExists")
+    ScalaFutures.whenReady(future) {
+      result => {
+        result should be("Invalid operation")
       }
     }
   }
-*/
 
-
+  /*########################################################################
+    Testing CreateDatabaseMessage() receiving
+    ########################################################################*/
+  //it should "create a new"
 
 }
 
