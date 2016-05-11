@@ -98,7 +98,14 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
         reply("Database " + name + " selected")
       }
       case CreateDatabaseMessage(name: String) => {
-        if (!isValidStoremanager(name, message)) return
+        if(checkPermissions(message, name)) {
+          reply(invalidOperationMessage)
+          return
+        }
+        if(Server.storemanagers.containsKey(name)) {
+          reply("A server with that name already exists")
+          return
+        }
         Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
         logAndReply("Database " + name + " created")
       }
