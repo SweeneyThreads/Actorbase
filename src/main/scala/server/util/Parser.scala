@@ -1,5 +1,6 @@
 package server.util
 
+import akka.event.LoggingAdapter
 import server.messages._
 import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.HelpMessages._
