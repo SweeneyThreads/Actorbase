@@ -73,8 +73,8 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null, val server
   /** Manage help messages */
   private def handleHelpMessage(message: HelpMessage): Unit ={
     message match {
-      case CompleteHelp() => reply(helper.CompleteHelp())
-      case SpecificHelp(command: String) => reply(helper.SpecificHelp(command))
+      case CompleteHelp() => reply(helper.completeHelp())
+      case SpecificHelp(command: String) => reply(helper.specificHelp(command))
       case _ => log.error(unhandledMessage + ", handleHelpMessage: " + message)
     }
   }

@@ -24,13 +24,13 @@ class Helper {
   helpMessages.put("insert",    "INSERT    key value   insertion of a key and its value in a previously selected database")
   helpMessages.put("update",    "UPDATE    key value   update of a key and its value in a previously selected database")
 
-  def CompleteHelp(): String = {
+  def completeHelp(): String = {
     var helpComplete = ""
     for (k: String <- helpMessages.keySet()) helpComplete += helpMessages.get(k) + "\n"
     return helpComplete.substring(0, helpComplete.length - 1)
   }
 
-  def SpecificHelp(command: String): String = {
+  def specificHelp(command: String): String = {
     val help = helpMessages.get(command.toLowerCase())
     if (help != null)
       return help

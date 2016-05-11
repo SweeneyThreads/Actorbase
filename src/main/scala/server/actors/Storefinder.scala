@@ -27,7 +27,7 @@ class Storefinder extends Actor with akka.actor.ActorLogging {
   val unhandledMessage = "Unhandled message in storefinder "
 
   var storekeepers = new ConcurrentHashMap[Regex, ActorRef]()
-  storekeepers.put(".*".r, context.actorOf(Props[Storekeeper])) // Startup storekeeper
+  storekeepers.put(".*".r, context.actorOf(Props(new Storekeeper(true)))) // Startup storekeeper
 
   def receive = {
     case m:RowMessage => handleRowMessage(m)

@@ -93,7 +93,7 @@ class Parser {
   }
 
   /** Parses row level commands with two parameters */
-  def parseRowCommandTwoParams(command: String, key: String, value: String): QueryMessage = {
+  private def parseRowCommandTwoParams(command: String, key: String, value: String): QueryMessage = {
     command match {
       case "insert" => return new InsertRowMessage(key, value)
       case "update" => return new UpdateRowMessage(key, value)

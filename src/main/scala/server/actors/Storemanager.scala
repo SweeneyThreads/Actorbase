@@ -28,7 +28,7 @@ class Storemanager extends Actor with akka.actor.ActorLogging {
   val unhandledMessage = "Unhandled message in storemanager "
 
   var storefinders = new ConcurrentHashMap[String, ActorRef]()
-  storefinders.put("defaultMap", context.actorOf(Props[Storekeeper]))
+  storefinders.put("defaultMap", context.actorOf(Props[Storefinder]))
 
   def receive = {
     // Replay to the main actor if there's a map with that name

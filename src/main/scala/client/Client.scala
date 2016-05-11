@@ -38,7 +38,7 @@ object Client extends App {
 
   def checkLogin(ln:String): Unit = {
     // Connection command pattern (connect address:port username password)
-    val pattern = "connect\\s(.+):([0-9]*)\\s(.+)\\s(.+)".r
+    val pattern = "connect\\s(\\S+):([0-9]*)\\s(\\S+)\\s(\\S+)$".r
     val result = pattern.findFirstMatchIn(ln)
     // If it's a connection command
     if (result.isDefined) {
