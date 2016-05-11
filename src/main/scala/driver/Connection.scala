@@ -8,31 +8,28 @@ import java.net.{InetAddress, Socket}
   */
 trait Connection {
   def closeConnection(): Unit
+
   def executeQuery(query: String): String
+
   def isConnected(): Boolean
+
+  def connectionStatus(): String
 }
 
-class ConcreteConnectionProxy(val host: String,val port: Integer,val username: String,val password: String) extends Connection {
-  var instance: ConcreteConnection = null
-
+class FailedConnection(val host: String,val port: Integer,val username: String,val password: String) extends Connection {
   def isConnected(): Boolean = {
-    if (instance == null) {
-      instance = new ConcreteConnection(host,port,username,password)
-    }
-    instance.isConnected()
+    false
   }
 
   def closeConnection(): Unit = {
-    if (instance != null) {
-      instance.closeConnection()
-    }
+  }
+
+  def connectionStatus(): String ={
+    "Failed to connect to host "+host+" port "+port
   }
 
   def executeQuery(query: String): String = {
-    if (instance == null) {
-      instance = new ConcreteConnection(host,port,username,password)
-    }
-    instance.executeQuery(query)
+    "non dovrebbe andare"
   }
 }
 
@@ -45,6 +42,10 @@ class ConcreteConnection(val host: String, val port: Integer, val username: Stri
   var connected: Boolean = false
 
   login(username,password)
+
+  def connectionStatus(): String ={
+    "Successful connection to host "+host+" port "+port
+  }
 
   def isConnected(): Boolean = {
     connected

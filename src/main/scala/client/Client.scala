@@ -52,6 +52,7 @@ object Client extends App {
         case e: NullPointerException => println("The address is null")
         case _: Throwable => println("There was an error")
       }
+      println(connection.connectionStatus())
       if (connection.isConnected()) {
         println("You are connected!")
       }
