@@ -1,6 +1,5 @@
 package server.messages.query
 
-import server.messages.ActorbaseMessage
 import server.messages.query.PermissionMessages.{NoPermissionMessage, ReadMessage}
 import server.messages.query.user.UserMessage
 

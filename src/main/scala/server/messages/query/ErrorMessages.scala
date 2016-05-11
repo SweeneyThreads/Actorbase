@@ -1,7 +1,5 @@
 package server.messages.query
 
-import server.messages.ActorbaseMessage
-
 /**
   * Created by matteobortolazzo on 02/05/2016.
   */

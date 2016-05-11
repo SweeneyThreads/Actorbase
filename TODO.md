@@ -7,22 +7,32 @@ Robe da sviluppare
 >&nbsp;Make it stronger"   
 >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;~Sasha Gray
 
-## Per RQ
-* Driver **(fatto)**
-* Client **(fatto)**
-* Risposte al client **(fatto)**
-* Loggin' attori **(fatto)**
+## FATTI
+* Risposte al client
+* Loggin' attori
 * Più storefinder per mappa
-* 'Superuser' **(fatto)**
+* 'Superuser'
+* Help
+* Conversione oggetti in base64
 
-## Dopo RQ
+## DA FINIRE
+* Driver
+* Client
+
+##DA INIZIARE
+* Permessi utente admin
+* Parsing comandi admin
+* Gestione database con impostazioni server
+* Gestione comandi admin nel main (e manager)
+* Manager
 * Warehouseman
-* Ninja
+* Libreria per gestire file disco per Warehouseman
+* Ninja (messaggio become e metodo become)
 * Manager
 * Crezione dinamica storekeeper
 * Creazione dinamica storefinder
-* Spegnimento / accensione server
-* Comandi server
+* Creazione dinamica storemanager
+* Spegnimento server (con salvataggio configurazione)
+* Accensione server (con lettura configurazione)
 * Timeout connessione client/server
-* Help
-* Conversione oggetti in base64 **(fatto)**
+* Gestione distribuzione (conf Akka)
