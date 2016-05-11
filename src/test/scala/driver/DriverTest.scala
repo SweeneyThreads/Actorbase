@@ -1,10 +1,7 @@
 package driver
 
-import java.net.SocketException
-
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{Matchers, FlatSpec}
-import driver.Driver. _
+import org.scalatest.{FlatSpec, Matchers}
 
 /**
   * Created by Paolo on 10/05/2016.
