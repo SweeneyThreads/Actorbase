@@ -14,7 +14,7 @@ import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.MapMessages.{MapMessage, SelectMapMessage}
 import server.messages.query.user.RowMessages.{RowMessage, StorefinderRowMessage}
 import server.messages.query.user.UserMessage
-import server.util.Helper
+import server.util.{StandardServerInjector, ServerDependencyInjector, Helper}
 import server.{EnumPermission, Server}
 
 import scala.collection.JavaConversions._
@@ -25,7 +25,7 @@ import scala.util.{Failure, Success}
   */
 
 /** This actor executes client commands and checks permissions */
-class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Actor with akka.actor.ActorLogging {
+class Main(permissions: ConcurrentHashMap[String, Permission] = null, val server: ServerDependencyInjector = new StandardServerInjector {}) extends Actor with akka.actor.ActorLogging {
 
   import akka.dispatch.ExecutionContexts._
   import akka.pattern.ask
@@ -73,8 +73,8 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
   /** Manage help messages */
   private def handleHelpMessage(message: HelpMessage): Unit ={
     message match {
-      case CompleteHelp() => reply(helper.CompleteHelp())
-      case SpecificHelp(command: String) => reply(helper.SpecificHelp(command))
+      case CompleteHelp() => reply(helper.completeHelp())
+      case SpecificHelp(command: String) => reply(helper.specificHelp(command))
       case _ => log.error(unhandledMessage + ", handleHelpMessage: " + message)
     }
   }
@@ -84,7 +84,7 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
     message match {
       case ListDatabaseMessage() => {
         var str: String = ""
-        for (k: String <- Server.storemanagers.keys())
+        for (k: String <- server.getStoremanagers.keys())
           if (permissions == null || permissions.get(k) != null)
             str += k + " "
         if (str == "")
@@ -98,13 +98,25 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
         reply("Database " + name + " selected")
       }
       case CreateDatabaseMessage(name: String) => {
+
         if (!isValidStoremanager(name, message)) return
         Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
+
+        if(checkPermissions(message, name)) {
+          reply(invalidOperationMessage)
+          return
+        }
+        if(Server.storemanagers.containsKey(name)) {
+          reply("A server with that name already exists")
+          return
+        }
+        Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
+
         logAndReply("Database " + name + " created")
       }
       case DeleteDatabaseMessage(name: String) => {
         if (!isValidStoremanager(name, message)) return
-        Server.storemanagers.remove(name)
+        server.getStoremanagers.remove(name)
         logAndReply("Database " + name + " deleted")
       }
     }
@@ -120,7 +132,7 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
       reply(invalidOperationMessage)
       return
     }
-    val sm = Server.storemanagers.get(selectedDatabase)
+    val sm = server.getStoremanagers.get(selectedDatabase)
 
     message match {
       // If it's a select command
@@ -166,7 +178,7 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
       reply(invalidOperationMessage)
       return
     }
-    val sm = Server.storemanagers.get(selectedDatabase)
+    val sm = server.getStoremanagers.get(selectedDatabase)
 
     val origSender = sender
     val future = sm ? StorefinderRowMessage(selectedMap, message)
@@ -177,7 +189,7 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null) extends Ac
   }
 
   private def isValidStoremanager(name:String, message:QueryMessage): Boolean = {
-    val ris = Server.storemanagers.containsKey(name) && checkPermissions(message, name)
+    val ris = server.getStoremanagers.containsKey(name) && checkPermissions(message, name)
     if(!ris) reply(invalidOperationMessage)
     return ris
   }
