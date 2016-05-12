@@ -1,5 +1,8 @@
 package server.actors
 
+import java.lang.Enum
+import java.util
+
 import akka.actor.Actor.Receive
 import akka.dispatch.ExecutionContexts._
 import akka.util.Timeout
@@ -11,12 +14,15 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
 import server.EnumPermission.Permission
 import server.actors.{Doorkeeper, Storemanager}
-import server.messages.query.user.DatabaseMessages.{CreateDatabaseMessage, SelectDatabaseMessage, ListDatabaseMessage}
+import server.messages.query.user.DatabaseMessages.{DeleteDatabaseMessage, CreateDatabaseMessage, SelectDatabaseMessage, ListDatabaseMessage}
+import server.messages.query.user.MapMessages.SelectMapMessage
 import server.util.{ServerDependencyInjector, FileReader}
 import server.{Server, EnumPermission}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
+
+import akka.testkit.TestActorRef
 
 
 /**
@@ -29,10 +35,11 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   import akka.dispatch.ExecutionContexts._
 
 
-  var system:ActorSystem = ActorSystem("System")
-  var log:LoggingAdapter = Logging.getLogger(system, this)
+  var System:ActorSystem = ActorSystem("System")
+  var log:LoggingAdapter = Logging.getLogger(System, this)
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
+  implicit val system = ActorSystem()
 
 
   /*########################################################################
@@ -41,9 +48,9 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
 
   //creating a map that simulates a plausible list of databasename=>Storemanager
   val fakeStoremanagersMap=new ConcurrentHashMap[String,ActorRef]
-  fakeStoremanagersMap.put("test", system.actorOf(Props[Storemanager]))
-  fakeStoremanagersMap.put("biggetMapEu", system.actorOf(Props[Storemanager]))
-  fakeStoremanagersMap.put("lastMapForNow", system.actorOf(Props[Storemanager]))
+  fakeStoremanagersMap.put("test", System.actorOf(Props[Storemanager]))
+  fakeStoremanagersMap.put("biggestMapEu", System.actorOf(Props[Storemanager]))
+  fakeStoremanagersMap.put("lastMapForNow", System.actorOf(Props[Storemanager]))
   //creating a fake server
   object FakeServer {
     var fakeStoremanagers: ConcurrentHashMap[String, ActorRef] = fakeStoremanagersMap
@@ -63,10 +70,10 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
    */
   "Main" should "reply correctly to a ListDatabaseMessage()" in {
     //creating a MainActor into system, injecting a dependency to a fake server that is defined above
-    val main = system.actorOf(Props(new Main(null, new FakeServerInjector {})))
+    val main = System.actorOf(Props(new Main(null, new FakeServerInjector {})))
     val future = main ? new ListDatabaseMessage()
     ScalaFutures.whenReady(future) {
-      result => result should be("test biggetMapEu lastMapForNow ")
+      result => result should be("test biggestMapEu lastMapForNow ")
     }
   }
 
@@ -84,7 +91,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   }
   //testing that the servers reacts well to ListDatabaseMessage even if empty
   it should "reply 'The server is empty' to a ListDatabaseMessage() if the server is in fact empty" in {
-    val anotherMain = system.actorOf(Props(new Main(null, new FakeEmptyServerInjector {} )))
+    val anotherMain = System.actorOf(Props(new Main(null, new FakeEmptyServerInjector {} )))
     val future2 = anotherMain ? new ListDatabaseMessage()
     ScalaFutures.whenReady(future2) {
       result => result should be("The server is empty")
@@ -96,21 +103,16 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   /*########################################################################
     Testing SelectDatabaseMessage() receiving
     ########################################################################*/
-
   /**
-    * @todo qui controllo solo che il risponda una roba tipo "Database test selected", ma non che
-    *       effettivamente selezioni il databse corretto, testa questa cosa è parecchio difficile
-    *       segue la mia idea:
-    *       -overridare il metodo <code>receive</code> dentro la classe <code>FakeTest</code>
-    *       -fare in modo che questo override:
-    *             -faccia quello che farebbe l'attore Main vero se riceve un SelectDataBaseMessage
-    *             -inserire due nuovi messaggi uno per richiedere la mappa selezionata e uno per richiedere
-    *              il database selzionato.
-    */
-  case class TestMessage(){}
-  it should "select the correct database when recive a SelectDatabaseMessage(s: String)" in {
-    class FakeMain extends Main(null, new FakeServerInjector {})
-    val main3 = system.actorOf(Props(new FakeMain))
+    * first of all I try to test what is possible to test without the akka-testkit, as reported
+    * on the akka-testkit best practice
+    *
+    * @see [[http://doc.akka.io/docs/akka/current/scala/testing.html]]
+   */
+  class FakeMain extends Main(null, new FakeServerInjector {})
+  it should "reply correctly when receiving a SelectDatabaseMessage(s: String) - - - database should not be actually selected, just testing correct answer" in {
+    //a fake main with the desired injector
+    val main3 = System.actorOf(Props(new FakeMain))
     val future3 = main3 ? SelectDatabaseMessage("test")
     ScalaFutures.whenReady(future3) {
       result => {
@@ -126,10 +128,125 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     }
   }
 
+  /**
+    * now, using the akka-toolkit, I can test if the property of the actor actually change when
+    * he receive the message
+    * ''check this out:'' we can generate kind an actor ref from witch we can get the `underlyingActor` that
+    * can be used to acces the actor's members.
+    *
+    * @note to TestActorRef you '''must''' put this line at the beginning of the scope: `implicit val system = ActorSystem()`
+    *       @see [[http://stackoverflow.com/questions/35202570/could-not-find-implicit-value-for-parameter-system-akka-actor-actorsystem]]
+    */
+  it should "actually select the correct database when receiving a SelectDatabaseMessage(s: String)" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val actorRef=TestActorRef(new FakeMain)
+    // retrieving the underlying actor
+    val actor = actorRef.underlyingActor
+    // now I send the message
+    val future = actorRef ? SelectDatabaseMessage("biggestMapEu")
+    //when the message is completed i check that the MainActor property changed consistently
+    ScalaFutures.whenReady(future) { result => {
+      actor.selectedDatabase should be("biggestMapEu")
+      actor.selectedMap should be("")
+    }}
+    // now i try to send a message with a wrong db name, and check that the selected map is the same than before
+    val future2 = actorRef ? SelectDatabaseMessage("randomDatabaseThaDontExists")
+    ScalaFutures.whenReady(future2) { result => {
+      actor.selectedDatabase should be("biggestMapEu")
+      actor.selectedMap should be("")
+    }}
+  }
+
   /*########################################################################
     Testing CreateDatabaseMessage() receiving
     ########################################################################*/
-  //it should "create a new"
+  /**
+    * @todo test this soon
+    */
+
+
+
+    /*########################################################################
+      Testing DeleteDatabaseMessage() receiving
+      ########################################################################*/
+    it should "actually delete from the StoreManagers map the database passed to 'deletedb' command" in {
+      //refreshing the FakeServer
+      FakeServer.fakeStoremanagers=fakeStoremanagersMap
+      val actorRef=TestActorRef(new FakeMain)
+      val actor = actorRef.underlyingActor
+      //check that "test" is actually inside storemanagers map
+      FakeServer.fakeStoremanagers.containsKey("test") should be(true)
+      //issuing to remove "test"
+      val future = actorRef ? DeleteDatabaseMessage("test")
+      ScalaFutures.whenReady(future) { result => {
+        //check that is no more inside storemanagers map
+        FakeServer.fakeStoremanagers.containsKey("test") should be(false)
+        result should be("Database test deleted")
+      }}
+      val future2 = actorRef ? DeleteDatabaseMessage("thisDbDoesNotExists")
+      ScalaFutures.whenReady(future2) { result => {
+        result should be("Invalid operation")
+      }}
+    }
+
+
+
+  /*########################################################################
+    Testing DeleteDatabaseMessage() receiving
+    ########################################################################*/
+  //refreshing the FakeServer
+  FakeServer.fakeStoremanagers=fakeStoremanagersMap
+  val actorRef=TestActorRef(new FakeMain)
+  val actor = actorRef.underlyingActor
+
+  //testing what happens if the mapName is valid
+  //setting some preconditions
+  actor.selectedDatabase="test"
+  val future = actorRef ? SelectMapMessage("defaultMap")
+  "Main (<- selectmap <mapName>)" should "actually set the correct map in his property (if mapName is valid)" in {
+    ScalaFutures.whenReady(future) {result => {
+      actor.selectedDatabase should be("test")
+      actor.selectedMap should be("defaultMap")
+    }}
+  }
+  it should "reply affirmatively when command is valid" in {
+    ScalaFutures.whenReady(future) {result => {
+      result should be("Map defaultMap selected")
+    }}
+  }
+
+
+  //now testing what happens if the mapName is not valid
+  //setting some preconditions
+  actor.selectedDatabase = "test"
+  actor.selectedMap = "defaultMap"
+  val future2 = actorRef ? SelectMapMessage("imaginaryMap")
+
+  it should "actually dont change selectedMap property if mapName in not valid" in {
+    ScalaFutures.whenReady(future2) {result => {
+      actor.selectedDatabase should be("test")
+      actor.selectedMap should be("defaultMap")
+    }}
+  }
+  it should "reply whit error when command is not valid" in {
+    ScalaFutures.whenReady(future2) {result => {
+      result should be("Invalid map")
+    }}
+  }
+
+  //now testing what happens if there is no DB selected
+  //setting some preconditions
+  actor.selectedDatabase = ""
+  actor.selectedMap = ""
+  val future3 = actorRef ? SelectMapMessage("defaultMap")
+  it should "if no DB selected -> dont change properties and reply with an error" in {
+    ScalaFutures.whenReady(future3) {result => {
+      actor.selectedDatabase should be("test")
+      actor.selectedMap should be("defaultMap")
+      result should be("Please select a database")
+    }}
+  }
 
 }
 
