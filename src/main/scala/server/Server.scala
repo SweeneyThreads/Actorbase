@@ -1,9 +1,11 @@
 package server
 
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
+import com.typesafe.config.ConfigFactory
 import server.EnumPermission.Permission
 import server.actors.{Doorkeeper, Storemanager}
 import server.util.FileReader
@@ -35,6 +37,7 @@ object Server extends App {
   var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, Permission]] = null
 
   override def main(args: Array[String]) {
+
     system = ActorSystem("System")
     log = Logging.getLogger(system, this)
     fileReader = new FileReader(log)
