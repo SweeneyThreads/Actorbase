@@ -99,10 +99,7 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null, val server
       }
       case CreateDatabaseMessage(name: String) => {
 
-        if (!isValidStoremanager(name, message)) return
-        Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
-
-        if(checkPermissions(message, name)) {
+        if(!checkPermissions(message, name)) {
           reply(invalidOperationMessage)
           return
         }

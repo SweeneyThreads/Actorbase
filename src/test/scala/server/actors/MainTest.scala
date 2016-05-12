@@ -193,21 +193,24 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
 
 
   /*########################################################################
-    Testing DeleteDatabaseMessage() receiving
+    Testing SelectMapMessage() receiving
     ########################################################################*/
   //refreshing the FakeServer
-  FakeServer.fakeStoremanagers=fakeStoremanagersMap
-  val actorRef=TestActorRef(new FakeMain)
-  val actor = actorRef.underlyingActor
+  //FakeServer.fakeStoremanagers=fakeStoremanagersMap
+  //val actorRef=TestActorRef(new FakeMain)
+  //val actor = actorRef.underlyingActor
+
 
   //testing what happens if the mapName is valid
   //setting some preconditions
-  actor.selectedDatabase="test"
-  val future = actorRef ? SelectMapMessage("defaultMap")
+  val mainActorRef=TestActorRef(new FakeMain)
+  val mainActor = mainActorRef.underlyingActor
+  mainActor.selectedDatabase="test"
+  val future = mainActorRef ? SelectMapMessage("defaultMap")
   "Main (<- selectmap <mapName>)" should "actually set the correct map in his property (if mapName is valid)" in {
     ScalaFutures.whenReady(future) {result => {
-      actor.selectedDatabase should be("test")
-      actor.selectedMap should be("defaultMap")
+      mainActor.selectedDatabase should be("test")
+      mainActor.selectedMap should be("defaultMap")
     }}
   }
   it should "reply affirmatively when command is valid" in {
@@ -216,7 +219,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     }}
   }
 
-
+/*
   //now testing what happens if the mapName is not valid
   //setting some preconditions
   actor.selectedDatabase = "test"
@@ -247,7 +250,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
       result should be("Please select a database")
     }}
   }
-
+*/
 }
 
 
