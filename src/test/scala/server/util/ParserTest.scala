@@ -43,17 +43,17 @@ class ParserTest extends FlatSpec with Matchers {
 
   //Testing commands with one param
   val oneParamCommands = Array(
-    new SampleCommand("selectdb", "SelectDatabaseMessage", new SelectDatabaseMessage("aParam"), new SelectDatabaseMessage("anotherParam")),
-    new SampleCommand("createdb", "CreateDatabaseMessage", new CreateDatabaseMessage("aParam"), new CreateDatabaseMessage("anotherParam")),
-    new SampleCommand("deletedb", "DeleteDatabaseMessage", new DeleteDatabaseMessage("aParam"), new DeleteDatabaseMessage("anotherParam")),
-    new SampleCommand("selectmap", "SelectMapMessage", new SelectMapMessage("aParam"), new SelectMapMessage("anotherParam")),
-    new SampleCommand("createmap", "CreateMapMessage", new CreateMapMessage("aParam"), new CreateMapMessage("anotherParam")),
-    new SampleCommand("deletemap", "DeleteMapMessage", new DeleteMapMessage("aParam"), new DeleteMapMessage("anotherParam"))
+    new SampleCommand("selectdb", "SelectDatabaseMessage", new SelectDatabaseMessage("aparam"), new SelectDatabaseMessage("anotherparam")),
+    new SampleCommand("createdb", "CreateDatabaseMessage", new CreateDatabaseMessage("aparam"), new CreateDatabaseMessage("anotherparam")),
+    new SampleCommand("deletedb", "DeleteDatabaseMessage", new DeleteDatabaseMessage("aparam"), new DeleteDatabaseMessage("anotherparam")),
+    new SampleCommand("selectmap", "SelectMapMessage", new SelectMapMessage("aparam"), new SelectMapMessage("anotherparam")),
+    new SampleCommand("createmap", "CreateMapMessage", new CreateMapMessage("aparam"), new CreateMapMessage("anotherparam")),
+    new SampleCommand("deletemap", "DeleteMapMessage", new DeleteMapMessage("aparam"), new DeleteMapMessage("anotherparam"))
   )
   for (cmd <- oneParamCommands) {
     "'" + cmd.command + "' command" should "generate a " + cmd.strMessage in {
-      parser.parseQuery(cmd.command + " aParam") should be(cmd.message1)
-      parser.parseQuery(cmd.command + " anotherParam") should be(cmd.message2)
+      parser.parseQuery(cmd.command + " aparam") should be(cmd.message1)
+      parser.parseQuery(cmd.command + " anotherparam") should be(cmd.message2)
     }
     it should "have exactly 1 parameter" in {
       parser.parseQuery(cmd.command) should be(new InvalidQueryMessage)

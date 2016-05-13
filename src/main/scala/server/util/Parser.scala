@@ -19,41 +19,40 @@ import scala.util.matching.Regex
 class Parser {
 
   def parseQuery(query: String, log:LoggingAdapter = null) : QueryMessage = {
-    val lowQuery = query.toLowerCase()
     // Connect command
     var pattern = "login\\s(\\S+)\\s(\\S+)$".r
-    var m = getMatch(pattern, lowQuery)
-    if(m != null) return new LoginMessage(m.group(1), m.group(2))
+    var m = getMatch(pattern, query)
+    if(m != null) return new LoginMessage(m.group(1).toLowerCase(), m.group(2))
 
     // Row command (two parameters)
     pattern = "(\\S+)\\s\\'(.+)\\'\\s(\\S+)$".r
-    m = getMatch(pattern, lowQuery)
-    if(m != null) return parseRowCommandTwoParams(m.group(1), m.group(2), m.group(3))
+    m = getMatch(pattern, query)
+    if(m != null) return parseRowCommandTwoParams(m.group(1).toLowerCase(), m.group(2), m.group(3))
 
     // Row command (one parameter)
     pattern = "(\\S+)\\s\\'(.+)\\'$".r
-    m = getMatch(pattern, lowQuery)
-    if(m != null) return parseRowCommandOneParam(m.group(1), m.group(2))
+    m = getMatch(pattern, query)
+    if(m != null) return parseRowCommandOneParam(m.group(1).toLowerCase(), m.group(2))
 
     // Command with three params
     pattern = "(\\S+)\\s(\\S+)\\s(\\S+)\\s(\\S+)$".r
-    m = getMatch(pattern, lowQuery)
-    if(m != null) return parseCommandWithThreeParams(m.group(1), m.group(2), m.group(3), m.group(4))
+    m = getMatch(pattern, query)
+    if(m != null) return parseCommandWithThreeParams(m.group(1).toLowerCase(), m.group(2).toLowerCase(), m.group(3).toLowerCase(), m.group(4).toLowerCase())
 
     // Command with two params
     pattern = "(\\S+)\\s(\\S+)\\s(\\S+)$".r
-    m = getMatch(pattern, lowQuery)
-    if(m != null) return parseCommandWithTwoParams(m.group(1), m.group(2), m.group(3))
+    m = getMatch(pattern, query)
+    if(m != null) return parseCommandWithTwoParams(m.group(1).toLowerCase(), m.group(2).toLowerCase(), m.group(3).toLowerCase())
 
     // Command with parameters
     pattern = "(\\S+)\\s(\\S+)$".r
-    m = getMatch(pattern, lowQuery)
-    if(m != null) return parseCommandWithParam(m.group(1), m.group(2))
+    m = getMatch(pattern, query)
+    if(m != null) return parseCommandWithParam(m.group(1).toLowerCase(), m.group(2).toLowerCase())
 
     // Command without parameters
     pattern = "(\\S+)$".r
-    m = getMatch(pattern, lowQuery)
-    if(m != null) return parseCommandWithoutParam(m.group(1))
+    m = getMatch(pattern, query)
+    if(m != null) return parseCommandWithoutParam(m.group(1).toLowerCase())
 
     return new InvalidQueryMessage
   }

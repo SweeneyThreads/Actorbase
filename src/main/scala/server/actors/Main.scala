@@ -72,8 +72,8 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null, val server
   private def handleAdminMessage(message: AdminMessage) = {
     message match {
       case m:UsersManagementMessage => handleUserManagementMessage(m)
-      case m:UsersManagementMessage => handleUserManagementMessage(m)
-      case m:UsersManagementMessage => handleUserManagementMessage(m)
+      case m:PermissionsManagementMessage => handlePermissionsManagementMessage(m)
+      case m:ActorPropriertiesMessage =>  handleActorPropriertiesMessageMessage(m)
       case _ => log.error(unhandledMessage + ", handleAdminMessage: " + message)
     }
   }

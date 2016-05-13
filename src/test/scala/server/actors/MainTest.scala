@@ -2,25 +2,19 @@ package server.actors
 
 import java.lang.Enum
 import java.util
-
 import akka.actor.Actor.Receive
 import akka.dispatch.ExecutionContexts._
 import akka.util.Timeout
+
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, FlatSpec}
 import java.util.concurrent.ConcurrentHashMap
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
-import server.EnumPermission.Permission
-import server.actors.{Doorkeeper, Storemanager}
-import server.messages.query.user.DatabaseMessages.{DeleteDatabaseMessage, CreateDatabaseMessage, SelectDatabaseMessage, ListDatabaseMessage}
+import server.messages.query.user.DatabaseMessages.{DeleteDatabaseMessage, SelectDatabaseMessage, ListDatabaseMessage}
 import server.messages.query.user.MapMessages.SelectMapMessage
-import server.util.{ServerDependencyInjector, FileReader}
-import server.{Server, EnumPermission}
-
-import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import server.util.{ServerDependencyInjector}
 
 import akka.testkit.TestActorRef
 
