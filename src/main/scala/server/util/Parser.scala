@@ -1,7 +1,7 @@
 package server.util
 
 import akka.event.LoggingAdapter
-import server.EnumPermission
+import server.enums.EnumPermission
 import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.HelpMessages.{CompleteHelp, SpecificHelp}
 import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, RemovePermissionMessage}

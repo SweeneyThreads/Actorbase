@@ -4,11 +4,14 @@ import akka.actor.{Actor, ActorRef, Props}
 import akka.io.Tcp
 import akka.util.ByteString
 import server.Server
+import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.query.ErrorMessages.InvalidQueryMessage
-import server.messages.query.{LoginMessage, QueryMessage}
+import server.messages.query.{LoginMessage, QueryMessage, ReplyMessage}
 import server.util.Parser
 
 import scala.util.{Failure, Success}
+import server.messages.query._
+import server.messages.query.user.DatabaseMessages.CreateDatabaseMessage
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
@@ -95,6 +98,15 @@ class Usermanager extends Actor with akka.actor.ActorLogging {
       else reply("N")
     }
     else reply("N")
+  }
+
+  private def handleReplyMessage(message: ReplyMessage, sender: ActorRef = sender): Unit = {
+    message.question match {
+      case CreateDatabaseMessage(name: String) => {
+        if(message.result == EnumReplyResult.Done) reply("Database " + name + " created", sender)
+        else reply("Database " + name + " already exists", sender)
+      }
+    }
   }
 
   private def reply(str: String, sender: ActorRef = sender): Unit = {

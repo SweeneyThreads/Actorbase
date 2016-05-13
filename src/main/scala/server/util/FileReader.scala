@@ -5,8 +5,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.event.LoggingAdapter
 import org.json.JSONObject
-import server.EnumPermission
-import server.EnumPermission.Permission
+import server.enums.EnumPermission
+import server.enums.EnumPermission.UserPermission
 
 /**
   * Created by matteobortolazzo on 09/05/2016.
@@ -39,8 +39,8 @@ class FileReader(log:LoggingAdapter) {
     return users;
   }
 
-  def readPermissions(path:String): ConcurrentHashMap[String, ConcurrentHashMap[String, Permission]] = {
-    val permissions = new ConcurrentHashMap[String, ConcurrentHashMap[String, Permission]]()
+  def readPermissions(path:String): ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]] = {
+    val permissions = new ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]]()
 
     try {
       //* Open the file that should be on the same level as SRC folder */
@@ -53,7 +53,7 @@ class FileReader(log:LoggingAdapter) {
         val singleUserEntry = permissionsList.getJSONObject(i)
         val accountID = singleUserEntry.getString("id")
         val permissionList = singleUserEntry.getJSONArray("list")
-        val permissionsMap = new ConcurrentHashMap[String, Permission]()
+        val permissionsMap = new ConcurrentHashMap[String, UserPermission]()
         for (j <- 0 until permissionList.length()) {
           val singleDbPerm = permissionList.getJSONObject(j)
           val DBName = singleDbPerm.getString("name")

@@ -3,13 +3,13 @@ package server.actors
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{Actor, ActorRef, Props}
-import server.EnumPermission.Permission
+import server.enums.EnumPermission
 import server.messages._
 import server.messages.internal.AskMapMessage
 import server.messages.query.HelpMessages.{CompleteHelp, HelpMessage, SpecificHelp}
 import server.messages.query.PermissionMessages.{NoPermissionMessage, ReadMessage, ReadWriteMessage}
 import server.messages.query.QueryMessage
-import server.messages.query.admin.ActorProprietiesMessages.ActorPropriertiesMessage
+import server.messages.query.admin.ActorProprietiesMessages.ActorPropertiesMessage
 import server.messages.query.admin.AdminMessage
 import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, PermissionsManagementMessage, RemovePermissionMessage}
 import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage, UsersManagementMessage}
@@ -18,7 +18,8 @@ import server.messages.query.user.MapMessages.{MapMessage, SelectMapMessage}
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
 import server.util.{Helper, ServerDependencyInjector, StandardServerInjector}
-import server.{EnumPermission, Server}
+import server.Server
+import server.enums.EnumPermission.UserPermission
 
 import scala.collection.JavaConversions._
 import scala.util.{Failure, Success}
@@ -28,7 +29,7 @@ import scala.util.{Failure, Success}
   */
 
 /** This actor executes client commands and checks permissions */
-class Main(permissions: ConcurrentHashMap[String, Permission] = null, val server: ServerDependencyInjector = new StandardServerInjector {}) extends Actor with akka.actor.ActorLogging {
+class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val server: ServerDependencyInjector = new StandardServerInjector {}) extends Actor with akka.actor.ActorLogging {
 
   import akka.dispatch.ExecutionContexts._
   import akka.pattern.ask
@@ -73,7 +74,7 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null, val server
     message match {
       case m:UsersManagementMessage => handleUserManagementMessage(m)
       case m:PermissionsManagementMessage => handlePermissionsManagementMessage(m)
-      case m:ActorPropriertiesMessage =>  handleActorPropriertiesMessageMessage(m)
+      case m:ActorPropertiesMessage =>  handleActorPropertiesMessageMessage(m)
       case _ => log.error(unhandledMessage + ", handleAdminMessage: " + message)
     }
   }
@@ -94,13 +95,13 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null, val server
     selectedMap = "permissions"
     message match {
       case ListPermissionMessage(username:String) => reply("Not implemented")
-      case AddPermissionMessage(username: String, database:String, permissionType: Permission) => reply("Not implemented")
+      case AddPermissionMessage(username: String, database:String, permissionType: UserPermission) => reply("Not implemented")
       case RemovePermissionMessage(username: String, database:String) => reply("Not implemented")
       case _ => log.error(unhandledMessage + ", handlePermissionsManagementMessage: " + message)
     }
   }
 
-  private def handleActorPropriertiesMessageMessage(message: ActorPropriertiesMessage): Unit = {
+  private def handleActorPropertiesMessageMessage(message: ActorPropertiesMessage): Unit = {
     message match {
       case _ => reply("Not implemented")
     }

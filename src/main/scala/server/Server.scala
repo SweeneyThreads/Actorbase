@@ -6,8 +6,9 @@ import java.util.concurrent.ConcurrentHashMap
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
 import com.typesafe.config.ConfigFactory
-import server.EnumPermission.Permission
 import server.actors.{Doorkeeper, Storemanager}
+import server.enums.EnumPermission
+import server.enums.EnumPermission.UserPermission
 import server.messages.query.user.MapMessages.CreateMapMessage
 import server.util.FileReader
 
@@ -15,17 +16,7 @@ import server.util.FileReader
   * Created by matteobortolazzo on 02/05/2016.
   */
 
-/** Permission types */
-object EnumPermission {
-  val permissionsType = Seq(Read, ReadWrite)
 
-  sealed trait Permission
-
-  case object Read extends Permission
-
-  case object ReadWrite extends Permission
-
-}
 
 /** Startup class */
 object Server extends App {
@@ -35,7 +26,7 @@ object Server extends App {
 
   var storemanagers: ConcurrentHashMap[String, ActorRef] = null
   var users: ConcurrentHashMap[String, String] = null
-  var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, Permission]] = null
+  var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]] = null
 
   override def main(args: Array[String]) {
 

@@ -4,8 +4,8 @@ package server.messages.query.admin
   * Created by lucan on 10/05/2016.
   */
 object ActorProprietiesMessages {
-  trait ActorPropriertiesMessage extends AdminMessage
-  case class MaxRowsMessage(number : Integer) extends ActorPropriertiesMessage
-  case class MaxStorekeeper(number : Integer) extends ActorPropriertiesMessage
-  case class MaxStorefinder(number : Integer) extends ActorPropriertiesMessage
+  trait ActorPropertiesMessage extends AdminMessage
+  case class MaxRowsMessage(number : Integer) extends ActorPropertiesMessage
+  case class MaxStorekeeper(number : Integer) extends ActorPropertiesMessage
+  case class MaxStorefinder(number : Integer) extends ActorPropertiesMessage
 }
