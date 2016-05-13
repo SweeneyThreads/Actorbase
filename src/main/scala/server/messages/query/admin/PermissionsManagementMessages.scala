@@ -5,6 +5,7 @@ import server.EnumPermission.Permission
   */
 object PermissionsManagementMessages {
   trait PermissionsManagementMessage extends AdminMessage
+  case class ListPermissionMessage(username : String) extends PermissionsManagementMessage
   case class AddPermissionMessage(username : String, database: String, permissionType : Permission) extends PermissionsManagementMessage
   case class RemovePermissionMessage(username : String, database: String) extends PermissionsManagementMessage
 }

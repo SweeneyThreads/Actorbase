@@ -8,6 +8,7 @@ import akka.event.{Logging, LoggingAdapter}
 import com.typesafe.config.ConfigFactory
 import server.EnumPermission.Permission
 import server.actors.{Doorkeeper, Storemanager}
+import server.messages.query.user.MapMessages.CreateMapMessage
 import server.util.FileReader
 
 /**
@@ -66,6 +67,12 @@ object Server extends App {
   private def loadDatabases(s: ActorSystem): Unit = {
     storemanagers = new ConcurrentHashMap[String, ActorRef]()
     storemanagers.put("test", s.actorOf(Props[Storemanager]))
+
+    val master = s.actorOf(Props[Storemanager])
+    storemanagers.put("master", master)
+    master ! new CreateMapMessage("users")
+    master ! new CreateMapMessage("permissions")
+
     log.info("Database loaded")
   }
 }

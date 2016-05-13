@@ -81,5 +81,4 @@ class Storekeeper(isStorekeeper: Boolean = false) extends Actor with akka.actor.
   private def reply(str: String, sender: ActorRef = sender): Unit = {
     if ( isStorekeeper) Some(sender).map(_ ! str)
   }
-
 }

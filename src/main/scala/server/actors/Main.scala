@@ -9,12 +9,15 @@ import server.messages.internal.AskMapMessage
 import server.messages.query.HelpMessages.{CompleteHelp, HelpMessage, SpecificHelp}
 import server.messages.query.PermissionMessages.{NoPermissionMessage, ReadMessage, ReadWriteMessage}
 import server.messages.query.QueryMessage
+import server.messages.query.admin.ActorProprietiesMessages.ActorPropriertiesMessage
 import server.messages.query.admin.AdminMessage
+import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, PermissionsManagementMessage, RemovePermissionMessage}
+import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage, UsersManagementMessage}
 import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.MapMessages.{MapMessage, SelectMapMessage}
-import server.messages.query.user.RowMessages.{RowMessage, StorefinderRowMessage}
+import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
-import server.util.{StandardServerInjector, ServerDependencyInjector, Helper}
+import server.util.{Helper, ServerDependencyInjector, StandardServerInjector}
 import server.{EnumPermission, Server}
 
 import scala.collection.JavaConversions._
@@ -67,7 +70,40 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null, val server
   }
 
   private def handleAdminMessage(message: AdminMessage) = {
-    //TODO admin commands
+    message match {
+      case m:UsersManagementMessage => handleUserManagementMessage(m)
+      case m:UsersManagementMessage => handleUserManagementMessage(m)
+      case m:UsersManagementMessage => handleUserManagementMessage(m)
+      case _ => log.error(unhandledMessage + ", handleAdminMessage: " + message)
+    }
+  }
+
+  private def handleUserManagementMessage(message: UsersManagementMessage): Unit = {
+    selectedDatabase = "master"
+    selectedMap = "users"
+    message match {
+      case ListUserMessage() => handleRowMessage(new ListKeysMessage)
+      case AddUserMessage(username: String, password:String) => handleRowMessage(new InsertRowMessage(username, password))
+      case RemoveUserMessage(username: String) => handleRowMessage(new RemoveRowMessage(username))
+      case _ => log.error(unhandledMessage + ", handleUserManagementMessage: " + message)
+    }
+  }
+
+  private def handlePermissionsManagementMessage(message: PermissionsManagementMessage): Unit = {
+    selectedDatabase = "master"
+    selectedMap = "permissions"
+    message match {
+      case ListPermissionMessage(username:String) => reply("Not implemented")
+      case AddPermissionMessage(username: String, database:String, permissionType: Permission) => reply("Not implemented")
+      case RemovePermissionMessage(username: String, database:String) => reply("Not implemented")
+      case _ => log.error(unhandledMessage + ", handlePermissionsManagementMessage: " + message)
+    }
+  }
+
+  private def handleActorPropriertiesMessageMessage(message: ActorPropriertiesMessage): Unit = {
+    message match {
+      case _ => reply("Not implemented")
+    }
   }
 
   /** Manage help messages */
@@ -98,7 +134,6 @@ class Main(permissions: ConcurrentHashMap[String, Permission] = null, val server
         reply("Database " + name + " selected")
       }
       case CreateDatabaseMessage(name: String) => {
-
         if(!checkPermissions(message, name)) {
           reply(invalidOperationMessage)
           return

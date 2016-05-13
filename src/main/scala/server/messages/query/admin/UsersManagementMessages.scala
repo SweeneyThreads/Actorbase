@@ -5,6 +5,7 @@ package server.messages.query.admin
   */
 object UsersManagementMessages {
   trait UsersManagementMessage extends AdminMessage
+  case class ListUserMessage() extends UsersManagementMessage
   case class AddUserMessage(username : String, password :String) extends UsersManagementMessage
   case class RemoveUserMessage(username : String) extends UsersManagementMessage
 }
