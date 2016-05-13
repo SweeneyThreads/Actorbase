@@ -22,7 +22,7 @@ class Parser {
     // Connect command
     var pattern = "login\\s(\\S+)\\s(\\S+)$".r
     var m = getMatch(pattern, query)
-    if(m != null) return new LoginMessage(m.group(1).toLowerCase(), m.group(2))
+    if(m != null) return new LoginMessage(m.group(1), m.group(2))
 
     // Row command (two parameters)
     pattern = "(\\S+)\\s\\'(.+)\\'\\s(\\S+)$".r
@@ -37,17 +37,17 @@ class Parser {
     // Command with three params
     pattern = "(\\S+)\\s(\\S+)\\s(\\S+)\\s(\\S+)$".r
     m = getMatch(pattern, query)
-    if(m != null) return parseCommandWithThreeParams(m.group(1).toLowerCase(), m.group(2).toLowerCase(), m.group(3).toLowerCase(), m.group(4).toLowerCase())
+    if(m != null) return parseCommandWithThreeParams(m.group(1).toLowerCase(), m.group(2), m.group(3), m.group(4))
 
     // Command with two params
     pattern = "(\\S+)\\s(\\S+)\\s(\\S+)$".r
     m = getMatch(pattern, query)
-    if(m != null) return parseCommandWithTwoParams(m.group(1).toLowerCase(), m.group(2).toLowerCase(), m.group(3).toLowerCase())
+    if(m != null) return parseCommandWithTwoParams(m.group(1).toLowerCase(), m.group(2), m.group(3))
 
     // Command with parameters
     pattern = "(\\S+)\\s(\\S+)$".r
     m = getMatch(pattern, query)
-    if(m != null) return parseCommandWithParam(m.group(1).toLowerCase(), m.group(2).toLowerCase())
+    if(m != null) return parseCommandWithParam(m.group(1).toLowerCase(), m.group(2))
 
     // Command without parameters
     pattern = "(\\S+)$".r

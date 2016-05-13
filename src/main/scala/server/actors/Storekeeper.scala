@@ -16,15 +16,17 @@ import scala.collection.JavaConversions._
 class Storekeeper(isStorekeeper: Boolean = false) extends Actor with akka.actor.ActorLogging {
   var db = new ConcurrentHashMap[String, String]()
   val unhandledMessage = "Unhandled message in storefinder "
-  if (isStorekeeper) self ! new BecomeStorekeeperMessage()
 
   import context._
 
+  override def preStart(): Unit = {
+    if(isStorekeeper) become(receiveAsStorekeeper)
+  }
   // Row level commands
   def receive = {
     case BecomeStorekeeperMessage => become(receiveAsStorekeeper)
-    case m: RowMessage => handleRowMessage(m)
-    case other => log.error(unhandledMessage + ", receive: " + other)
+    case m: RowMessage => handleRowMessagesAsNinja(m)
+    case other => log.error(unhandledMessage + ", receive (Ninja): " + other)
   }
 
   private def receiveAsStorekeeper: Receive = {
@@ -67,9 +69,33 @@ class Storekeeper(isStorekeeper: Boolean = false) extends Actor with akka.actor.
     }
   }
 
+  private def handleRowMessagesAsNinja(message: RowMessage): Unit = {
+    message match {
+      case InsertRowMessage(key: String, value: String) => {
+        if (db.containsKey(key)) {
+          log.warning(key + " already exist")
+          return
+        }
+        db.put(key, value)
+        log.info(key + " inserted")
+      }
+      case UpdateRowMessage(key: String, value: String) => {
+        if (exists(key)) return
+        db.put(key, value)
+        log.info(key + " updated")
+      }
+      case RemoveRowMessage(key: String) => {
+        if (!exists(key)) return
+        db.remove(key)
+        log.info(key + " removed")
+      }
+      case _ => log.error(unhandledMessage + ", handleRowMessagesAsNinja: " + message)
+    }
+  }
+
   private def exists(key: String): Boolean = {
     val ris = db.contains(key)
-    if (!ris) reply(key + "doesn't exist")
+    if (!ris) log.warning(key + "doesn't exist")
     return ris
   }
 
@@ -79,6 +105,6 @@ class Storekeeper(isStorekeeper: Boolean = false) extends Actor with akka.actor.
   }
 
   private def reply(str: String, sender: ActorRef = sender): Unit = {
-    if ( isStorekeeper) Some(sender).map(_ ! str)
+    Some(sender).map(_ ! str)
   }
 }
