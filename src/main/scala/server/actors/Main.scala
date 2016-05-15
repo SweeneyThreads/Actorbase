@@ -9,7 +9,7 @@ import server.messages.internal.AskMapMessage
 import server.messages.query.HelpMessages.{CompleteHelp, HelpMessage, SpecificHelp}
 import server.messages.query.PermissionMessages.{NoPermissionMessage, ReadMessage, ReadWriteMessage}
 import server.messages.query.QueryMessage
-import server.messages.query.admin.ActorProprietiesMessages.ActorPropertiesMessage
+import server.messages.query.admin.ActorPropetiesMessages.ActorPropertiesMessage
 import server.messages.query.admin.AdminMessage
 import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, PermissionsManagementMessage, RemovePermissionMessage}
 import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage, UsersManagementMessage}
