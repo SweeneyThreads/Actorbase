@@ -21,6 +21,9 @@ object Client extends App {
   }
 
   def executeLine(ln: String): Unit = {
+    if(ln == "quit") {
+      System.exit(1)
+    }
     // If the client is connected
     if (connection != null) {
       // Close the connection when the user write 'disconnect'
@@ -55,9 +58,6 @@ object Client extends App {
       println("Please connect first")
     }
   }
-
-
-
 
 
   /*def convertQuery(query:String): String = {

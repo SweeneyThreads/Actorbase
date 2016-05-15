@@ -19,10 +19,11 @@ class Doorkeeper(port: Integer) extends Actor with akka.actor.ActorLogging {
   def receive = {
     case b@Bound(localAddress) => log.info("Port " + port + " opened")
     case CommandFailed(_: Bind) => context stop self
-    case c@Connected(remote, local) =>
+    case c@Connected(remote, local) => {
       val connectionKeeper = context.actorOf(Props[Usermanager])
       val connection = sender()
       connection ! Register(connectionKeeper)
       log.info(remote.getHostName + " connected")
+    }
   }
 }

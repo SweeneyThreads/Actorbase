@@ -11,6 +11,6 @@ object RowMessages {
   case class UpdateRowMessage(key: String, value: String) extends RowMessage with ReadWriteMessage
   case class RemoveRowMessage(key: String) extends RowMessage with ReadWriteMessage
   case class FindRowMessage(key: String) extends RowMessage with ReadMessage
-  case class ListKeysMessage() extends RowMessage with ReadMessage  // Message from storemanger to storefinder
-  case class StorefinderRowMessage(mapName: String, rowMessage: RowMessage) extends RowMessage
+  case class ListKeysMessage() extends RowMessage with ReadMessage
+  case class StorefinderRowMessage(mapName: String, rowMessage: RowMessage) extends RowMessage // Message from storemanger to storefinder
 }
