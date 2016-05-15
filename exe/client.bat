@@ -1,0 +1,1 @@
+java -jar ../classes/artifacts/actorbaseclient_jar/actorbase.jar

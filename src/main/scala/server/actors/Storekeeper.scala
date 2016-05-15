@@ -94,8 +94,8 @@ class Storekeeper(isStorekeeper: Boolean = false) extends Actor with akka.actor.
   }
 
   private def exists(key: String): Boolean = {
-    val ris = db.contains(key)
-    if (!ris) log.warning(key + "doesn't exist")
+    val ris = db.containsKey(key)
+    if (!ris) reply(key + " doesn't exist")
     return ris
   }
 
