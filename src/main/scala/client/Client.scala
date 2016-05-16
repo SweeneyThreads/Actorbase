@@ -62,7 +62,7 @@ object Client extends App {
 
   /*def convertQuery(query:String): String = {
       var command = query
-      import java.util.Base64
+      import java.utils.Base64
       import java.nio.charset.StandardCharsets
 
       val keyvalue = getKeyValue(query)

@@ -1,4 +1,4 @@
-package server.util
+package server.utils
 
 import org.scalatest.{FlatSpec, Matchers}
 import server.messages.query.ErrorMessages.InvalidQueryMessage

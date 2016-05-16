@@ -10,7 +10,7 @@ import server.actors.{Doorkeeper, Storemanager}
 import server.enums.EnumPermission
 import server.enums.EnumPermission.UserPermission
 import server.messages.query.user.MapMessages.CreateMapMessage
-import server.util.FileReader
+import server.utils.FileReader
 
 /**
   * Created by matteobortolazzo on 02/05/2016.

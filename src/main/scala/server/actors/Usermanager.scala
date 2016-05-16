@@ -7,7 +7,7 @@ import server.Server
 import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.{LoginMessage, QueryMessage, ReplyMessage}
-import server.util.Parser
+import server.utils.Parser
 
 import scala.util.{Failure, Success}
 import server.messages.query._

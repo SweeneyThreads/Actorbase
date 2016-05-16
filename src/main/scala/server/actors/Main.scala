@@ -17,7 +17,7 @@ import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.MapMessages.{MapMessage, SelectMapMessage}
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
-import server.util.{Helper, ServerDependencyInjector, StandardServerInjector}
+import server.utils.{Helper, ServerDependencyInjector, StandardServerInjector}
 import server.Server
 import server.enums.EnumPermission.UserPermission
 

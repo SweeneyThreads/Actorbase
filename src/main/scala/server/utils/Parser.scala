@@ -1,4 +1,4 @@
-package server.util
+package server.utils
 
 import akka.event.LoggingAdapter
 import server.enums.EnumPermission

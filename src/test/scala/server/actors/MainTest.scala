@@ -14,7 +14,7 @@ import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
 import server.messages.query.user.DatabaseMessages.{DeleteDatabaseMessage, SelectDatabaseMessage, ListDatabaseMessage}
 import server.messages.query.user.MapMessages.SelectMapMessage
-import server.util.{ServerDependencyInjector}
+import server.utils.{ServerDependencyInjector}
 
 import akka.testkit.TestActorRef
 
