@@ -57,9 +57,9 @@ object Server extends App {
   //* Loads databases */
   private def loadDatabases(s: ActorSystem): Unit = {
     storemanagers = new ConcurrentHashMap[String, ActorRef]()
-    storemanagers.put("test", s.actorOf(Props[Storemanager]))
+    storemanagers.put("test", s.actorOf(Props[Storemanager], name="test"))
 
-    val master = s.actorOf(Props[Storemanager])
+    val master = s.actorOf(Props[Storemanager], name="master")
     storemanagers.put("master", master)
     master ! new CreateMapMessage("users")
     master ! new CreateMapMessage("permissions")
