@@ -1,16 +1,18 @@
 package server
 
-import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
-import com.typesafe.config.ConfigFactory
 import server.actors.{Doorkeeper, Storemanager}
-import server.enums.EnumPermission
 import server.enums.EnumPermission.UserPermission
-import server.messages.query.user.MapMessages.CreateMapMessage
 import server.utils.FileReader
+
+import scala.util.{Failure, Success}
+import akka.dispatch.ExecutionContexts._
+import akka.util.Timeout
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 /**
   * Created by matteobortolazzo on 02/05/2016.
@@ -28,6 +30,9 @@ object Server {
   var users: ConcurrentHashMap[String, String] = null
   var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]] = null
 
+  implicit val timeout = Timeout(25 seconds)
+  implicit val ec = global
+
   def main(args: Array[String]) {
 
     system = ActorSystem("System")
@@ -39,6 +44,19 @@ object Server {
     loadDatabases(system)
     system.actorOf(Props(classOf[Doorkeeper], 8181))
     log.info("Server started")
+
+    /* TEST IF DB EXISTS
+    val name = "/user/test"
+    system.actorSelection(name).resolveOne().onComplete {
+      case Success(actor) => log.error(name + " exists")
+      case Failure(ex) => log.error(name + " doesn't exist")
+    }
+    val name2 = "/user/main"
+    system.actorSelection(name2).resolveOne().onComplete {
+      case Success(actor) => log.error(name2 + " exists")
+      case Failure(ex) => log.error(name2 + " doesn't exist")
+    }
+    */
   }
 
   //* Loads system users */
@@ -61,10 +79,8 @@ object Server {
 
     val master = s.actorOf(Props[Storemanager], name="master")
     storemanagers.put("master", master)
-    master ! new CreateMapMessage("users")
-    master ! new CreateMapMessage("permissions")
 
-    log.info("Database loaded")
+    log.info("Databases loaded")
   }
 }
 

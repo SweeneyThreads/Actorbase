@@ -62,7 +62,6 @@ class Storekeeper(isStorekeeper: Boolean = false) extends Actor with akka.actor.
         var keys = ""
         for (k: String <- db.keys())
           keys += k + "\n"
-        if (keys != "") keys = keys.substring(0, keys.length - 1)
         reply(keys)
       }
       case _ => log.error(unhandledMessage + ", handleRowMessage: " + message)
