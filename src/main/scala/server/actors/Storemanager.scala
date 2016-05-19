@@ -1,5 +1,6 @@
 package server.actors
 
+import scala.language.postfixOps
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{Actor, ActorRef, Props}

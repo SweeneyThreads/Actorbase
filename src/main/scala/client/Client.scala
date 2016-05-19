@@ -8,11 +8,11 @@ import scala.util.matching.Regex
 /**
   * Created by matteobortolazzo on 01/05/2016.
   */
-object Client extends App {
+object Client {
 
   var connection: Connection = null
 
-  override def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit = {
     Welcome.printWelcomeMessage
     // Readline loop
     for (ln <- io.Source.stdin.getLines) {

@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{Actor, ActorRef, Props}
 import server.enums.EnumPermission
-import server.messages._
+import scala.language.postfixOps
 import server.messages.internal.AskMapMessage
 import server.messages.query.HelpMessages.{CompleteHelp, HelpMessage, SpecificHelp}
 import server.messages.query.PermissionMessages.{NoPermissionMessage, ReadMessage, ReadWriteMessage}

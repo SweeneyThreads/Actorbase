@@ -19,7 +19,7 @@ import server.utils.FileReader
 
 
 /** Startup class */
-object Server extends App {
+object Server {
   var system:ActorSystem = null
   var log:LoggingAdapter = null
   var fileReader:FileReader = null
@@ -28,7 +28,7 @@ object Server extends App {
   var users: ConcurrentHashMap[String, String] = null
   var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]] = null
 
-  override def main(args: Array[String]) {
+  def main(args: Array[String]) {
 
     system = ActorSystem("System")
     log = Logging.getLogger(system, this)

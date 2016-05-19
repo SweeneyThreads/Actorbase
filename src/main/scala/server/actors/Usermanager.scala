@@ -25,7 +25,7 @@ class Usermanager extends Actor with akka.actor.ActorLogging {
   import akka.dispatch.ExecutionContexts._
   import akka.pattern.ask
   import akka.util.Timeout
-
+  import scala.language.postfixOps
   import scala.concurrent.duration._
 
   implicit val timeout = Timeout(25 seconds)

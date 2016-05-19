@@ -1,11 +1,6 @@
 package server.actors
 
-import java.lang.Enum
-import java.util
-import akka.actor.Actor.Receive
-import akka.dispatch.ExecutionContexts._
-import akka.util.Timeout
-
+import scala.language.postfixOps
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, FlatSpec}
