@@ -56,7 +56,7 @@ class Storekeeper(isStorekeeper: Boolean = false) extends Actor with akka.actor.
       }
       case FindRowMessage(key: String) => {
         if (!exists(key)) return
-        reply("The value of " + key + " is " + db.get(key))
+        reply(db.get(key))
       }
       case ListKeysMessage() => {
         var keys = ""

@@ -15,8 +15,10 @@ object Client {
   def main(args: Array[String]): Unit = {
     Welcome.printWelcomeMessage
     // Readline loop
+    print("> ")
     for (ln <- io.Source.stdin.getLines) {
       executeLine(ln)
+      print("> ")
     }
   }
 

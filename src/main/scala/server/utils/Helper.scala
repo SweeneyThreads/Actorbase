@@ -10,19 +10,20 @@ import scala.collection.immutable.{HashMap, ListMap}
   */
 class Helper {
   var helpMessages = new util.LinkedHashMap[String, String]
-  helpMessages.put("listdb",    "LISTDB                lists all available databases")
-  helpMessages.put("selectdb",  "SELECTDB  nameDB      select the database")
-  helpMessages.put("createdb",  "CREATEDB  nameDB      create the database with the name specied")
-  helpMessages.put("deletedb",  "DELETEDB  nameDB      clears the databse with the name specied")
-  helpMessages.put("listmap",   "LISTMAP               lists all maps within the database")
-  helpMessages.put("selectmap", "SELECTMAP map         select the map to use")
-  helpMessages.put("createmap", "CREATEMAP map         creates the map with the name specied")
-  helpMessages.put("deletemap", "DELETEMAP map         deletes the map the name specied")
-  helpMessages.put("keys",      "KEYS                  lists all the keys in the map")
-  helpMessages.put("find",      "FIND      key         returns the value associated with the key searched")
-  helpMessages.put("remove",    "REMOVE    key         deletes the key and its value")
-  helpMessages.put("insert",    "INSERT    key value   insertion of a key and its value in a previously selected database")
-  helpMessages.put("update",    "UPDATE    key value   update of a key and its value in a previously selected database")
+  helpMessages.put("help",      "       help <command>          show the command's description")
+  helpMessages.put("listdb",    "       listdb                  show all available databases")
+  helpMessages.put("selectdb",  "       selectdb <db_name>      select the database")
+  helpMessages.put("createdb",  "       createdb <db_name>      create a database")
+  helpMessages.put("deletedb",  "       deletedb <db_name>      delete the database")
+  helpMessages.put("listmap",   "       listmap                 show all the maps within the selected database")
+  helpMessages.put("selectmap", "       selectmap               select the map")
+  helpMessages.put("createmap", "       createmap <map_name>    create a map")
+  helpMessages.put("deletemap", "       deletemap <map_name>    delete the map")
+  helpMessages.put("keys",      "       keys                    show all the keys within the selected map")
+  helpMessages.put("find",      "       find '<key>'            show the value of the specified key")
+  helpMessages.put("insert",    "       insert '<key>' <value>  insert an entry")
+  helpMessages.put("update",    "       update '<key>' <value>  update the value of the specified key")
+  helpMessages.put("remove",    "       remove '<key>'          remove the entry with the specified key")
 
   def completeHelp(): String = {
     var helpComplete = ""

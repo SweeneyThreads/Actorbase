@@ -62,7 +62,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     val main = System.actorOf(Props(new Main(null, new FakeServerInjector {})))
     val future = main ? new ListDatabaseMessage()
     ScalaFutures.whenReady(future) {
-      result => result should be("test biggestMapEu lastMapForNow ")
+      result => result should be("test\nbiggestMapEu\nlastMapForNow")
     }
   }
 
