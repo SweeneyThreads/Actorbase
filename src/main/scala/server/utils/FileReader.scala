@@ -11,6 +11,53 @@ import server.enums.EnumPermission.UserPermission
 /**
   * Created by matteobortolazzo on 09/05/2016.
   */
+
+/*
+{
+  "accounts": [
+    {
+      "id": "admin",
+      "pw": "admin"
+    },
+    {
+      "id": "borto",
+      "pw": "borto"
+    }
+  ]
+}
+*/
+/*
+{
+  "permissions": [
+    {
+      "id": "admin",
+      "list": [
+        {
+          "name": "test",
+          "perm": 1
+        },
+        {
+          "name": "test2",
+          "perm": 1
+        }
+      ]
+    },
+    {
+      "id": "borto",
+      "list": [
+        {
+          "name": "test",
+          "perm": 1
+        },
+        {
+          "name": "test2",
+          "perm": 0
+        }
+      ]
+    }
+  ]
+}
+*/
 class FileReader(log:LoggingAdapter) {
 
   def readUsers(path: String): ConcurrentHashMap[String, String] = {

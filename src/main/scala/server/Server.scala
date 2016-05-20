@@ -63,14 +63,14 @@ object Server {
 
   //* Loads system users */
   private def loadUsers(): Unit = {
-    users = fileReader.readUsers("accounts.json")
+    users = new ConcurrentHashMap[String, String]()
     users.put("admin", "admin")
     log.info("Users loaded")
   }
 
   //* Loads users permissions */
   private def loadUsersPermissions(): Unit = {
-    permissions = fileReader.readPermissions("permissions.json")
+    permissions = new ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]]
     log.info("Permissions loaded")
   }
 
