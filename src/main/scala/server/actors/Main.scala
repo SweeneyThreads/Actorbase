@@ -123,10 +123,9 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
         var str: String = ""
         for (k: String <- server.getStoremanagers.keys())
           if (permissions == null || permissions.get(k) != null)
-            str += k + " "
-        if (str == "")
-          reply("The server is empty")
-        else reply(str)
+            str += k + "\n"
+        if (str == "") reply("The server is empty")
+        else reply(str.dropRight(1))
       }
       case SelectDatabaseMessage(name: String) => {
         if (!isValidStoremanager(name, message)) return

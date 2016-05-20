@@ -47,13 +47,11 @@ class Storefinder extends Actor with akka.actor.ActorLogging {
           future.onComplete {
             case Success(result) => {
               messagesReceived = messagesReceived + 1
-              keys += result + "\n"
+              val ris = result.toString
+              if(ris != "") keys += ris.dropRight(1) + "\n"
               if (messagesReceived == storeKeeperNumber) {
-                if (keys == "") reply("No keys in this map")
-                else {
-                  val res = result.toString
-                  reply(res.substring(0, res.length - 1), origSender)
-                }
+                if (keys == "") reply("No rows in this map", origSender)
+                else reply(keys.dropRight(1), origSender)
               }
             }
             case Failure(t) => {

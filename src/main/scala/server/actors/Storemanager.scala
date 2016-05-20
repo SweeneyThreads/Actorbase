@@ -44,9 +44,9 @@ class Storemanager extends Actor with akka.actor.ActorLogging {
       case ListMapMessage() => {
         var maps = ""
         for (k: String <- storefinders.keys())
-          maps += k
-        if (maps == "") reply("No maps")
-        else reply(maps)
+          maps += k + "\n"
+        if (maps == "") reply("No maps in this database")
+        else reply(maps.dropRight(1))
       }
       case CreateMapMessage(name: String) => {
         val sf = storefinders.get(name)
