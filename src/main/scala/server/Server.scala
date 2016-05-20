@@ -11,6 +11,8 @@ import server.utils.FileReader
 import scala.util.{Failure, Success}
 import akka.dispatch.ExecutionContexts._
 import akka.util.Timeout
+import com.typesafe.config.ConfigFactory
+
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -34,8 +36,8 @@ object Server {
   implicit val ec = global
 
   def main(args: Array[String]) {
-
-    system = ActorSystem("System")
+    val conf = ConfigFactory.load()
+    system = ActorSystem("System", conf)
     log = Logging.getLogger(system, this)
     fileReader = new FileReader(log)
 

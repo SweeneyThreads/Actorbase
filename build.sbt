@@ -25,3 +25,7 @@ libraryDependencies +=
 
 libraryDependencies +=
   "ch.qos.logback" %  "logback-classic" % "1.1.7"
+
+assemblyMergeStrategy in assembly := {
+  case PathList("reference.conf") => MergeStrategy.concat
+}

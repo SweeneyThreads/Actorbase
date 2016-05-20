@@ -36,3 +36,4 @@ Robe da sviluppare
 * Accensione server (con lettura configurazione)
 * Timeout connessione client/server
 * Gestione distribuzione (conf Akka)
+* Gestire errore porta occupata

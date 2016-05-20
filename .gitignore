@@ -14,10 +14,7 @@ src_managed/
 project/boot/
 project/plugins/project/
 
-classes
-classes/
-src/main/scala/server/META-INF
-src/main/scala/client/META-INF
+jar/
 
 # IntelliJ specific
 *.iml
