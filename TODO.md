@@ -38,3 +38,4 @@ Robe da sviluppare
 * Gestione distribuzione (conf Akka)
 * Gestire errore porta occupata
 * Gestire application.conf esterno (non compilato)
+* Fare un README decente
