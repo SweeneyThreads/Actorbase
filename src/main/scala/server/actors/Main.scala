@@ -143,12 +143,13 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
           return
         }
         Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
-
-        logAndReply("Database " + name + " created")
+        selectedDatabase = name
+        logAndReply("Database " + name + " created" + "\nDatabase " + name + " selected")
       }
       case DeleteDatabaseMessage(name: String) => {
         if (!isValidStoremanager(name, message)) return
         server.getStoremanagers.remove(name)
+        selectedDatabase = ""
         logAndReply("Database " + name + " deleted")
       }
     }
@@ -203,7 +204,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
       return
     }
     if (selectedMap == "") {
-      reply("Please select a database")
+      reply("Please select a map")
       return
     }
     if (!isValidStoremanager(selectedDatabase, message)) {

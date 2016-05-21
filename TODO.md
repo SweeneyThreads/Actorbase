@@ -39,3 +39,6 @@ Robe da sviluppare
 * Gestire errore porta occupata
 * Gestire application.conf esterno (non compilato)
 * Fare un README decente
+* Togliere azzerare selectmap quando viene eliminata la mappa
+* Mettere selectmap quando viene creata
+* Togliere spazi iniziali e finali nei comandi in entrata (da più margine d'errore)
