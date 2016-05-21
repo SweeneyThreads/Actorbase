@@ -11,24 +11,25 @@ Robe da sviluppare
 * Risposte al client
 * Loggin' attori
 * Più storefinder per mappa
-* 'Superuser'
-* Help
-* Conversione oggetti in base64
-
-## DA FINIRE
+* Superuser
 * Driver
 * Client
+* Parsing comandi utente
+* Parsing comandi admin
+* Gestiti tutti i comandi utente
+* Ninja (messaggio become e metodo become)
+* Permessi utente admin
+
+## DA FINIRE
 
 ##DA INIZIARE
-* Permessi utente admin
-* Parsing comandi admin
-* Gestione database con impostazioni server
-* Gestione comandi admin nel main (e manager)
-* Manager
+* Spostare risposte testuali da tutti gli attori a solo Usermanager
+* Gestire utenti e permessi in database 'master'
+* Gestione comandi admin nel main
 * Warehouseman
 * Libreria per gestire file disco per Warehouseman
-* Ninja (messaggio become e metodo become)
-* Manager
+* Gestione morte storekeeper -> trasformazione Ninja
+* Gestione Ninja e Warehouseman di uno Storekeeper (messaggi ed invio)
 * Crezione dinamica storekeeper
 * Creazione dinamica storefinder
 * Creazione dinamica storemanager
@@ -39,6 +40,10 @@ Robe da sviluppare
 * Gestire errore porta occupata
 * Gestire application.conf esterno (non compilato)
 * Fare un README decente
+<<<<<<< HEAD
 * Togliere azzerare selectmap quando viene eliminata la mappa
 * Mettere selectmap quando viene creata
 * Togliere spazi iniziali e finali nei comandi in entrata (da più margine d'errore)
+=======
+* Help connessione / disconnessione lato client
+>>>>>>> origin/master
