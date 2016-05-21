@@ -45,7 +45,7 @@ class Storekeeper(isStorekeeper: Boolean = false) extends Actor with akka.actor.
         logAndReply(key + " inserted")
       }
       case UpdateRowMessage(key: String, value: String) => {
-        if (exists(key)) return
+        if (!exists(key)) return
         db.put(key, value)
         logAndReply(key + " updated")
       }
