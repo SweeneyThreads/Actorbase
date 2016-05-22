@@ -44,3 +44,4 @@ Robe da sviluppare
 * Mettere selectmap quando viene creata
 * Togliere spazi iniziali e finali nei comandi in entrata (da più margine d'errore)
 * Help connessione / disconnessione lato client
+* Controllo caratteri speciali (accenti) UTF-8
