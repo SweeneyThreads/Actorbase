@@ -3,15 +3,14 @@ package server
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.event.{Logging, LoggingAdapter}
-import server.actors.{Doorkeeper, Storemanager}
-import server.enums.EnumPermission.UserPermission
-import server.utils.FileReader
-
-import scala.util.{Failure, Success}
 import akka.dispatch.ExecutionContexts._
+import akka.event.{Logging, LoggingAdapter}
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
+import server.actors.{Doorkeeper, Storemanager}
+import server.enums.EnumPermission
+import server.enums.EnumPermission.UserPermission
+import server.utils.FileReader
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -65,12 +64,16 @@ object Server {
   private def loadUsers(): Unit = {
     users = new ConcurrentHashMap[String, String]()
     users.put("admin", "admin")
+    users.put("user","user")
     log.info("Users loaded")
   }
 
   //* Loads users permissions */
   private def loadUsersPermissions(): Unit = {
     permissions = new ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]]
+    var userP = new ConcurrentHashMap[String, UserPermission]
+    userP.put("test", EnumPermission.Read)
+    permissions.put("user",userP)
     log.info("Permissions loaded")
   }
 
