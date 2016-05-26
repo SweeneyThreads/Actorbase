@@ -14,7 +14,7 @@ class Doorkeeper(port: Integer) extends Actor with akka.actor.ActorLogging {
 
   import Tcp._
   import context.system
-  IO(Tcp) ! Bind(self, new InetSocketAddress("localhost", port))
+  IO(Tcp) ! Bind(self, new InetSocketAddress(port))
 
   def receive = {
     case b@Bound(localAddress) => log.info("Port " + port + " opened")
