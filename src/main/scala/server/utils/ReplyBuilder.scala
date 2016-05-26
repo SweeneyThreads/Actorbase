@@ -134,17 +134,19 @@ class ReplyBuilder {
           case SelectDatabaseMessage(name: String) =>{
             reply.info match {
               case DBDoesNotExistInfo() => "Database "+name+" not exist"
+              case NoReadPermissionInfo() => "No read permission"
               case _ => ""//TODO
             }
           }
           case CreateDatabaseMessage(name: String) => {
             reply.info match {
-              case DBAlreadyExistInfo() => "The database name: "+name+" is already used"
+              case DBAlreadyExistInfo() => "The database name "+name+" is already used"
               case _ => ""//TODO
             }
           }
           case DeleteDatabaseMessage(name: String) => {
             reply.info match {
+              case NoWritePermissionInfo() => "No write permission "
               case DBDoesNotExistInfo() => "Database "+name+" not exist"
               case _ => ""//TODO
             }
@@ -177,6 +179,9 @@ class ReplyBuilder {
         if(reply.info.isInstanceOf[NoDBSelectedInfo]){
           return "Select database first"
         }
+        if(reply.info.isInstanceOf[NoReadPermissionInfo]){
+          return "No read permission"
+        }
         reply.question match{
           case ListMapMessage() => {
             reply.info match {
@@ -192,13 +197,15 @@ class ReplyBuilder {
           }
           case CreateMapMessage(name: String) => {
             reply.info match {
-              case MapAlreadyExistInfo() => "The map name: "+name+" is already used"
+              case MapAlreadyExistInfo() => "The map name "+name+" is already used"
+              case NoWritePermissionInfo() => "No write permission"
               case _ => ""//TODO
             }
           }
           case DeleteMapMessage(name: String) => {
             reply.info match {
               case MapDoesNotExistInfo() => "Map "+name+" not exist"
+              case NoWritePermissionInfo() => "No write permission"
               case _ => ""//TODO
             }
           }
@@ -226,9 +233,9 @@ class ReplyBuilder {
               case _ => "" //TODO
             }
           }
-          case InsertRowMessage(key: String, value: String) => "Key: "+key+" with value: "+value+" inserted"
-          case UpdateRowMessage(key: String, value: String) => "Key: "+key+" updated with value: "+value
-          case RemoveRowMessage(key: String) => "Key: "+key+" deleted"
+          case InsertRowMessage(key: String, value: String) => "Key "+key+" with value "+value+" inserted"
+          case UpdateRowMessage(key: String, value: String) => "Key "+key+" updated with value "+value
+          case RemoveRowMessage(key: String) => "Key "+key+" deleted"
           case _ =>"" //TODO
         }
       }
@@ -239,6 +246,9 @@ class ReplyBuilder {
         if(reply.info.isInstanceOf[NoMapSelectedInfo]){
           return "Select map first"
         }
+        if(reply.info.isInstanceOf[NoReadPermissionInfo]){
+          return "No read permission"
+        }
         reply.question match{
           case ListKeysMessage() => {
             reply.info match {
@@ -248,25 +258,28 @@ class ReplyBuilder {
           }
           case FindRowMessage(key: String) =>{
             reply.info match {
-              case KeyDoesNotExistInfo() => "Key: "+key+" not exist"
+              case KeyDoesNotExistInfo() => "Key "+key+" not exist"
               case _ => ""//TODO
             }
           }
           case InsertRowMessage(key: String, value: String) => {
             reply.info match {
-              case KeyAlreadyExistInfo() => "Key: "+key+" is already used"
+              case KeyAlreadyExistInfo() => "Key "+key+" is already used"
+              case NoWritePermissionInfo() => "No write permission"
               case _ => ""//TODO
             }
           }
           case UpdateRowMessage(key: String, value: String) => {
             reply.info match {
-              case  KeyDoesNotExistInfo() => "Key: "+key+" not exist"
+              case  KeyDoesNotExistInfo() => "Key "+key+" not exist"
+              case NoWritePermissionInfo() => "No write permission"
               case _ => ""//TODO
             }
           }
           case RemoveRowMessage(key: String) => {
             reply.info match {
-              case  KeyDoesNotExistInfo() => "Key: "+key+" not exist"
+              case  KeyDoesNotExistInfo() => "Key "+key+" not exist"
+              case NoWritePermissionInfo() => "No write permission"
               case _ => ""//TODO
             }
           }
