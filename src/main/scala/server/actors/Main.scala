@@ -250,8 +250,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   private def handleRowMessage(message: RowMessage): Unit = {
     // If there isn't a selected database
     if(selectedDatabase == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoDBSelectedInfo()))
-    // If there isn't a selected database
-    else if(selectedDatabase == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoDBSelectedInfo()))
     // If the selected database doesn't exists
     else if(!server.getStoremanagers.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
     // If the user doesn't have at least read permissions on the selected database

@@ -31,8 +31,14 @@ class Storemanager extends ReplyActor {
   implicit val ec = global
   // The list of storefinders
   var storefinders = new ConcurrentHashMap[String, ActorRef]()
-  // Add a default map (Storefinder)
-  storefinders.put("defaultMap", context.actorOf(Props[Storefinder]))
+  // Add a default map (Storefinder). If the present Soremanager represents the Master database, it
+  // does not create the default map, instead it creates the users map and the permissions map
+  if(self.path.name == "master") {
+    storefinders.put("users", context.actorOf(Props[Storefinder]))
+    storefinders.put("permissions", context.actorOf(Props[Storefinder]))
+  } else {
+    storefinders.put("defaultMap", context.actorOf(Props[Storefinder]))
+  }
 
   /** The main receive method */
   def receive = {
