@@ -23,6 +23,7 @@ import server.enums.EnumPermission.UserPermission
 
 import scala.collection.JavaConversions._
 import scala.util.{Failure, Success}
+import server.messages.query.ReplyMessage
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
@@ -246,10 +247,10 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
-  private def logAndReply(str:String, sender: ActorRef = sender): Unit = {
+  private def logAndReply(reply: ReplyMessage, sender: ActorRef = sender): Unit = {
     log.info(str)
     reply(str, sender)
   }
 
-  private def reply(str:String, sender: ActorRef = sender): Unit = Some(sender).map(_ ! str)
+  private def reply(reply: ReplyMessage, sender: ActorRef = sender): Unit = Some(sender).map(_ ! str)
 }
