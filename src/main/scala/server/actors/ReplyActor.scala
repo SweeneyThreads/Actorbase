@@ -13,7 +13,7 @@ trait ReplyActor extends Actor with akka.actor.ActorLogging {
 
   def logAndReply(reply: ReplyMessage, sender: ActorRef = sender): Unit = {
     writeLog(reply)
-    reply(reply, sender)
+    this.reply(reply, sender)
   }
 
   def reply(reply: ReplyMessage, sender: ActorRef = sender): Unit = Some(sender).map(_ ! reply)
