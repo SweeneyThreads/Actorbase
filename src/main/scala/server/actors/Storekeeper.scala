@@ -3,10 +3,11 @@ package server.actors
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{Actor, ActorRef}
+import server.enums.EnumReplyResult._
 import server.messages.internal.BecomeStorekeeperMessage
 import server.messages.query.ReplyMessage
 import server.messages.query.user.RowMessages._
-import server.utils.ReplyBuilder
+
 
 import scala.collection.JavaConversions._
 
@@ -17,8 +18,6 @@ import scala.collection.JavaConversions._
 /** This actor represent a map partition */
 class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
   var db = new ConcurrentHashMap[String, String]()
-  val unhandledMessage = "Unhandled message in storefinder "
-  val replyBuilder=new ReplyBuilder()
 
   import context._
 
@@ -29,22 +28,24 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
   def receive = {
     case BecomeStorekeeperMessage => become(receiveAsStorekeeper)
     case m: RowMessage => handleRowMessagesAsNinja(m)
-    case other => log.error(unhandledMessage + ", receive (Ninja): " + other)
+    case other => log.error(replyBuilder.unhandledMessage(self.path.toString,currentMethodName()))
   }
 
   private def receiveAsStorekeeper: Receive = {
     case m: RowMessage => handleRowMessage(m)
-    case other => log.error(unhandledMessage + ", receive: " + other)
+    case other => log.error(replyBuilder.unhandledMessage(self.path.toString,currentMethodName()))
   }
 
   private def handleRowMessage(message: RowMessage): Unit = {
     message match {
       case InsertRowMessage(key: String, value: String) => {
         if (db.containsKey(key)) {
+          reply(new ReplyMessage(Error,message))
           reply(key + " already exist")
           return
         }
         db.put(key, value)
+        reply(new ReplyMessage(Done,message))
         logAndReply(key + " inserted")
       }
       case UpdateRowMessage(key: String, value: String) => {
@@ -67,7 +68,7 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
           keys += k + "\n"
         reply(keys)
       }
-      case _ => log.error(unhandledMessage + ", handleRowMessage: " + message)
+      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString,currentMethodName()))
     }
   }
 
@@ -101,12 +102,6 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
     ris
   }
 
-  private def logAndReply(reply : ReplyMessage, sender: ActorRef = sender): Unit = {
-    log.info(replyBuilder.buildReply(reply))
-    reply(reply, sender)
-  }
 
-  private def reply(reply : ReplyMessage, sender: ActorRef = sender): Unit = {
-    Some(sender).map(_ ! reply)
   }
 }

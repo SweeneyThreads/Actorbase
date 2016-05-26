@@ -7,4 +7,4 @@ import server.enums.EnumReplyResult.ReplyResult
   */
 trait ReplyInfo { }
 
-case class ReplyMessage(result: ReplyResult, question: QueryMessage, info: ReplyInfo)
+case class ReplyMessage(result: ReplyResult, question: QueryMessage, info: ReplyInfo = null)

@@ -17,4 +17,8 @@ trait ReplyActor extends Actor with akka.actor.ActorLogging {
   }
 
   def reply(reply: ReplyMessage, sender: ActorRef = sender): Unit = Some(sender).map(_ ! reply)
+
+
+  def currentMethodName() : String = Thread.currentThread.getStackTrace()(2).getMethodName
+
 }
