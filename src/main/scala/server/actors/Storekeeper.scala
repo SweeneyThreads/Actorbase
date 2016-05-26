@@ -40,33 +40,39 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
     message match {
       case InsertRowMessage(key: String, value: String) => {
         if (db.containsKey(key)) {
-          reply(new ReplyMessage(Error,message))
-          reply(key + " already exist")
-          return
+          reply(ReplyMessage(Error,message,KeyAlreadyExistInfo()))
+        } else {
+          db.put(key, value)
+          logAndReply(ReplyMessage(Done, message))
         }
-        db.put(key, value)
-        reply(new ReplyMessage(Done,message))
-        logAndReply(key + " inserted")
       }
       case UpdateRowMessage(key: String, value: String) => {
-        if (!exists(key)) return
-        db.put(key, value)
-        logAndReply(key + " updated")
+        if (!db.containsKey(key)) {
+          reply(ReplyMessage(Error,message,KeyDoesNotExistInfo()))
+        } else {
+          db.put(key, value)
+          logAndReply(ReplyMessage(Done,message))
+        }
       }
       case RemoveRowMessage(key: String) => {
-        if (!exists(key)) return
-        db.remove(key)
-        logAndReply(key + " removed")
+        if (!db.containsKey(key)) {
+          reply(ReplyMessage(Error,message,KeyDoesNotExistInfo()))
+        } else {
+          db.remove(key)
+          logAndReply(ReplyMessage(Done,message))
+        }
       }
       case FindRowMessage(key: String) => {
-        if (!exists(key)) return
-        reply(db.get(key))
+        if (!db.containsKey(key))
+          reply(ReplyMessage(Error,message,KeyDoesNotExistInfo()))
+        else
+          reply(ReplyMessage(Done,message))
       }
       case ListKeysMessage() => {
-        var keys = ""
+        val keys = List()
         for (k: String <- db.keys())
-          keys += k + "\n"
-        reply(keys)
+          keys.add(k)
+        reply(ReplyMessage(Done,message,ListKeyInfo(keys)))
       }
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString,currentMethodName()))
     }
@@ -75,33 +81,23 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
   private def handleRowMessagesAsNinja(message: RowMessage): Unit = {
     message match {
       case InsertRowMessage(key: String, value: String) => {
-        if (db.containsKey(key)) {
-          log.warning(key + " already exist")
-          return
-        }
+        if (db.containsKey(key)) return
         db.put(key, value)
-        log.info(key + " inserted")
+        writeLog(ReplyMessage(Done,message))
       }
       case UpdateRowMessage(key: String, value: String) => {
-        if (exists(key)) return
+        if (db.containsKey(key)) return
         db.put(key, value)
-        log.info(key + " updated")
+        writeLog(ReplyMessage(Done,message))
       }
       case RemoveRowMessage(key: String) => {
-        if (!exists(key)) return
+        if (!db.containsKey(key)) return
         db.remove(key)
-        log.info(key + " removed")
+        writeLog(ReplyMessage(Done,message))
       }
-      case _ => log.error(unhandledMessage + ", handleRowMessagesAsNinja: " + message)
+      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString,currentMethodName()))
     }
   }
 
-  private def exists(key: String): Boolean = {
-    val ris = db.containsKey(key)
-    if (!ris) reply(key + " doesn't exist")
-    ris
-  }
 
-
-  }
 }
