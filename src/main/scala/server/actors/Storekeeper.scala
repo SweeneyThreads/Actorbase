@@ -4,7 +4,9 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{Actor, ActorRef}
 import server.messages.internal.BecomeStorekeeperMessage
+import server.messages.query.ReplyMessage
 import server.messages.query.user.RowMessages._
+import server.utils.ReplyBuilder
 
 import scala.collection.JavaConversions._
 
@@ -16,6 +18,7 @@ import scala.collection.JavaConversions._
 class Storekeeper(isStorekeeper: Boolean = false) extends Actor with akka.actor.ActorLogging {
   var db = new ConcurrentHashMap[String, String]()
   val unhandledMessage = "Unhandled message in storefinder "
+  val replyBuilder=new ReplyBuilder()
 
   import context._
 
@@ -98,12 +101,12 @@ class Storekeeper(isStorekeeper: Boolean = false) extends Actor with akka.actor.
     return ris
   }
 
-  private def logAndReply(str: String, sender: ActorRef = sender): Unit = {
-    log.info(str)
-    reply(str, sender)
+  private def logAndReply(reply : ReplyMessage, sender: ActorRef = sender): Unit = {
+    log.info(reply.toString)
+    reply(reply, sender)
   }
 
-  private def reply(str: String, sender: ActorRef = sender): Unit = {
-    Some(sender).map(_ ! str)
+  private def reply(reply : ReplyMessage, sender: ActorRef = sender): Unit = {
+    Some(sender).map(_ ! reply)
   }
 }

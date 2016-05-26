@@ -7,6 +7,10 @@ import server.messages.query.ReplyMessage
   */
 class ReplyBuilder {
   def buildReply(reply: ReplyMessage) : String = {
-    return "";
+    ""
+  }
+
+  def unhandledMessage(actor: String, method: String) : String = {
+    "Unhandled message in actor; " + actor + ", method: " + method
   }
 }
