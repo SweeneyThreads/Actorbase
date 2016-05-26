@@ -71,7 +71,7 @@ object Server {
   //* Loads users permissions */
   private def loadUsersPermissions(): Unit = {
     permissions = new ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]]
-    var userP = new ConcurrentHashMap[String, UserPermission]
+    val userP = new ConcurrentHashMap[String, UserPermission]
     userP.put("test", EnumPermission.Read)
     permissions.put("user",userP)
     log.info("Permissions loaded")

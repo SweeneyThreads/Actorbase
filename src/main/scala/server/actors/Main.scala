@@ -147,11 +147,11 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     message match {
       // If the user types 'listdb'
       case ListDatabaseMessage() => {
-        val dbs = List()
+        var dbs = List[String]()
         // Foreach database
         for (k: String <- server.getStoremanagers.keys())
           // If the user is a super admin or has permissions on the current database, add the db name to the list
-          if (permissions == null || permissions.get(k) != null) dbs.add(k)
+          if (permissions == null || permissions.get(k) != null) dbs = dbs.::(k)
         // If the database is empty it return a 'no dbs error'
         if (dbs.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoDBInfo()))
         // Otherwise it return the list of dbs
@@ -162,7 +162,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
         // If the selected database doesn't exists
         if(!server.getStoremanagers.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
         // If the user doesn't have at least read permissions on the selected database
-        else if(checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
+        else if(!checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
         // If the selected database exists and the user has at least read permissions on it
         else {
           // Select the database and reset the selected map
@@ -187,7 +187,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
         // If the selected database doesn't exists
         if(!server.getStoremanagers.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
         // If the user doesn't have write permissions on the selected database
-        else if(checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoWritePermissionInfo()))
+        else if(!checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoWritePermissionInfo()))
         // If the selected database exists and the user has write permissions on it
         else {
           // Remove the database
@@ -207,7 +207,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     // If the selected database doesn't exists
     if(!server.getStoremanagers.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
     // If the user doesn't have at least read permissions on the selected database
-    else if(checkPermissions(message, selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
+    else if(!checkPermissions(message, selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
     // It gets the right storemanager
     val sm = server.getStoremanagers.get(selectedDatabase)
     message match {
@@ -255,7 +255,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     // If the selected database doesn't exists
     else if(!server.getStoremanagers.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
     // If the user doesn't have at least read permissions on the selected database
-    else if(checkPermissions(message, selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
+    else if(!checkPermissions(message, selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
     // It gets the right storemanager
     val sm = server.getStoremanagers.get(selectedDatabase)
     // Save the original sender

@@ -48,7 +48,7 @@ class Usermanager extends ReplyActor {
       op(0) match {
         // If  the byte is equals to 1 the command it's a query
         case 1 => parseQuery(data.slice(1, data.length).utf8String)
-        case _ => reply("Invalid command")
+        case _ => replyToClient("Invalid command")
       }
     }
     // When a client disconnects
@@ -64,7 +64,7 @@ class Usermanager extends ReplyActor {
     val message = parser.parseQuery(query)
     message match {
       // If the user command is not a valid query
-      case m:InvalidQueryMessage => reply("Invalid query")
+      case m:InvalidQueryMessage => replyToClient("Invalid query")
       // If the user command is a valid query
       case m:QueryMessage => handleQueryMessage(m)
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString, currentMethodName()))
@@ -85,12 +85,12 @@ class Usermanager extends ReplyActor {
           val future = mainActor ? message
           future.onComplete {
             // If the main reply successfully
-            case Success(result) => reply(replyBuilder.buildReply(result.asInstanceOf[ReplyMessage]), origSender)
+            case Success(result) => replyToClient(replyBuilder.buildReply(result.asInstanceOf[ReplyMessage]), origSender)
             case Failure(t) => log.error("Error sending message: " + t.getMessage)
           }
         }
         // If someone sends a message before login
-        else reply("WTF?! You can't be here if you're using our client, " +
+        else replyToClient("WTF?! You can't be here if you're using our client, " +
           "so FUCK YOU and you're shitty home made actor-fuckin'-base client!")
       }
     }
@@ -110,16 +110,16 @@ class Usermanager extends ReplyActor {
         if(username == "admin") mainActor = context.actorOf(Props(new Main()))
         // If the user is not 'admin' the main receive the user's permissions
         else mainActor = context.actorOf(Props(new Main(Server.permissions.get(username))))
-        reply("Y")
+        replyToClient("Y")
         log.info(username + " is connected")
       }
-      else reply("N")
+      else replyToClient("N")
     }
-    else reply("N")
+    else replyToClient("N")
   }
 
   /** Reply to the client */
-  private def reply(str: String, sender: ActorRef = sender): Unit = {
+  private def replyToClient(str: String, sender: ActorRef = sender): Unit = {
     sender ! Write(ByteString(str))
   }
 }

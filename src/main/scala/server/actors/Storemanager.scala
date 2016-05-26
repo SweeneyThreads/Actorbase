@@ -51,9 +51,9 @@ class Storemanager extends ReplyActor {
       // If the user types 'listmap'
       case ListMapMessage() => {
         // Create a list
-        val maps = List()
+        var maps = List[String]()
         // For each storekeeper adds the map name to the list
-        for (k: String <- storefinders.keys()) maps.add(k)
+        for (k: String <- storefinders.keys()) maps = maps.::(k)
         // If the map is empty reply with an error
         if (maps.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoMapInfo()))
         // If the map is not empty
@@ -103,7 +103,7 @@ class Storemanager extends ReplyActor {
           val future = sf ? m.rowMessage
           future.onComplete {
             // Reply the storemanager with the reply from the storekeeper
-            case Success(result) => reply(result.asInstanceOf[ReplyMessage])
+            case Success(result) => reply(result.asInstanceOf[ReplyMessage], oldSender)
             case Failure(t) => log.error("Error sending message: " + t.getMessage)
           }
         }

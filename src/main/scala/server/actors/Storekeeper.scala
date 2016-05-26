@@ -89,9 +89,9 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
       // If the user types "listkey"
       case ListKeysMessage() => {
         // Create the list of key
-        val keys = List()
+        var keys = List[String]()
         // For each key, add to the list
-        for (k: String <- db.keys()) keys.add(k)
+        for (k: String <- db.keys()) keys = keys.::(k)
         // Reply with the list
         reply(ReplyMessage(EnumReplyResult.Done,message,ListKeyInfo(keys)))
       }
@@ -120,9 +120,7 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
       }
       // If the storemanager send a remove message
       case RemoveRowMessage(key: String) => {
-        // If the key doesn't exist
         if (!db.containsKey(key)) return
-        // If the key exists
         db.remove(key)
         writeLog(ReplyMessage(EnumReplyResult.Done,message))
       }

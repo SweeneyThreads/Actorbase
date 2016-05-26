@@ -1,24 +1,17 @@
 package server.utils
 
-import akka.actor.Props
-import server.Server
-import server.actors.Storemanager
 import server.enums.EnumPermission.UserPermission
 import server.enums.EnumReplyResult
-import server.messages.internal.AskMapMessage
 import server.messages.query.HelpMessages._
-import server.messages.query.PermissionMessages.{NoWritePermissionInfo, NoReadPermissionInfo}
 import server.messages.query.admin.ActorPropetiesMessages.ActorPropertiesMessage
 import server.messages.query.admin.AdminMessage
-import server.messages.query.admin.PermissionsManagementMessages.{RemovePermissionMessage, AddPermissionMessage, ListPermissionMessage, PermissionsManagementMessage}
-import server.messages.query.admin.UsersManagementMessages.{RemoveUserMessage, AddUserMessage, ListUserMessage, UsersManagementMessage}
+import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, PermissionsManagementMessage, RemovePermissionMessage}
+import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage, UsersManagementMessage}
 import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.MapMessages._
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
-import server.messages.query.{ReplyInfo, QueryMessage, ReplyMessage}
-
-import scala.util.{Failure, Success}
+import server.messages.query.{QueryMessage, ReplyInfo, ReplyMessage}
 
 /**
   * Created by borto on 26/05/2016.
@@ -98,7 +91,7 @@ class ReplyBuilder {
           case _ => "" //TODO
         }
       }
-      case SpecificHelp =>{
+      case SpecificHelp(command: String) =>{
         info match {
           case SpecificHelpReplyInfo(command: String) => command
           case _ => "" //TODO
@@ -217,7 +210,7 @@ class ReplyBuilder {
               case _ => "" //TODO
             }
           }
-          case FindRowMessage() =>{
+          case FindRowMessage(key: String) =>{
             reply.info match {
               case FindInfo(value: String) => value
               case _ => "" //TODO
@@ -243,13 +236,13 @@ class ReplyBuilder {
               case _ => ""//TODO
             }
           }
-          case InsertRowMessage(key: String) => {
+          case InsertRowMessage(key: String, value: String) => {
             reply.info match {
               case KeyAlreadyExistInfo() => "key: "+key+" is already used"
               case _ => ""//TODO
             }
           }
-          case UpdateRowMessage(key: String) => {
+          case UpdateRowMessage(key: String, value:String) => {
             reply.info match {
               case  KeyDoesNotExistInfo() => "key: "+key+" not exist"
               case _ => ""//TODO
