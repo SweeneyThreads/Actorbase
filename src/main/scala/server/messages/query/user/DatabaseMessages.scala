@@ -1,5 +1,7 @@
 package server.messages.query.user
 
+import java.util
+
 import server.messages.query.PermissionMessages.{NoPermissionMessage, ReadMessage, ReadWriteMessage}
 import server.messages.query.ReplyInfo
 

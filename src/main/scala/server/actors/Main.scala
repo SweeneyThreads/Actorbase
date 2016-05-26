@@ -9,7 +9,7 @@ import server.enums.{EnumPermission, EnumReplyResult}
 import server.enums.EnumPermission.UserPermission
 import server.messages.internal.AskMapMessage
 import server.messages.query.HelpMessages._
-import server.messages.query.PermissionMessages.{NoPermissionMessage, ReadMessage, ReadWriteMessage}
+import server.messages.query.PermissionMessages._
 import server.messages.query.{QueryMessage, ReplyMessage}
 import server.messages.query.admin.ActorPropetiesMessages.ActorPropertiesMessage
 import server.messages.query.admin.AdminMessage
@@ -45,11 +45,13 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   var selectedDatabase = ""
   var selectedMap = ""
 
+  /** Receive method */
   def receive = {
     case m:QueryMessage => handleQueryMessage(m)
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString(), "receive"))
   }
 
+  /** Handle query messages (User and Admin) */
   private def handleQueryMessage(message: QueryMessage) = {
     message match {
       case m: UserMessage => handleUserMessage(m)
@@ -58,6 +60,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
+  /** Handle user query messages (Help, Database, Map and Row) */
   private def handleUserMessage(message: UserMessage) = {
     message match {
       case m: HelpMessage => handleHelpMessage(m)
@@ -68,6 +71,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
+  /** Handle admin query messages (UserManagement, PermissionManagement and Properties) */
   private def handleAdminMessage(message: AdminMessage) = {
     message match {
       case m:UsersManagementMessage => handleUserManagementMessage(m)
@@ -77,6 +81,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
+  /** Handle user management messages (ListUser, AddUser and RemoveUser) */
   private def handleUserManagementMessage(message: UsersManagementMessage): Unit = {
     selectedDatabase = "master"
     selectedMap = "users"
@@ -88,6 +93,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
+  /** Handle permission management messages (ListPermission, AddPermission, RemovePermission) */
   private def handlePermissionsManagementMessage(message: PermissionsManagementMessage): Unit = {
     selectedDatabase = "master"
     selectedMap = "permissions"
@@ -99,56 +105,76 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
+  /** Handle actors' properties messages */
   private def handleActorPropertiesMessageMessage(message: ActorPropertiesMessage): Unit = {
     message match {
       case _ => //TODO
     }
   }
 
-  /** Manage help messages */
+  /** Handle help messages (complete or specific ones) */
   private def handleHelpMessage(message: HelpMessage): Unit ={
     message match {
-      case CompleteHelp() => reply(new ReplyMessage(EnumReplyResult.Done, message, new CompleteHelpReplyInfo(helper.completeHelp())))
-      case SpecificHelp(command: String) => reply(new ReplyMessage(EnumReplyResult.Done, message, new SpecificHelpReplyInfo(helper.completeHelp())))
+      case CompleteHelp() => reply(ReplyMessage(EnumReplyResult.Done, message, CompleteHelpReplyInfo(helper.completeHelp())))
+      case SpecificHelp(command: String) => reply(ReplyMessage(EnumReplyResult.Done, message, SpecificHelpReplyInfo(helper.completeHelp())))
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleHelpMessage"))
     }
   }
 
-  /** Manages database messages */
+  /** Handle database messages (ListDatabase, SelectDatabase, CreateDatabase and DeleteDatabase) */
   private def handleDatabaseMessage(message: DatabaseMessage): Unit = {
     message match {
+      // If the user types 'listdb'
       case ListDatabaseMessage() => {
-        val rep = new util.ArrayList[String]
+        val dbs = List()
+        // Foreach database
         for (k: String <- server.getStoremanagers.keys())
-          if (permissions == null || permissions.get(k) != null)
-            rep.add(k)
-        if (rep.isEmpty) reply("The server is empty")
-        else reply(str.dropRight(1))
+          // If the user is a super admin or has permissions on the current database, add the db name to the list
+          if (permissions == null || permissions.get(k) != null) dbs.add(k)
+        // If the database is empty it return a 'no dbs error'
+        if (dbs.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoDBInfo()))
+        // Otherwise it return the list of dbs
+        else reply(ReplyMessage(EnumReplyResult.Done, message, ListDBInfo(dbs)))
       }
+      // If the user types 'selectdb <db_name>'
       case SelectDatabaseMessage(name: String) => {
-        if (!isValidStoremanager(name, message)) return
-        selectedDatabase = name
-        selectedMap = ""
-        reply("Database " + name + " selected")
+        // If the selected database doesn't exists
+        if(!server.getStoremanagers.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+        // If the user doesn't have at least read permissions on the selected database
+        else if(checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
+        // If the selected database exists and the user has at least read permissions on it
+        else {
+          // Select the database and reset the selected map
+          selectedDatabase = name
+          selectedMap = ""
+          reply(ReplyMessage(EnumReplyResult.Done, message))
+        }
       }
+      // If the user types 'createdb <db_name>'
       case CreateDatabaseMessage(name: String) => {
-        if(!checkPermissions(message, name)) {
-          reply(invalidOperationMessage)
-          return
+        // If the selected database already exists
+        if(server.getStoremanagers.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBAlreadyExistInfo()))
+        // If the selected database doesn't exist
+        else {
+          // Add the new database
+          Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
+          logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
-        if(Server.storemanagers.containsKey(name)) {
-          reply("A server with that name already exists")
-          return
-        }
-        Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
-        selectedDatabase = name
-        logAndReply("Database " + name + " created" + "\nDatabase " + name + " selected")
       }
+      // If the user types 'deletedb <db_name>'
       case DeleteDatabaseMessage(name: String) => {
-        if (!isValidStoremanager(name, message)) return
-        server.getStoremanagers.remove(name)
-        selectedDatabase = ""
-        logAndReply("Database " + name + " deleted")
+        // If the selected database doesn't exists
+        if(!server.getStoremanagers.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+        // If the user doesn't have write permissions on the selected database
+        else if(checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoWritePermissionInfo()))
+        // If the selected database exists and the user has write permissions on it
+        else {
+          // Remove the database
+          server.getStoremanagers.remove(name)
+          // Deselect the database
+          selectedDatabase = ""
+          logAndReply(ReplyMessage(EnumReplyResult.Done, message))
+        }
       }
     }
   }
@@ -217,12 +243,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
       case Success(result) => reply(result.toString, origSender)
       case Failure(t) => log.error("Error sending message: " + t.getMessage)
     }
-  }
-
-  private def isValidStoremanager(name:String, message:QueryMessage): Boolean = {
-    val ris = server.getStoremanagers.containsKey(name) && checkPermissions(message, name)
-    if(!ris) reply(invalidOperationMessage)
-    return ris
   }
 
   /** Checks user permissions */
