@@ -15,7 +15,7 @@ import scala.util.{Failure, Success}
   */
 
 /** This actor represent a map */
-class Storefinder extends Actor with akka.actor.ActorLogging {
+class Storefinder extends ReplyActor {
 
   import akka.dispatch.ExecutionContexts._
   import akka.pattern.ask
@@ -91,9 +91,5 @@ class Storefinder extends Actor with akka.actor.ActorLogging {
         return storekeepers.get(r)
     }
     return null
-  }
-
-  private def reply(str:String, sender: ActorRef = sender): Unit = {
-    Some(sender).map(_ ! str)
   }
 }

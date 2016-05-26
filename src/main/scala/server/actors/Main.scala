@@ -4,6 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{Actor, ActorRef, Props}
 import server.enums.EnumPermission
+
 import scala.language.postfixOps
 import server.messages.internal.AskMapMessage
 import server.messages.query.HelpMessages.{CompleteHelp, HelpMessage, SpecificHelp}
@@ -17,7 +18,7 @@ import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.MapMessages.{MapMessage, SelectMapMessage}
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
-import server.utils.{Helper, ServerDependencyInjector, StandardServerInjector}
+import server.utils.{Helper, ReplyBuilder, ServerDependencyInjector, StandardServerInjector}
 import server.Server
 import server.enums.EnumPermission.UserPermission
 
@@ -30,7 +31,7 @@ import server.messages.query.ReplyMessage
   */
 
 /** This actor executes client commands and checks permissions */
-class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val server: ServerDependencyInjector = new StandardServerInjector {}) extends Actor with akka.actor.ActorLogging {
+class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val server: ServerDependencyInjector = new StandardServerInjector {}) extends ReplyActor {
 
   import akka.dispatch.ExecutionContexts._
   import akka.pattern.ask
@@ -45,19 +46,16 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   var selectedDatabase = ""
   var selectedMap = ""
 
-  val invalidOperationMessage = "Invalid operation"
-  val unhandledMessage = "Unhandled message in main "
-
   def receive = {
     case m:QueryMessage => handleQueryMessage(m)
-    case other => log.error(unhandledMessage + ", receive: " + other)
+    case other => log.error(replyBuilder.unhandledMessage(self.path.toString(), "receive"))
   }
 
   private def handleQueryMessage(message: QueryMessage) = {
     message match {
       case m: UserMessage => handleUserMessage(m)
       case m: AdminMessage => handleAdminMessage(m)
-      case _ => log.error(unhandledMessage + ", handleQueryMessage: " + message)
+      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleQueryMessage"))
     }
   }
 
@@ -246,11 +244,4 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
       case n: NoPermissionMessage => true
     }
   }
-
-  private def logAndReply(reply: ReplyMessage, sender: ActorRef = sender): Unit = {
-    log.info(str)
-    reply(str, sender)
-  }
-
-  private def reply(reply: ReplyMessage, sender: ActorRef = sender): Unit = Some(sender).map(_ ! str)
 }

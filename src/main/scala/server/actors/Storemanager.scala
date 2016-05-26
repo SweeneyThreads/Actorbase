@@ -16,7 +16,7 @@ import scala.util.{Failure, Success}
   */
 
 /** This actor represent a database */
-class Storemanager extends Actor with akka.actor.ActorLogging {
+class Storemanager extends ReplyActor {
 
   import akka.dispatch.ExecutionContexts._
   import akka.pattern.ask
@@ -85,11 +85,4 @@ class Storemanager extends Actor with akka.actor.ActorLogging {
       case _ => log.error(unhandledMessage + ", handleRowMessage: " + message)
     }
   }
-
-  private def logAndReply(str:String, sender: ActorRef = sender): Unit = {
-    log.info(str)
-    reply(str, sender)
-  }
-
-  private def reply(str:String, sender: ActorRef = sender): Unit = Some(sender).map(_ ! str)
 }
