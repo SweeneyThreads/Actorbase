@@ -6,4 +6,6 @@ package server.messages.query
 object ErrorMessages {
   trait ErrorMessage {}
   case class InvalidQueryMessage() extends QueryMessage with ErrorMessage
+
+  case class QueryErrorInfo() extends ReplyInfo
 }

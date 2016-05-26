@@ -8,4 +8,8 @@ object PermissionMessages {
   trait ReadMessage extends NoPermissionMessage
   trait ReadWriteMessage extends ReadMessage
   trait AdminPermissionMessage
+
+  case class NoReadPermissionInfo() extends ReplyInfo
+  case class NoWritePermissionInfo() extends ReplyInfo
+  case class NoAdminPermissionInfo() extends ReplyInfo
 }
