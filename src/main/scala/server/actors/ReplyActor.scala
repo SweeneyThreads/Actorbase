@@ -22,7 +22,6 @@ trait ReplyActor extends Actor with akka.actor.ActorLogging {
     log.info(replyBuilder.buildReply(reply))
   }
 
-
   def currentMethodName() : String = Thread.currentThread.getStackTrace()(2).getMethodName
 
 }

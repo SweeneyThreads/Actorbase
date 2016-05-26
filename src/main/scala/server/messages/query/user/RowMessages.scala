@@ -19,5 +19,5 @@ object RowMessages {
   case class KeyDoesNotExistInfo() extends ReplyInfo
   case class ListKeyInfo(keys: List[String]) extends ReplyInfo
   case class NoKeyInfo() extends ReplyInfo
-  case class FindInfo() extends ReplyInfo
+  case class FindInfo(value: String) extends ReplyInfo
 }
