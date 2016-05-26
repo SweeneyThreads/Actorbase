@@ -15,7 +15,7 @@ import scala.collection.JavaConversions._
   */
 
 /** This actor represent a map partition */
-class Storekeeper(isStorekeeper: Boolean = false) extends Actor with akka.actor.ActorLogging {
+class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
   var db = new ConcurrentHashMap[String, String]()
   val unhandledMessage = "Unhandled message in storefinder "
   val replyBuilder=new ReplyBuilder()
@@ -98,11 +98,11 @@ class Storekeeper(isStorekeeper: Boolean = false) extends Actor with akka.actor.
   private def exists(key: String): Boolean = {
     val ris = db.containsKey(key)
     if (!ris) reply(key + " doesn't exist")
-    return ris
+    ris
   }
 
   private def logAndReply(reply : ReplyMessage, sender: ActorRef = sender): Unit = {
-    log.info(reply.toString)
+    log.info(replyBuilder.buildReply(reply))
     reply(reply, sender)
   }
 
