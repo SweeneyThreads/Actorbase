@@ -49,3 +49,5 @@ Robe da sviluppare
 * Gestire comandi su più pacchetti in Usermanager / Driver
 * Mostrare tipo di errore di connessione
 
+
+
