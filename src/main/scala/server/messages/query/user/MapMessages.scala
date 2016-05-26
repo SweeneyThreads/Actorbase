@@ -18,4 +18,5 @@ object MapMessages {
   case class MapDoesNotExistInfo() extends ReplyInfo
   case class ListMapInfo(maps: List[String]) extends ReplyInfo
   case class NoMapInfo() extends ReplyInfo
+  case class NoMapSelectedInfo() extends ReplyInfo
 }

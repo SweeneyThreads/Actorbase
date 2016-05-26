@@ -19,4 +19,5 @@ object DatabaseMessages {
   case class DBDoesNotExistInfo() extends ReplyInfo
   case class ListDBInfo(dbs: List[String]) extends ReplyInfo
   case class NoDBInfo() extends ReplyInfo
+  case class NoDBSelectedInfo() extends ReplyInfo
 }

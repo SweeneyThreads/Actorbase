@@ -16,7 +16,7 @@ import server.messages.query.admin.AdminMessage
 import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, PermissionsManagementMessage, RemovePermissionMessage}
 import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage, UsersManagementMessage}
 import server.messages.query.user.DatabaseMessages._
-import server.messages.query.user.MapMessages.{MapMessage, SelectMapMessage}
+import server.messages.query.user.MapMessages.{MapDoesNotExistInfo, MapMessage, SelectMapMessage}
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
 import server.utils.{Helper, ServerDependencyInjector, StandardServerInjector}
@@ -37,16 +37,18 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   import akka.util.Timeout
 
   import scala.concurrent.duration._
+  // Values for futures
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
-
+  // Instance of Helper class
   var helper = new Helper
-
+  // Values for selected database and selected map
   var selectedDatabase = ""
   var selectedMap = ""
 
   /** Receive method */
   def receive = {
+    // If it's a query message
     case m:QueryMessage => handleQueryMessage(m)
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString(), "receive"))
   }
@@ -54,7 +56,9 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   /** Handle query messages (User and Admin) */
   private def handleQueryMessage(message: QueryMessage) = {
     message match {
+      // If it's a user type command
       case m: UserMessage => handleUserMessage(m)
+      // If it's an admin type command
       case m: AdminMessage => handleAdminMessage(m)
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleQueryMessage"))
     }
@@ -63,9 +67,13 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   /** Handle user query messages (Help, Database, Map and Row) */
   private def handleUserMessage(message: UserMessage) = {
     message match {
+      // If it's an help message
       case m: HelpMessage => handleHelpMessage(m)
+      // If it's a database level message
       case m: DatabaseMessage => handleDatabaseMessage(m)
+      // If it's a map level message
       case m: MapMessage => handleMapMessage(m)
+      // If it's a row level message
       case m: RowMessage => handleRowMessage(m)
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleUserMessage"))
     }
@@ -74,8 +82,11 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   /** Handle admin query messages (UserManagement, PermissionManagement and Properties) */
   private def handleAdminMessage(message: AdminMessage) = {
     message match {
+      // If it's an user management command
       case m:UsersManagementMessage => handleUserManagementMessage(m)
+      // If it's an permission management command
       case m:PermissionsManagementMessage => handlePermissionsManagementMessage(m)
+      // If it's an actor property command
       case m:ActorPropertiesMessage =>  handleActorPropertiesMessageMessage(m)
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleAdminMessage"))
     }
@@ -83,11 +94,15 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
 
   /** Handle user management messages (ListUser, AddUser and RemoveUser) */
   private def handleUserManagementMessage(message: UsersManagementMessage): Unit = {
+    // Select the 'master' database and the 'user' map
     selectedDatabase = "master"
     selectedMap = "users"
     message match {
+      // If the user types 'listuser'
       case ListUserMessage() => handleRowMessage(new ListKeysMessage)
+      // If the user types 'adduser <username> <password>'
       case AddUserMessage(username: String, password:String) => handleRowMessage(new InsertRowMessage(username, password))
+      // If the user types 'removeuser <username>'
       case RemoveUserMessage(username: String) => handleRowMessage(new RemoveRowMessage(username))
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleUserManagementMessage"))
     }
@@ -95,11 +110,15 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
 
   /** Handle permission management messages (ListPermission, AddPermission, RemovePermission) */
   private def handlePermissionsManagementMessage(message: PermissionsManagementMessage): Unit = {
+    // Select the 'master' database and the 'permissions' map
     selectedDatabase = "master"
     selectedMap = "permissions"
     message match {
+      // If the user types 'listpermission <username>'
       case ListPermissionMessage(username:String) => //TODO
+      // If the user types 'addpermission <username> <database> <permission_type>'
       case AddPermissionMessage(username: String, database:String, permissionType: UserPermission) => //TODO
+      // If the user types 'removepermission <username> <database>'
       case RemovePermissionMessage(username: String, database:String) => //TODO
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handlePermissionsManagementMessage"))
     }
@@ -115,8 +134,10 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   /** Handle help messages (complete or specific ones) */
   private def handleHelpMessage(message: HelpMessage): Unit ={
     message match {
+      // If the user types 'help' use the 'completeHelp' method from the Helper
       case CompleteHelp() => reply(ReplyMessage(EnumReplyResult.Done, message, CompleteHelpReplyInfo(helper.completeHelp())))
-      case SpecificHelp(command: String) => reply(ReplyMessage(EnumReplyResult.Done, message, SpecificHelpReplyInfo(helper.completeHelp())))
+      // If the user types 'help <command>' use the 'specificHelp' method from the Helper
+      case SpecificHelp(command: String) => reply(ReplyMessage(EnumReplyResult.Done, message, SpecificHelpReplyInfo(helper.specificHelp(command))))
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleHelpMessage"))
     }
   }
@@ -181,40 +202,44 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
 
   /** Manages map messages */
   private def handleMapMessage(message: MapMessage): Unit = {
-    if(selectedDatabase == "") {
-      reply("Please select a database")
-      return
-    }
-    if(!isValidStoremanager(selectedDatabase, message)) {
-      reply(invalidOperationMessage)
-      return
-    }
+    // If there isn't a selected database
+    if(selectedDatabase == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoDBSelectedInfo()))
+    // If the selected database doesn't exists
+    if(!server.getStoremanagers.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+    // If the user doesn't have at least read permissions on the selected database
+    else if(checkPermissions(message, selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
+    // It gets the right storemanager
     val sm = server.getStoremanagers.get(selectedDatabase)
-
     message match {
-      // If it's a select command
+      // If the user types 'selectmap <db_name>'
       case SelectMapMessage(name: String) => {
-        // Ask the storemanager if there's a map with that name
-        val future = sm ? new AskMapMessage(name)
         // Save the original sender
         val oldSender = sender
+        // Ask the storemanager if there is a map with that name and save the reply on a future
+        val future = sm ? new AskMapMessage(name)
         future.onComplete {
           case Success(result) => {
             // If the storemanager contains the map
             if (result.asInstanceOf[Boolean]) {
+              // Select the map
               selectedMap = name
-              reply("Map " + name + " selected", oldSender)
+              reply(ReplyMessage(EnumReplyResult.Done, message), oldSender)
             }
-            else reply("Invalid map", oldSender)
+            // The storemanager doesn't contain the map
+            else reply(ReplyMessage(EnumReplyResult.Error, message, MapDoesNotExistInfo()), oldSender)
           }
           case Failure(t) => log.error("Error sending message: " + t.getMessage)
         }
       }
+      // If it's another type of map level message
       case _ => {
+        // Save the original sender
         val origSender = sender
+        // Send the message to the storemanager and save the reply in a future
         val future = sm ? message
         future.onComplete {
-          case Success(result) => logAndReply(result.toString, origSender)
+          // Reply the usermanger with the reply from the storemanager
+          case Success(result) => logAndReply(result.asInstanceOf[ReplyMessage], origSender)
           case Failure(t) => log.error("Error sending message: " + t.getMessage)
         }
       }
@@ -223,24 +248,23 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
 
   /** Manages row messages */
   private def handleRowMessage(message: RowMessage): Unit = {
-    if (selectedDatabase == "") {
-      reply("Please select a database")
-      return
-    }
-    if (selectedMap == "") {
-      reply("Please select a map")
-      return
-    }
-    if (!isValidStoremanager(selectedDatabase, message)) {
-      reply(invalidOperationMessage)
-      return
-    }
+    // If there isn't a selected database
+    if(selectedDatabase == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoDBSelectedInfo()))
+    // If there isn't a selected database
+    else if(selectedDatabase == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoDBSelectedInfo()))
+    // If the selected database doesn't exists
+    else if(!server.getStoremanagers.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+    // If the user doesn't have at least read permissions on the selected database
+    else if(checkPermissions(message, selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
+    // It gets the right storemanager
     val sm = server.getStoremanagers.get(selectedDatabase)
-
+    // Save the original sender
     val origSender = sender
+    // Send a StorefinderRowMessage to the storemanager and save the reply in a future
     val future = sm ? StorefinderRowMessage(selectedMap, message)
     future.onComplete {
-      case Success(result) => reply(result.toString, origSender)
+      // Reply the usermanager with the reply from the storemanager
+      case Success(result) => reply(result.asInstanceOf[ReplyMessage], origSender)
       case Failure(t) => log.error("Error sending message: " + t.getMessage)
     }
   }
@@ -249,17 +273,25 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   private def checkPermissions(message: QueryMessage, dbName:String): Boolean = {
     //TODO admin permissions
 
+    // If permissions are null the user is a super admin and has every permissions
     if(permissions == null)
       return true
     return message match {
+      // If the message requires write permissions
       case n: ReadWriteMessage => {
+        // Get the database permission
         val p = permissions.get(dbName)
+        // Return if the user has a write permissions
         p != null && p == EnumPermission.ReadWrite
       }
+      // If the message requires read permissions
       case n: ReadMessage => {
+        // Get the database permission
         val p = permissions.get(dbName)
+        // Return if the user has a read or write permissions
         p != null && (p == EnumPermission.Read || p == EnumPermission.ReadWrite)
       }
+      // If the message doesn't require permissions
       case n: NoPermissionMessage => true
     }
   }
