@@ -1,5 +1,8 @@
 package server.actors
 
+import server.enums.EnumReplyResult
+import server.messages.query.ReplyMessage
+
 import scala.language.postfixOps
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
@@ -7,7 +10,7 @@ import org.scalatest.{Matchers, FlatSpec}
 import java.util.concurrent.ConcurrentHashMap
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
-import server.messages.query.user.DatabaseMessages.{DeleteDatabaseMessage, SelectDatabaseMessage, ListDatabaseMessage}
+import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.MapMessages.SelectMapMessage
 import server.utils.{ServerDependencyInjector}
 
@@ -43,6 +46,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   //creating a fake server
   object FakeServer {
     var fakeStoremanagers: ConcurrentHashMap[String, ActorRef] = fakeStoremanagersMap
+    var dbs = List[String]()
   }
   //creating the injector (the traits that tells the main actor i'll create soon to use FakeServer instead of the real server)
   trait FakeServerInjector extends ServerDependencyInjector {
@@ -62,7 +66,8 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     val main = System.actorOf(Props(new Main(null, new FakeServerInjector {})))
     val future = main ? new ListDatabaseMessage()
     ScalaFutures.whenReady(future) {
-      result => result should be("test\nbiggestMapEu\nlastMapForNow")
+      val dbs = List[String]("lastMapForNow","biggestMapEu","test")
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new ListDatabaseMessage(),ListDBInfo(dbs)))
     }
   }
 
@@ -83,7 +88,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     val anotherMain = System.actorOf(Props(new Main(null, new FakeEmptyServerInjector {} )))
     val future2 = anotherMain ? new ListDatabaseMessage()
     ScalaFutures.whenReady(future2) {
-      result => result should be("The server is empty")
+      result => result should be(new ReplyMessage (EnumReplyResult.Error,new ListDatabaseMessage(),NoDBInfo()))
     }
   }
 
@@ -105,14 +110,15 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     val future3 = main3 ? SelectDatabaseMessage("test")
     ScalaFutures.whenReady(future3) {
       result => {
-        result should be("Database test selected")
+        result should be(new ReplyMessage(EnumReplyResult.Done,SelectDatabaseMessage("test"),null))
       }
     }
     //now i try to select a database that isn't actually inside our FakeServer
     val future = main3 ? SelectDatabaseMessage("aRandomDatabaseThatDontActuallyExists")
     ScalaFutures.whenReady(future) {
       result => {
-        result should be("Invalid operation")
+        result should be(new ReplyMessage(EnumReplyResult.Error,
+          SelectDatabaseMessage("aRandomDatabaseThatDontActuallyExists"),DBDoesNotExistInfo()))
       }
     }
   }
@@ -171,11 +177,11 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
       ScalaFutures.whenReady(future) { result => {
         //check that is no more inside storemanagers map
         FakeServer.fakeStoremanagers.containsKey("test") should be(false)
-        result should be("Database test deleted")
+        result should be(new ReplyMessage(EnumReplyResult.Done,DeleteDatabaseMessage("test"),null))
       }}
       val future2 = actorRef ? DeleteDatabaseMessage("thisDbDoesNotExists")
       ScalaFutures.whenReady(future2) { result => {
-        result should be("Invalid operation")
+        result should be(new ReplyMessage(EnumReplyResult.Error,DeleteDatabaseMessage("thisDbDoesNotExists"),DBDoesNotExistInfo()))
       }}
     }
 
@@ -204,7 +210,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   }
   it should "reply affirmatively when command is valid" in {
     ScalaFutures.whenReady(future) {result => {
-      result should be("Map defaultMap selected")
+      result should be(new ReplyMessage (EnumReplyResult.Done,new SelectMapMessage("defaultMap"),null))
     }}
   }
 
