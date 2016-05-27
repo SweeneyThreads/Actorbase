@@ -41,8 +41,8 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   //creating a map that simulates a plausible list of databasename=>Storemanager
   val fakeStoremanagersMap=new ConcurrentHashMap[String,ActorRef]
   fakeStoremanagersMap.put("test", System.actorOf(Props[Storemanager]))
-  fakeStoremanagersMap.put("biggestMapEu", System.actorOf(Props[Storemanager]))
-  fakeStoremanagersMap.put("lastMapForNow", System.actorOf(Props[Storemanager]))
+  fakeStoremanagersMap.put("biggestDBEu", System.actorOf(Props[Storemanager]))
+  fakeStoremanagersMap.put("lastDBForNow", System.actorOf(Props[Storemanager]))
   //creating a fake server
   object FakeServer {
     var fakeStoremanagers: ConcurrentHashMap[String, ActorRef] = fakeStoremanagersMap
@@ -59,14 +59,14 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   - first of all i put inside the system a new actor of tipe Main injecting it with the directive to use our FakeServer
   - then i send a ListDatabaseMessage to him and i store the result in a Future
   - when future is complete (this blocks the execution and waits the future to be completed) i check that the result is
-    what i am expecting: the list of the names of the databases
+    what i am expecting:the reply message containing the list of the names of the databases
    */
   "Main" should "reply correctly to a ListDatabaseMessage()" in {
     //creating a MainActor into system, injecting a dependency to a fake server that is defined above
     val main = System.actorOf(Props(new Main(null, new FakeServerInjector {})))
     val future = main ? new ListDatabaseMessage()
     ScalaFutures.whenReady(future) {
-      val dbs = List[String]("lastMapForNow","biggestMapEu","test")
+      val dbs = List[String]("biggestDBEu","lastDBForNow","test")
       result => result should be(new ReplyMessage (EnumReplyResult.Done,new ListDatabaseMessage(),ListDBInfo(dbs)))
     }
   }
@@ -139,16 +139,16 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     // now I send the message
-    val future = actorRef ? SelectDatabaseMessage("biggestMapEu")
+    val future = actorRef ? SelectDatabaseMessage("biggestDBEu")
     //when the message is completed i check that the MainActor property changed consistently
     ScalaFutures.whenReady(future) { result => {
-      actor.selectedDatabase should be("biggestMapEu")
+      actor.selectedDatabase should be("biggestDBEu")
       actor.selectedMap should be("")
     }}
     // now i try to send a message with a wrong db name, and check that the selected map is the same than before
     val future2 = actorRef ? SelectDatabaseMessage("randomDatabaseThaDontExists")
     ScalaFutures.whenReady(future2) { result => {
-      actor.selectedDatabase should be("biggestMapEu")
+      actor.selectedDatabase should be("biggestDBEu")
       actor.selectedMap should be("")
     }}
   }
