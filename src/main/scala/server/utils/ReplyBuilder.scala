@@ -110,7 +110,7 @@ class ReplyBuilder {
           case ListDatabaseMessage() => {
             //info for a done ListDatabaseMessage
             reply.info match {
-              case ListDBInfo(dbs: List[String]) => dbs.mkString("\n").dropRight(1)
+              case ListDBInfo(dbs: List[String]) => dbs.mkString("\n")
               case _ => "Unknown info on done ListDatabaseMessage" //TODO
             }
           }
@@ -169,7 +169,7 @@ class ReplyBuilder {
           case ListMapMessage() => {
             reply.info match {
                 //info for a done ListMapMessage
-              case ListMapInfo(dbs: List[String]) => dbs.mkString("\n").dropRight(1)
+              case ListMapInfo(dbs: List[String]) => dbs.mkString("\n")
               case _ => "Unknown info for a done ListMapMessage" //TODO
             }
           }
@@ -236,7 +236,7 @@ class ReplyBuilder {
           case ListKeysMessage() => {
             //possible info for a done ListKeysMessage
             reply.info match {
-              case ListKeyInfo(dbs: List[String]) => dbs.mkString("\n").dropRight(1)
+              case ListKeyInfo(dbs: List[String]) => dbs.mkString("\n")
               case _ => "Unknown info for ListKeysMessage done" //TODO
             }
           }
