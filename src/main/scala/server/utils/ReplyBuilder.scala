@@ -1,11 +1,7 @@
 package server.utils
 
-import akka.actor.Props
-import server.Server
-import server.actors.Storemanager
 import server.enums.EnumPermission.UserPermission
 import server.enums.EnumReplyResult
-import server.messages.internal.AskMapMessage
 import server.messages.query.HelpMessages._
 import server.messages.query.PermissionMessages.{NoWritePermissionInfo, NoReadPermissionInfo}
 import server.messages.query.admin.ActorPropetiesMessages.ActorPropertiesMessage
@@ -18,7 +14,6 @@ import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
 import server.messages.query.{ReplyInfo, QueryMessage, ReplyMessage}
 
-import scala.util.{Failure, Success}
 
 /**
   * Created by borto on 26/05/2016.
@@ -29,7 +24,7 @@ class ReplyBuilder {
     reply.question match {
       case m: UserMessage => UserMessageReply(reply)
       case m: AdminMessage => AdminMessageReply(reply)
-      case _ => ""//TODO
+      case _ => "Unknown question "//TODO
     }
   }
 
@@ -40,7 +35,7 @@ class ReplyBuilder {
       case m: DatabaseMessage => DatabaseMessageReply(reply)
       case m: MapMessage => MapMessageReply(reply)
       case m: RowMessage => RowMessageReply(reply)
-      case _ =>"" //TODO
+      case _ =>"Unknown question UserMessage" //TODO
     }
   }
 
@@ -50,7 +45,7 @@ class ReplyBuilder {
       case m:UsersManagementMessage => UserManagementMessageReply(reply)
       case m:PermissionsManagementMessage => PermissionsManagementMessageReply(reply)
       case m:ActorPropertiesMessage =>  ActorPropertiesMessageMessageReply(reply)
-      case _ => ""//TODO
+      case _ => "Unknown question AdminMessage"//TODO
     }
   }
 
@@ -86,7 +81,7 @@ class ReplyBuilder {
     reply.result match {
       case EnumReplyResult.Done => DoneHelpMessageReply(reply.question,reply.info)
       case EnumReplyResult.Error => "" //TODO
-      case _ => "" //TODO
+      case _ => "Unknown result on HelpMessage" //TODO
     }
   }
   /**create final string for Done Help*/
