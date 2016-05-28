@@ -19,6 +19,7 @@ Robe da sviluppare
 * Gestiti tutti i comandi utente
 * Ninja (messaggio become e metodo become)
 * Permessi utente admin
+* Togliere spazi iniziali e finali nei comandi in entrata (da più margine d'errore)
 
 ## DA FINIRE
 
@@ -40,9 +41,8 @@ Robe da sviluppare
 * Gestire errore porta occupata
 * Gestire application.conf esterno (non compilato)
 * Fare un README decente
-* Togliere azzerare selectmap quando viene eliminata la mappa
+* Azzerare selectmap quando viene eliminata la mappa
 * Mettere selectmap quando viene creata
-* Togliere spazi iniziali e finali nei comandi in entrata (da più margine d'errore)
 * Help connessione / disconnessione lato client
 * Controllo caratteri speciali (accenti) UTF-8
 * Fare help specifici più lunghi con anche le stringhe in caso di errore

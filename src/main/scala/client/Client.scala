@@ -17,7 +17,9 @@ object Client {
     // Readline loop
     print("> ")
     for (ln <- io.Source.stdin.getLines) {
-      executeLine(ln)
+      if(ln != "") {
+        executeLine(ln.trim)
+      }
       print("> ")
     }
   }
