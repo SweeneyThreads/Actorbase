@@ -8,6 +8,10 @@ import scala.util.matching.Regex
 /**
   * Created by matteobortolazzo on 01/05/2016.
   */
+
+/**
+  * A command line client instance. Contains the main method of the command line client-side of Actorbase.
+  */
 object Client {
 
   var connection: Connection = null
@@ -24,18 +28,25 @@ object Client {
     }
   }
 
+  /**
+    * Process a command line content, executing the client-side query. If no connection is established checkLogin
+    * method is called.
+    *
+    * @param ln the query String to be processed
+    */
   def executeLine(ln: String): Unit = {
     if(ln == "quit") {
       System.exit(1)
     }
-    // If the client is connected
+    // Check if the client is connected
     if (connection != null) {
-      // Close the connection when the user write 'disconnect'
+      // Close the connection if the the command is 'disconnect'
       if (ln == "disconnect") {
         connection.closeConnection()
         connection = null
         println("You are disconnected!")
       }
+      // execute the query otherwise
       else {
         println(connection.executeQuery(ln))
       }
@@ -43,6 +54,11 @@ object Client {
     else checkLogin(ln)
   }
 
+  /**
+    * Try to establish a connection in case of a login query, print an error message otherwise.
+    *
+    * @param ln The query String to be processed
+    */
   def checkLogin(ln:String): Unit = {
     // Connection command pattern (connect address:port username password)
     val pattern = "connect\\s(\\S+):([0-9]*)\\s(\\S+)\\s(\\S+)$".r
