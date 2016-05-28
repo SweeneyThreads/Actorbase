@@ -16,7 +16,7 @@ import server.messages.query.admin.AdminMessage
 import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, PermissionsManagementMessage, RemovePermissionMessage}
 import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage, UsersManagementMessage}
 import server.messages.query.user.DatabaseMessages._
-import server.messages.query.user.MapMessages.{MapDoesNotExistInfo, MapMessage, SelectMapMessage}
+import server.messages.query.user.MapMessages.{MapDoesNotExistInfo, MapMessage, NoMapSelectedInfo, SelectMapMessage}
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
 import server.utils.{Helper, ServerDependencyInjector, StandardServerInjector}
@@ -205,14 +205,14 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     // If there isn't a selected database
     if(selectedDatabase == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoDBSelectedInfo()))
     // If the selected database doesn't exists
-    if(!server.getStoremanagers.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
-    // If the user doesn't have at least read permissions on the selected database
-    else if(!checkPermissions(message, selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
+    else if(!server.getStoremanagers.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
     // It gets the right storemanager
     val sm = server.getStoremanagers.get(selectedDatabase)
     message match {
       // If the user types 'selectmap <db_name>'
       case SelectMapMessage(name: String) => {
+        // If the user doesn't have at least read permissions on the selected database
+        if(!checkPermissions(message, selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
         // Save the original sender
         val oldSender = sender
         // Ask the storemanager if there is a map with that name and save the reply on a future
@@ -250,10 +250,10 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   private def handleRowMessage(message: RowMessage): Unit = {
     // If there isn't a selected database
     if(selectedDatabase == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoDBSelectedInfo()))
+      // If there isn't a selected map
+    else if(selectedMap == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoMapSelectedInfo()))
     // If the selected database doesn't exists
     else if(!server.getStoremanagers.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
-    // If the user doesn't have at least read permissions on the selected database
-    else if(!checkPermissions(message, selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
     // It gets the right storemanager
     val sm = server.getStoremanagers.get(selectedDatabase)
     // Save the original sender
