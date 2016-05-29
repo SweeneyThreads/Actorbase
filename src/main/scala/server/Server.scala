@@ -21,7 +21,9 @@ import scala.language.postfixOps
 
 
 
-/** Startup class */
+/**
+  * The Actorbase server, contains the main method of the server-side application of Actorbase.
+  */
 object Server {
   var system:ActorSystem = null
   var log:LoggingAdapter = null
@@ -60,7 +62,10 @@ object Server {
     */
   }
 
-  //* Loads system users */
+  /**
+    * Load the list of usernames and password of the users who can access the server. The server will use these
+    * informations to manage login queries.
+    */
   private def loadUsers(): Unit = {
     users = new ConcurrentHashMap[String, String]()
     users.put("admin", "admin")
@@ -68,7 +73,10 @@ object Server {
     log.info("Users loaded")
   }
 
-  //* Loads users permissions */
+  /**
+    * Load user access permission data. Each user has specific access permissions for the databases present on the
+    * server. Access to those database is filtered using these permissions.
+    */
   private def loadUsersPermissions(): Unit = {
     permissions = new ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]]
     val userP = new ConcurrentHashMap[String, UserPermission]

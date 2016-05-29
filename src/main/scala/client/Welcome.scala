@@ -3,6 +3,10 @@ package client
 /**
   * Created by eliamaino on 05/05/16.
   */
+
+/**
+  * The command line welcome banner of Actorbase.
+  */
 object Welcome {
   val banner = """
                  # ______  ____    ______  _____   ____    ____     ______  ____    ____
@@ -22,6 +26,9 @@ object Welcome {
   val user = System.getProperty("user.name")
   val javaVersion = System.getProperty("java.version")
 
+  /**
+    * Print welcome banner and user information on console.
+    */
   def printWelcomeMessage: Unit = {
     println(banner)
     println("Hello " + user + "! And welcome to ACTORBASE \n")
