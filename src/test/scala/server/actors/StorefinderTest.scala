@@ -21,6 +21,9 @@ import server.messages.query.user.RowMessages._
 
 import scala.util.matching.Regex
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 /**
   * Created by mattia on 29/05/2016.
   */
@@ -37,6 +40,41 @@ class Storefinderest extends FlatSpec with Matchers with MockFactory {
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
   implicit val system = ActorSystem()
+
+  /*########################################################################
+    Testing correct log after no RowMessage receiving TU35
+    ########################################################################*/
+  /*testing if the storefinder returns the correct reply to yhe Main when reciving a ListKeysMessage*/
+
+
+  it should "create the correct log line" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val actorRef = TestActorRef(new Storefinder)
+    // retrieving the underlying actor
+    val actor = actorRef.underlyingActor
+    // now I send the message
+    val future = actorRef ? ListDatabaseMessage()
+    // a take the time now
+    val today = Calendar.getInstance.getTime
+    // date format for year month and day
+    val todayFormat = new SimpleDateFormat("yyyy-MM-dd")
+    //create a String with today values
+    val todayString :String = todayFormat.format(today)
+    //get the today log file
+    val source = scala.io.Source.fromFile("logs/actorbase."+todayString+".0.log")
+    //get the string of all the file and close the file
+    val lines = try source.mkString finally source.close()
+    //date format for hours minutes and seconds
+    val nowFormat = new SimpleDateFormat("HH:mm:ss")
+    //create a String with now time
+    val nowString = nowFormat.format(today)
+    //regular expression that match the error log produced by the storefinder
+    val Pattern=(nowString+"....\\s.+\\sERROR server\\.actors\\.Storefinder\\s\\-\\sUnhandled\\smessage" +
+      "\\sin\\sactor;\\sakka:\\/\\/default\\/user\\/\\$\\$.+,\\smethod:\\s.+").r
+    //if it doesn't find the line the log didn't appened correcly
+    Pattern.findFirstIn(lines) shouldNot be (None)
+  }
 
   /*########################################################################
     Testing ListKeysMessage() receiving TU36
