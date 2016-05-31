@@ -49,20 +49,20 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     // now I send the message
-    val future = actorRef ? InsertRowMessage("key","value")
+    val future = actorRef ? InsertRowMessage("key","value".getBytes("UTF-8"))
     //when the message is completed i check that the StorekeeperActor reply correctly
     ScalaFutures.whenReady(future) {
-      result => result should be(new ReplyMessage (EnumReplyResult.Done,new InsertRowMessage("key","value"),null))
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new InsertRowMessage("key","value".getBytes("UTF-8")),null))
     }
      //check if the key and value are correctly inserted
      actor.db.get("key") should be("value")
     //insert a key in the db of the storekeeper
-    actor.db.put("AlreadyExistingKey","value")
+    actor.db.put("AlreadyExistingKey","value".getBytes("UTF-8"))
     // now I send the message to insert the already inserted key
-    val future2 = actorRef ? InsertRowMessage("AlreadyExistingKey","value")
+    val future2 = actorRef ? InsertRowMessage("AlreadyExistingKey","value".getBytes("UTF-8"))
     //when the message is completed i check that the StorekeeperActor reply correctly
     ScalaFutures.whenReady(future2) {
-      result => result should be(new ReplyMessage (EnumReplyResult.Error,new InsertRowMessage("AlreadyExistingKey","value"),KeyAlreadyExistInfo()))
+      result => result should be(new ReplyMessage (EnumReplyResult.Error,new InsertRowMessage("AlreadyExistingKey","value".getBytes("UTF-8")),KeyAlreadyExistInfo()))
     }
   }
   /*########################################################################
@@ -79,18 +79,18 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     // now I send the message
-    actor.db.put("key", "value")
-    val future = actorRef ? UpdateRowMessage("key", "value2")
+    actor.db.put("key", "value".getBytes("UTF-8"))
+    val future = actorRef ? UpdateRowMessage("key", "value2".getBytes("UTF-8"))
     //when the message is completed i check that the StorekeeperActor reply correctly
     ScalaFutures.whenReady(future) {
-      result => result should be(new ReplyMessage(EnumReplyResult.Done, new UpdateRowMessage("key", "value2"), null))
+      result => result should be(new ReplyMessage(EnumReplyResult.Done, new UpdateRowMessage("key", "value2".getBytes("UTF-8")), null))
     }
     actor.db.get("key") should be("value2")
     // now I send the message to update not inserted key
-    val future2 = actorRef ? UpdateRowMessage("NotExistingKey", "value")
+    val future2 = actorRef ? UpdateRowMessage("NotExistingKey", "value".getBytes("UTF-8"))
     //when the message is completed i check that the StorekeeperActor reply correctly
     ScalaFutures.whenReady(future2) {
-      result => result should be(new ReplyMessage(EnumReplyResult.Error, new UpdateRowMessage("NotExistingKey", "value"), KeyDoesNotExistInfo()))
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new UpdateRowMessage("NotExistingKey", "value".getBytes("UTF-8")), KeyDoesNotExistInfo()))
     }
   }
 
@@ -108,7 +108,7 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     // now I send the message
-    actor.db.put("key", "value")
+    actor.db.put("key", "value".getBytes("UTF-8"))
     val future = actorRef ? RemoveRowMessage("key")
     //when the message is completed i check that the StorekeeperActor reply correctly
     ScalaFutures.whenReady(future) {
@@ -137,12 +137,12 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     //insert a key in the db of the storekeeper
-    actor.db.put("key","value")
+    actor.db.put("key","value".getBytes("UTF-8"))
     // now I send the message
     val future = actorRef ? FindRowMessage("key")
     //when the message is completed i check that the StorekeeperActor reply correctly
     ScalaFutures.whenReady(future) {
-      result => result should be(new ReplyMessage (EnumReplyResult.Done,new FindRowMessage("key"),FindInfo("value")))
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new FindRowMessage("key"),FindInfo("value".getBytes("UTF-8"))))
     }
     // now I send the message to find a non existing key
     val future2 = actorRef ? FindRowMessage("NotExistingKey")
@@ -164,12 +164,12 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     //insert some keys in the db of the storekeeper
-    actor.db.put("key1","value1")
-    actor.db.put("key2","value2")
-    actor.db.put("key3","value3")
-    actor.db.put("key4","value4")
-    actor.db.put("key5","value5")
-    actor.db.put("key6","value6")
+    actor.db.put("key1","value1".getBytes("UTF-8"))
+    actor.db.put("key2","value2".getBytes("UTF-8"))
+    actor.db.put("key3","value3".getBytes("UTF-8"))
+    actor.db.put("key4","value4".getBytes("UTF-8"))
+    actor.db.put("key5","value5".getBytes("UTF-8"))
+    actor.db.put("key6","value6".getBytes("UTF-8"))
     // now I send the message
     val future = actorRef ? ListKeysMessage()
     //when the message is completed i check that the StorekeeperActor reply correctly

@@ -243,12 +243,12 @@ class ReplyBuilder {
           case FindRowMessage(key: String) =>{
             reply.info match {
               //possible info for a done FindRowMessage
-              case FindInfo(value: String) => value
+              case FindInfo(value: Array[Byte]) => new String(value, "UTF-8")
               case _ => "Unknown info for FindRowMessage done" //TODO
             }
           }
-          case InsertRowMessage(key: String, value: String) => "Key "+key+" with value "+value+" inserted"
-          case UpdateRowMessage(key: String, value: String) => "Key "+key+" updated with value "+value
+          case InsertRowMessage(key: String, value: Array[Byte]) => "Key "+key+" with value "+new String(value, "UTF-8")+" inserted"
+          case UpdateRowMessage(key: String, value: Array[Byte]) => "Key "+key+" updated with value "+new String(value, "UTF-8")
           case RemoveRowMessage(key: String) => "Key "+key+" deleted"
           case _ =>"Unknown done row message question " //TODO
         }
@@ -282,7 +282,7 @@ class ReplyBuilder {
               case _ => "Unknown info for FindRowMessage error"//TODO
             }
           }
-          case InsertRowMessage(key: String, value: String) => {
+          case InsertRowMessage(key: String, value: Array[Byte]) => {
             reply.info match {
               //possible info for a failed InsertRowMessage
               case KeyAlreadyExistInfo() => "Key "+key+" is already used"
@@ -290,7 +290,7 @@ class ReplyBuilder {
               case _ => "Unknown info for InsertRowMessage  error"//TODO
             }
           }
-          case UpdateRowMessage(key: String, value: String) => {
+          case UpdateRowMessage(key: String, value: Array[Byte]) => {
             reply.info match {
               //possible info for a failed UpdateRowMessage
               case  KeyDoesNotExistInfo() => "Key "+key+" not exist"

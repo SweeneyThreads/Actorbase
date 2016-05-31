@@ -98,9 +98,9 @@ class Storefinder extends ReplyActor {
         }
       }
       // if the message type is InsertRowMessage, forward it to the storekeeper
-      case InsertRowMessage(key: String, value: String) => sendToStorekeeper(key, message)
+      case InsertRowMessage(key: String, value: Array[Byte]) => sendToStorekeeper(key, message)
       // if the message type is UpdateRowMessage, forward it to the storekeeper
-      case UpdateRowMessage(key: String, value: String) => sendToStorekeeper(key, message)
+      case UpdateRowMessage(key: String, value: Array[Byte]) => sendToStorekeeper(key, message)
       // if the message type is RemoveRowMessage, forward it to the storekeeper
       case RemoveRowMessage(key: String) => sendToStorekeeper(key, message)
       // if the message type is FindRowMessage, forward it to the storekeeper

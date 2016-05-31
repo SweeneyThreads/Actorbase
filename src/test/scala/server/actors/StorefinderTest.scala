@@ -117,45 +117,45 @@ class Storefinderest extends FlatSpec with Matchers with MockFactory {
     actor.storekeepers.put("[a-cA-C]".r, System.actorOf(Props[FakeStorekeeper1]))
     actor.storekeepers.put("[c-zC-Z]".r, System.actorOf(Props[FakeStorekeeper2]))
     // now I send the message
-    val InsertRowMessage1future = actorRef ? InsertRowMessage("a","b")
+    val InsertRowMessage1future = actorRef ? InsertRowMessage("a","b".getBytes("UTF-8"))
     //when the message is completed i check that the StorefinderActor reply correctly
     ScalaFutures.whenReady(InsertRowMessage1future) {
-      result => result should be(ReplyMessage(EnumReplyResult.Done,InsertRowMessage("a","b"),FindInfo("storekeeper1")))
+      result => result should be(ReplyMessage(EnumReplyResult.Done,InsertRowMessage("a","b".getBytes("UTF-8")),FindInfo("storekeeper1".getBytes("UTF-8"))))
     }
-    val InsertRowMessage2future = actorRef ? InsertRowMessage("d","e")
+    val InsertRowMessage2future = actorRef ? InsertRowMessage("d","e".getBytes("UTF-8"))
     //when the message is completed i check that the StorefinderActor reply correctly
     ScalaFutures.whenReady(InsertRowMessage2future) {
-      result => result should be(ReplyMessage(EnumReplyResult.Done,InsertRowMessage("d","e"),FindInfo("storekeeper2")))
+      result => result should be(ReplyMessage(EnumReplyResult.Done,InsertRowMessage("d","e".getBytes("UTF-8")),FindInfo("storekeeper2".getBytes("UTF-8"))))
     }
-    val UpdateRowMessage1future = actorRef ? UpdateRowMessage("a","b")
+    val UpdateRowMessage1future = actorRef ? UpdateRowMessage("a","b".getBytes("UTF-8"))
     //when the message is completed i check that the StorefinderActor reply correctly
     ScalaFutures.whenReady(UpdateRowMessage1future) {
-      result => result should be(ReplyMessage(EnumReplyResult.Done,UpdateRowMessage("a","b"),FindInfo("storekeeper1")))
+      result => result should be(ReplyMessage(EnumReplyResult.Done,UpdateRowMessage("a","b".getBytes("UTF-8")),FindInfo("storekeeper1".getBytes("UTF-8"))))
     }
-    val UpdateRowMessage2future = actorRef ? UpdateRowMessage("d","e")
+    val UpdateRowMessage2future = actorRef ? UpdateRowMessage("d","e".getBytes("UTF-8"))
     //when the message is completed i check that the StorefinderActor reply correctly
     ScalaFutures.whenReady(UpdateRowMessage2future) {
-      result => result should be(ReplyMessage(EnumReplyResult.Done,UpdateRowMessage("d","e"),FindInfo("storekeeper2")))
+      result => result should be(ReplyMessage(EnumReplyResult.Done,UpdateRowMessage("d","e".getBytes("UTF-8")),FindInfo("storekeeper2".getBytes("UTF-8"))))
     }
     val RemoveRowMessage1future = actorRef ? RemoveRowMessage("a")
     //when the message is completed i check that the StorefinderActor reply correctly
     ScalaFutures.whenReady(RemoveRowMessage1future) {
-      result => result should be(ReplyMessage(EnumReplyResult.Done,RemoveRowMessage("a"),FindInfo("storekeeper1")))
+      result => result should be(ReplyMessage(EnumReplyResult.Done,RemoveRowMessage("a"),FindInfo("storekeeper1".getBytes("UTF-8"))))
     }
     val RemoveRowMessage2future = actorRef ? RemoveRowMessage("d")
     //when the message is completed i check that the StorefinderActor reply correctly
     ScalaFutures.whenReady(RemoveRowMessage2future) {
-      result => result should be(ReplyMessage(EnumReplyResult.Done,RemoveRowMessage("d"),FindInfo("storekeeper2")))
+      result => result should be(ReplyMessage(EnumReplyResult.Done,RemoveRowMessage("d"),FindInfo("storekeeper2".getBytes("UTF-8"))))
     }
     val FindRowMessage1future = actorRef ? FindRowMessage("a")
     //when the message is completed i check that the StorefinderActor reply correctly
     ScalaFutures.whenReady(FindRowMessage1future) {
-      result => result should be(ReplyMessage(EnumReplyResult.Done,FindRowMessage("a"),FindInfo("storekeeper1")))
+      result => result should be(ReplyMessage(EnumReplyResult.Done,FindRowMessage("a"),FindInfo("storekeeper1".getBytes("UTF-8"))))
     }
     val FindRowMessage2future = actorRef ? FindRowMessage("d")
     //when the message is completed i check that the StorefinderActor reply correctly
     ScalaFutures.whenReady(FindRowMessage2future) {
-      result => result should be(ReplyMessage(EnumReplyResult.Done,FindRowMessage("d"),FindInfo("storekeeper2")))
+      result => result should be(ReplyMessage(EnumReplyResult.Done,FindRowMessage("d"),FindInfo("storekeeper2".getBytes("UTF-8"))))
     }
   }
 
@@ -178,7 +178,7 @@ class FakeStorekeeper1 extends Storekeeper{
   override def receive = {
     case m: RowMessage =>{
       val origSender = sender
-      reply(ReplyMessage(EnumReplyResult.Done,m ,FindInfo("storekeeper1")), origSender)
+      reply(ReplyMessage(EnumReplyResult.Done,m ,FindInfo("storekeeper1".getBytes("UTF-8"))), origSender)
     }
   }
 
@@ -189,7 +189,7 @@ class FakeStorekeeper2 extends Storekeeper{
   override def receive = {
     case m: RowMessage => {
       val origSender = sender
-      reply(ReplyMessage(EnumReplyResult.Done,m ,FindInfo("storekeeper2")), origSender)
+      reply(ReplyMessage(EnumReplyResult.Done,m ,FindInfo("storekeeper2".getBytes("UTF-8"))), origSender)
     }
   }
 

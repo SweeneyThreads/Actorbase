@@ -161,7 +161,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
     val future = actorRef ? StorefinderRowMessage("map1", FindRowMessage("1"))
     //when the message is completed i check that the StoremanagerActor reply correctly
     ScalaFutures.whenReady(future) {
-      result => result should be(ReplyMessage(Done, new FindRowMessage("1"), FindInfo("2")))
+      result => result should be(ReplyMessage(Done, new FindRowMessage("1"), FindInfo("2".getBytes("UTF-8"))))
     }
     val future2 = actorRef ? StorefinderRowMessage("map2", FindRowMessage("1"))
     //when the message is completed i check that the StoremanagerActor reply correctly
@@ -177,7 +177,7 @@ class FakeStorefinder extends Storefinder{
   override def receive = {
     case m:RowMessage => {
       val origSender = sender
-      reply(ReplyMessage(Done, new FindRowMessage("1"), FindInfo("2")), origSender)
+      reply(ReplyMessage(Done, new FindRowMessage("1"), FindInfo("2".getBytes("UTF-8"))), origSender)
     }
   }
 

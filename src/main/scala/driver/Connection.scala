@@ -2,6 +2,7 @@ package driver
 
 import java.io.{BufferedInputStream, PrintStream}
 import java.net.{InetAddress, Socket}
+import java.nio.charset.StandardCharsets
 
 /**
   * Created by eliamaino on 10/05/16.
@@ -57,7 +58,7 @@ class ConcreteConnection(val host: String, val port: Integer, val username: Stri
       while(in.available() < 1) Thread.sleep(100)
       val buf = new Array[Byte](in.available())
       in.read(buf)
-      new String(buf)
+      new String(buf, "UTF-8")
     }
     else
       "This connection is no more valid"

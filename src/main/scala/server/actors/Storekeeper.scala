@@ -19,7 +19,7 @@ import scala.collection.JavaConversions._
 
 /** This actor represent a map partition */
 class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
-  var db = new ConcurrentHashMap[String, String]()
+  var db = new ConcurrentHashMap[String,  Array[Byte]]()
 
   import context._
 
@@ -57,7 +57,7 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
   private def handleRowMessage(message: RowMessage): Unit = {
     message match {
       // If the user types "insert '<key>' <value>"
-      case InsertRowMessage(key: String, value: String) => {
+      case InsertRowMessage(key: String, value: Array[Byte]) => {
         // If the storekeeper already contains that key
         if (db.containsKey(key)) reply(ReplyMessage(EnumReplyResult.Error,message,KeyAlreadyExistInfo()))
         // If the storekeeper doesn't have that key
@@ -68,7 +68,7 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
         }
       }
       // If the user types "udpdate '<key>' <value>"
-      case UpdateRowMessage(key: String, value: String) => {
+      case UpdateRowMessage(key: String, value: Array[Byte]) => {
         // If the storekeeper doesn't have that key
         if (!db.containsKey(key)) reply(ReplyMessage(EnumReplyResult.Error,message,KeyDoesNotExistInfo()))
         // If the storekeeper contains that key
@@ -113,7 +113,7 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
   private def handleRowMessagesAsNinja(message: RowMessage): Unit = {
     message match {
       // If the storemanager send an insert message
-      case InsertRowMessage(key: String, value: String) => {
+      case InsertRowMessage(key: String, value: Array[Byte]) => {
         // If the key already exists
         if (db.containsKey(key)) return
         // If the key doesn't exist
@@ -121,7 +121,7 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
         writeLog(ReplyMessage(EnumReplyResult.Done,message))
       }
       // If the storemanager send an update message
-      case UpdateRowMessage(key: String, value: String) => {
+      case UpdateRowMessage(key: String, value: Array[Byte]) => {
         // If the key doesn't exist
         if (db.containsKey(key)) return
         // If the key exists

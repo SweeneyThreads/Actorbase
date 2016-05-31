@@ -8,8 +8,8 @@ import server.messages.query.ReplyInfo
   */
 object RowMessages {
   trait RowMessage extends UserMessage
-  case class InsertRowMessage(key: String, value: String) extends RowMessage with ReadWriteMessage
-  case class UpdateRowMessage(key: String, value: String) extends RowMessage with ReadWriteMessage
+  case class InsertRowMessage(key: String, value: Array[Byte]) extends RowMessage with ReadWriteMessage
+  case class UpdateRowMessage(key: String, value: Array[Byte]) extends RowMessage with ReadWriteMessage
   case class RemoveRowMessage(key: String) extends RowMessage with ReadWriteMessage
   case class FindRowMessage(key: String) extends RowMessage with ReadMessage
   case class ListKeysMessage() extends RowMessage with ReadMessage
@@ -19,6 +19,6 @@ object RowMessages {
   case class KeyDoesNotExistInfo() extends ReplyInfo
   case class ListKeyInfo(keys: List[String]) extends ReplyInfo
   case class NoKeyInfo() extends ReplyInfo
-  case class FindInfo(value: String) extends ReplyInfo
+  case class FindInfo(value: Array[Byte]) extends ReplyInfo
   case class FullMap() extends ReplyInfo
 }

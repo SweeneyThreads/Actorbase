@@ -84,8 +84,8 @@ class ParserTest extends FlatSpec with Matchers {
 
   //Testing row level commands with two params TU7
   val twoParamCommands = Array(
-    new SampleCommand("insert", "InsertRowMessage", new InsertRowMessage("aKey", "aValue"), new InsertRowMessage("one word is not enough for that key", "anotherValue")),
-    new SampleCommand("update", "UpdateRowMessage", new UpdateRowMessage("aKey", "aValue"), new UpdateRowMessage("one word is not enough for that key", "anotherValue"))
+    new SampleCommand("insert", "InsertRowMessage", new InsertRowMessage("aKey", "aValue".getBytes("UTF-8")), new InsertRowMessage("one word is not enough for that key", "anotherValue".getBytes("UTF-8"))),
+    new SampleCommand("update", "UpdateRowMessage", new UpdateRowMessage("aKey", "aValue".getBytes("UTF-8")), new UpdateRowMessage("one word is not enough for that key", "anotherValue".getBytes("UTF-8")))
   )
   for (cmd <- twoParamCommands) {
     "'" + cmd.command + "' command" should "generate a " + cmd.strMessage + " using first param as Key and bytes-value of second param as Value" in {

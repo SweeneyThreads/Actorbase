@@ -135,8 +135,8 @@ class Parser {
   /** Parses row level commands with two parameters */
   private def parseRowCommandTwoParams(command: String, key: String, value: String): QueryMessage = {
     command match {
-      case "insert" => return new InsertRowMessage(key, value)
-      case "update" => return new UpdateRowMessage(key, value)
+      case "insert" => return new InsertRowMessage(key, value.getBytes("UTF-8"))
+      case "update" => return new UpdateRowMessage(key, value.getBytes("UTF-8"))
 
       case _ => new InvalidQueryMessage
     }

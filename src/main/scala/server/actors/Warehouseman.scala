@@ -34,11 +34,11 @@ class Warehouseman(file : String) extends ReplyActor {
   private def handleRowMessages(message: RowMessage): Unit = {
     message match {
       // If the storemanager send an insert message
-      case InsertRowMessage(key: String, value: String) => {
+      case InsertRowMessage(key: String,  value: Array[Byte]) => {
         //TODO
       }
       // If the storemanager send an update message
-      case UpdateRowMessage(key: String, value: String) => {
+      case UpdateRowMessage(key: String,  value: Array[Byte]) => {
         ///TODO
       }
       // If the storemanager send a remove message

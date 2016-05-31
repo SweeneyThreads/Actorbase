@@ -101,7 +101,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
       // If the user types 'listuser'
       case ListUserMessage() => handleRowMessage(new ListKeysMessage)
       // If the user types 'adduser <username> <password>'
-      case AddUserMessage(username: String, password:String) => handleRowMessage(new InsertRowMessage(username, password))
+      case AddUserMessage(username: String, password:String) => handleRowMessage(new InsertRowMessage(username, password.getBytes("UTF-8")))
       // If the user types 'removeuser <username>'
       case RemoveUserMessage(username: String) => handleRowMessage(new RemoveRowMessage(username))
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleUserManagementMessage"))
