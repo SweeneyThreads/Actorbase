@@ -41,10 +41,10 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
    when receiving an InsertRowMessage*/
 
 
-  it should "actually reply correctly if the storekeeper recives a InsertRowMessage with corrector incorrect key" in {
+   "actor" should "actually reply correctly if the storekeeper recives a InsertRowMessage with corrector incorrect key" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef = TestActorRef(new Storekeeper)
+    val actorRef = TestActorRef(new Storekeeper(true))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     // now I send the message
