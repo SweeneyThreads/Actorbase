@@ -1,16 +1,16 @@
 package server.actors
 
-import scala.language.postfixOps
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{ActorRef, Props}
 import server.enums.EnumReplyResult
-import server.messages.internal.AskMapMessage
+import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.ReplyMessage
 import server.messages.query.user.MapMessages._
 import server.messages.query.user.RowMessages.{RowMessage, StorefinderRowMessage}
 
 import scala.collection.JavaConversions._
+import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
 /**

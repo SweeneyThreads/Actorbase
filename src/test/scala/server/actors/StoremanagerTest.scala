@@ -16,7 +16,7 @@ import server.messages.query.user.MapMessages._
 import server.utils.ServerDependencyInjector
 import akka.testkit.TestActorRef
 import server.enums.EnumReplyResult.Done
-import server.messages.internal.AskMapMessage
+import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.user.RowMessages._
 
 import scala.util.matching.Regex

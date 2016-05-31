@@ -20,4 +20,5 @@ object RowMessages {
   case class ListKeyInfo(keys: List[String]) extends ReplyInfo
   case class NoKeyInfo() extends ReplyInfo
   case class FindInfo(value: String) extends ReplyInfo
+  case class FullMap() extends ReplyInfo
 }

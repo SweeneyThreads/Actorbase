@@ -40,7 +40,6 @@ object Server {
     val conf = ConfigFactory.load()
     system = ActorSystem("System", conf)
     log = Logging.getLogger(system, this)
-    fileReader = new FileReader(log)
 
     loadUsers()
     loadUsersPermissions()

@@ -7,7 +7,7 @@ import akka.actor.Props
 import server.Server
 import server.enums.{EnumPermission, EnumReplyResult}
 import server.enums.EnumPermission.UserPermission
-import server.messages.internal.AskMapMessage
+import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.HelpMessages._
 import server.messages.query.PermissionMessages._
 import server.messages.query.{QueryMessage, ReplyMessage}

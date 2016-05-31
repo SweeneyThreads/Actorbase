@@ -1,5 +1,7 @@
 package server.actors
 
+import java.util
+
 import server.enums.EnumReplyResult._
 import server.messages.query.ReplyMessage
 
@@ -7,6 +9,7 @@ import scala.language.postfixOps
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{Actor, ActorRef, Props}
+import server.messages.internal.ScalabilityMessages.SendMapMessage
 import server.messages.query.user.RowMessages._
 
 import scala.collection.JavaConversions._

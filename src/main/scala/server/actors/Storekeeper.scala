@@ -1,11 +1,13 @@
 package server.actors
 
+import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{Actor, ActorRef}
 import server.enums.EnumReplyResult
 import server.enums.EnumReplyResult._
 import server.messages.internal.BecomeStorekeeperMessage
+import server.messages.internal.ScalabilityMessages.SendMapMessage
 import server.messages.query.ReplyMessage
 import server.messages.query.user.RowMessages._
 
@@ -33,6 +35,10 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
     case BecomeStorekeeperMessage => become(receiveAsStorekeeper)
     // If it's a row level message
     case m: RowMessage => handleRowMessagesAsNinja(m)
+    // if the storefinder send a send map message
+    case SendMapMessage(map: util.HashMap[String, Array[Byte]], actorRef: ActorRef) => {
+      //TODO
+    }
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString, currentMethodName()))
   }
 
@@ -40,6 +46,10 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
   private def receiveAsStorekeeper: Receive = {
     // If it's a row level message
     case m: RowMessage => handleRowMessage(m)
+    // if the storefinder send a send map message
+    case SendMapMessage(map: util.HashMap[String, Array[Byte]], actorRef: ActorRef) => {
+      //TODO
+    }
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString, currentMethodName()))
   }
 
