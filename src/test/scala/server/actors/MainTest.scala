@@ -35,7 +35,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
 
 
   /*########################################################################
-    Testing ListDatabaseMessage() receiving
+    Testing ListDatabaseMessage() receiving TU13
     ########################################################################*/
 
   //creating a map that simulates a plausible list of databasename=>Storemanager
@@ -95,7 +95,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
 
 
   /*########################################################################
-    Testing SelectDatabaseMessage() receiving
+    Testing SelectDatabaseMessage() receiving TU14
     ########################################################################*/
   /**
     * first of all I try to test what is possible to test without the akka-testkit, as reported
@@ -154,7 +154,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   }
 
   /*########################################################################
-    Testing CreateDatabaseMessage() receiving
+    Testing CreateDatabaseMessage() receiving TU15
     ########################################################################*/
   /**
     * @todo test this soon
@@ -163,7 +163,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
 
 
     /*########################################################################
-      Testing DeleteDatabaseMessage() receiving
+      Testing DeleteDatabaseMessage() receiving TU16
       ########################################################################*/
     it should "actually delete from the StoreManagers map the database passed to 'deletedb' command" in {
       //refreshing the FakeServer
@@ -188,7 +188,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
 
 
   /*########################################################################
-    Testing SelectMapMessage() receiving
+    Testing SelectMapMessage() receiving TU17
     ########################################################################*/
   //refreshing the FakeServer
   //FakeServer.fakeStoremanagers=fakeStoremanagersMap

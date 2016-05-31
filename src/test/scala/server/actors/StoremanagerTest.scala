@@ -39,7 +39,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   implicit val system = ActorSystem()
 
   /*########################################################################
-    Testing AskMapMessage() receiving
+    Testing AskMapMessage() receiving TU52
     ########################################################################*/
   /*testing if the storemanager returns the correct reply to yhe Main when reciving an AskMapMessage*/
 
@@ -65,7 +65,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
 
 
   /*########################################################################
-    Testing ListMapMessage() receiving
+    Testing ListMapMessage() receiving TU53
     ########################################################################*/
   /*testing if the storemanager contains the defaultMap and if return a correct reply when receving a ListMapMessage*/
 
@@ -89,7 +89,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   }
 
   /*########################################################################
-  Testing CreateMapMessage() receiving
+  Testing CreateMapMessage() receiving TU54
   ########################################################################*/
   it should "create the correct map and reply correctly or send the correct error when receving a CreateMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
@@ -114,7 +114,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
 
 
   /*########################################################################
-   Testing DeleteMapMessage() receiving
+   Testing DeleteMapMessage() receiving TU55
    ########################################################################*/
   /*testing if the storemanager delete the correct map and reply correctly or send the correct error when receving a DeleteMapMessage*/
 
@@ -143,7 +143,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   }
 
   /*########################################################################
-    Testing RowMapMessage() receiving
+    Testing RowMapMessage() receiving TU56
     ########################################################################*/
   /*testing if the storemanager receive and send correctly RowMapMessages and reply correctly*/
 

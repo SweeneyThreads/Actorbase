@@ -14,7 +14,7 @@ case class SampleCommand(command: String,strMessage: String,message1: QueryMessa
 
 class ParserTest extends FlatSpec with Matchers {
   val parser = new Parser()
-
+  //TU3
   "'login' command" should "generate a LoginMessage with 1rd and 2th param" in {
     parser.parseQuery("login admin admin") should be(new LoginMessage("admin", "admin"))
     parser.parseQuery("login tpadovan psw") should be(new LoginMessage("tpadovan", "psw"))
@@ -25,7 +25,7 @@ class ParserTest extends FlatSpec with Matchers {
     parser.parseQuery("login admin admin admin") should be(new InvalidQueryMessage)
   }
 
-  //test dei comandi a zero parametri
+  //test dei comandi a zero parametri TU4
   val zeroParamCommands = Array(
     new SampleCommand("listdb", "ListDatabaseMessage", new ListDatabaseMessage),
     new SampleCommand("listmap", "ListMapMessage", new ListMapMessage),
@@ -41,7 +41,7 @@ class ParserTest extends FlatSpec with Matchers {
     }
   }
 
-  //Testing commands with one param
+  //Testing commands with one param TU5
   val oneParamCommands = Array(
     new SampleCommand("selectdb", "SelectDatabaseMessage", new SelectDatabaseMessage("aparam"), new SelectDatabaseMessage("anotherparam")),
     new SampleCommand("createdb", "CreateDatabaseMessage", new CreateDatabaseMessage("aparam"), new CreateDatabaseMessage("anotherparam")),
@@ -62,7 +62,7 @@ class ParserTest extends FlatSpec with Matchers {
     }
   }
 
-  //Testing row level commands with one param
+  //Testing row level commands with one param TU6
   val test = Array(
     new SampleCommand("find", "FindRowMessage", new FindRowMessage("fourwordsalluppercase"), new FindRowMessage("ONE WORD ALL LOWERCASE")),
     new SampleCommand("remove", "RemoveRowMessage", new RemoveRowMessage("fourwordsalluppercase"), new RemoveRowMessage("ONE WORD ALL LOWERCASE"))
@@ -82,7 +82,7 @@ class ParserTest extends FlatSpec with Matchers {
     }
   }
 
-  //Testing row level commands with two params
+  //Testing row level commands with two params TU7
   val twoParamCommands = Array(
     new SampleCommand("insert", "InsertRowMessage", new InsertRowMessage("aKey", "aValue"), new InsertRowMessage("one word is not enough for that key", "anotherValue")),
     new SampleCommand("update", "UpdateRowMessage", new UpdateRowMessage("aKey", "aValue"), new UpdateRowMessage("one word is not enough for that key", "anotherValue"))
