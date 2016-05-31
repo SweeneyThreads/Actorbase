@@ -41,7 +41,7 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
    when receiving an InsertRowMessage*/
 
 
-   "actor" should "actually reply correctly if the storekeeper recives a InsertRowMessage with corrector incorrect key" in {
+   "StorekeeperActor" should "actually reply correctly if the storekeeper receives a InsertRowMessage with correct or incorrect key" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
     val actorRef = TestActorRef(new Storekeeper(true))
@@ -53,8 +53,7 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
     ScalaFutures.whenReady(future) {
       result => result should be(new ReplyMessage (EnumReplyResult.Done,new InsertRowMessage("key","value"),null))
     }
-    actor.db.containsKey("key") should be (true)
-    actor.db.containsValue("value") should be (true)
+     actor.db.get("key") should be("value")
     //insert a key in the db of the storekeeper
     actor.db.put("AlreadyExistingKey","value")
     // now I send the message to insert the already inserted key
@@ -62,6 +61,34 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
     //when the message is completed i check that the StorekeeperActor reply correctly
     ScalaFutures.whenReady(future2) {
       result => result should be(new ReplyMessage (EnumReplyResult.Error,new InsertRowMessage("AlreadyExistingKey","value"),KeyAlreadyExistInfo()))
+    }
+  }
+  /*########################################################################
+  Testing UpdateRowMessage() receiving TU40
+  ########################################################################*/
+  /*testing if the storekeeper Update the key and value, or reply with the correct error if the key not exist,
+   when receiving an UpadeRowMessage*/
+
+
+  it should "actually reply correctly if the storekeeper receives a UpdateRowMessage with correct or incorrect key" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val actorRef = TestActorRef(new Storekeeper(true))
+    // retrieving the underlying actor
+    val actor = actorRef.underlyingActor
+    // now I send the message
+    actor.db.put("key", "value")
+    val future = actorRef ? UpdateRowMessage("key", "value2")
+    //when the message is completed i check that the StorekeeperActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Done, new UpdateRowMessage("key", "value2"), null))
+    }
+    actor.db.get("key") should be("value2")
+    // now I send the message to update not inserted key
+    val future2 = actorRef ? UpdateRowMessage("NotExistingKey", "value")
+    //when the message is completed i check that the StorekeeperActor reply correctly
+    ScalaFutures.whenReady(future2) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new UpdateRowMessage("NotExistingKey", "value"), KeyDoesNotExistInfo()))
     }
   }
 }

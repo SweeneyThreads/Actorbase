@@ -47,7 +47,7 @@ class Storefinderest extends FlatSpec with Matchers with MockFactory {
   /*testing if the storefinder returns the correct reply to yhe Main when reciving a ListKeysMessage*/
 
 
-  "actor" should "create the correct log line" in {
+  "StorefinderActor" should "create the correct log line" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
     val actorRef = TestActorRef(new Storefinder)

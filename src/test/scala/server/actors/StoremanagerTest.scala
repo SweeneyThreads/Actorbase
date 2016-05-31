@@ -44,7 +44,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   /*testing if the storemanager returns the correct reply to yhe Main when reciving an AskMapMessage*/
 
 
-  it should "actually return true if the storemanager contains the map asked with an AskMapMessage" in {
+  "StoremanagerActor" should "actually return true if the storemanager contains the map asked with an AskMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
     val actorRef=TestActorRef(new Storemanager)
