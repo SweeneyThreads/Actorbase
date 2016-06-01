@@ -10,7 +10,7 @@ import com.typesafe.config.ConfigFactory
 import server.actors.{Doorkeeper, Storemanager}
 import server.enums.EnumPermission
 import server.enums.EnumPermission.UserPermission
-import server.utils.FileReader
+import server.utils.{ConfigurationManager, FileReader}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -27,7 +27,7 @@ import scala.language.postfixOps
 object Server {
   var system:ActorSystem = null
   var log:LoggingAdapter = null
-  var fileReader:FileReader = null
+  var fileReader:ConfigurationManager = null
 
   var storemanagers: ConcurrentHashMap[String, ActorRef] = null
   var users: ConcurrentHashMap[String, String] = null

@@ -17,4 +17,3 @@ trait StandardServerInjector extends ServerDependencyInjector {
     Server.storemanagers
   }
 }
-

@@ -6,10 +6,11 @@ import collection.JavaConversions._
 import scala.collection.immutable.{HashMap, ListMap}
 
 /**
-  * Created by davidetommasin on 10/05/2016.
+  * Created by matteobortolazzo on 10/05/2016.
+  * Gives commands descriptions.
   */
 class Helper {
-  var helpMessages = new util.LinkedHashMap[String, String]
+  val helpMessages = new util.LinkedHashMap[String, String]
   helpMessages.put("help",      "       help <command>          show the command's description")
   helpMessages.put("listdb",    "       listdb                  show all available databases")
   helpMessages.put("selectdb",  "       selectdb <db_name>      select the database")
@@ -25,12 +26,23 @@ class Helper {
   helpMessages.put("update",    "       update '<key>' <value>  update the value of the specified key")
   helpMessages.put("remove",    "       remove '<key>'          remove the entry with the specified key")
 
+  /**
+    * Returns the complete list of server's commands.
+    *
+    * @return The list of server commands.
+    */
   def completeHelp(): String = {
     var helpComplete = ""
     for (k: String <- helpMessages.keySet()) helpComplete += helpMessages.get(k) + "\n"
     return helpComplete.substring(0, helpComplete.length - 1)
   }
 
+  /**
+    * Returns the description of the specific command.
+    *
+    * @param command The command
+    * @return The description of the command
+    */
   def specificHelp(command: String): String = {
     val help = helpMessages.get(command.toLowerCase())
     if (help != null)

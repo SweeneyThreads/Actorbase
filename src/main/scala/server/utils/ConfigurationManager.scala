@@ -4,9 +4,6 @@ import java.util
 
 import akka.event.LoggingAdapter
 
-/**
-  * Created by borto on 31/05/2016.
-  */
 /*
 {
   "accesses": [
@@ -22,10 +19,39 @@ import akka.event.LoggingAdapter
 }
 */
 
-class ConfigurationReader(log:LoggingAdapter) {
-  def readDoorkeepersSettings(fileName: String): util.HashMap[String, Integer] = {
+/**
+  * Created by matteobortolazzo on 31/05/2016.
+  * Reads and writes various server configurations files.
+  */
+class ConfigurationManager() {
+
+  /**
+    * Reads from file doorkeepers' start address and port.
+    *
+    * @param fileName The name of the file that contains the doorkeeper configuration.
+    * @return A list with addresses and ports.
+    */
+  def readDoorkeepersSettings(fileName: String = "access.json"): util.HashMap[String, Integer] = {
     //TODO
     new util.HashMap[String, Integer]()
+  }
+
+  /**
+    * Reads from file actors' properties
+    *
+    * @param fileName The name of the file that contains the actors properties.
+    */
+  def readActorsProperties(fileName: String = "actor_properties.json"): Unit ={
+    //TODO
+  }
+
+  /**
+    * Reads to file actors' properties
+    *
+    * @param fileName The name of the file that contains the actors properties.
+    */
+  def writeActorPropertis(fileName: String = "actor_properties.json"): Unit ={
+    //TODO
   }
 
   /*def readUsers(path: String): ConcurrentHashMap[String, String] = {

@@ -3,32 +3,56 @@ package server.utils
 import server.enums.EnumPermission.UserPermission
 import server.enums.EnumReplyResult
 import server.messages.query.HelpMessages._
-import server.messages.query.PermissionMessages.{NoWritePermissionInfo, NoReadPermissionInfo}
-import server.messages.query.admin.ActorPropetiesMessages.ActorPropertiesMessage
+import server.messages.query.PermissionMessages.{NoReadPermissionInfo, NoWritePermissionInfo}
+import server.messages.query.admin.ActorPropetiesMessages.{MaxStorefinderMessage, _}
 import server.messages.query.admin.AdminMessage
-import server.messages.query.admin.PermissionsManagementMessages.{RemovePermissionMessage, AddPermissionMessage, ListPermissionMessage, PermissionsManagementMessage}
-import server.messages.query.admin.UsersManagementMessages.{RemoveUserMessage, AddUserMessage, ListUserMessage, UsersManagementMessage}
+import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, PermissionsManagementMessage, RemovePermissionMessage}
+import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage, UsersManagementMessage}
 import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.MapMessages._
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
-import server.messages.query.{ReplyInfo, QueryMessage, ReplyMessage}
+import server.messages.query.{QueryMessage, ReplyInfo, ReplyMessage}
 
 
 /**
   * Created by borto on 26/05/2016.
+  * Builds string replies from a ReplyMessage message.
   */
 class ReplyBuilder {
-  /** transform a ReplyMessage into a String */
+
+  /**
+    * Builds string replies from a ReplyMessage message.
+    * Handles reply for UserMessage and AdminMessage messages.
+    *
+    * @param reply The ReplyMessage message.
+    * @return The reply string.
+    *
+    * @see ReplyMessage
+    * @see UserMessage
+    * @see AdminMessage
+    */
   def buildReply(reply: ReplyMessage) : String = {
     reply.question match {
       case m: UserMessage => UserMessageReply(reply)
       case m: AdminMessage => AdminMessageReply(reply)
-      case _ => "Unknown question "//TODO
+      case _ => "Unknown question " //TODO
     }
   }
 
-  /**create reply String from UserMessage  */
+  /**
+    * Builds string replies from a ReplyMessage message.
+    * Handles reply for HelpMessage, DatabaseMessage, MapMessage and RowMessage messages.
+    *
+    * @param reply The ReplyMessage message.
+    * @return The reply string.
+    *
+    * @see ReplyMessage
+    * @see HelpMessage
+    * @see DatabaseMessage
+    * @see MapMessage
+    * @see RowMessage
+    */
   private def UserMessageReply(reply: ReplyMessage): String = {
     reply.question match {
       case m: HelpMessage => HelpMessageReply(reply)
@@ -39,7 +63,18 @@ class ReplyBuilder {
     }
   }
 
-  /** create reply String from admin query messages (UserManagement, PermissionManagement and Properties) */
+  /**
+    * Builds string replies from a ReplyMessage message.
+    * Handles reply for UsersManagementMessage, PermissionsManagementMessage, and ActorPropertiesMessage messages.
+    *
+    * @param reply The ReplyMessage message.
+    * @return The reply string.
+    *
+    * @see ReplyMessage
+    * @see UsersManagementMessage
+    * @see PermissionsManagementMessage
+    * @see ActorPropertiesMessage
+    */
   private def AdminMessageReply(reply: ReplyMessage): String = {
     reply.question match {
       case m:UsersManagementMessage => UserManagementMessageReply(reply)
@@ -49,7 +84,18 @@ class ReplyBuilder {
     }
   }
 
-  /** create reply String from user management messages (ListUser, AddUser and RemoveUser) */
+  /**
+    * Builds string replies from a ReplyMessage message.
+    * Handles reply for ListUserMessage, AddUserMessage, and RemoveUserMessage messages.
+    *
+    * @param reply The ReplyMessage message.
+    * @return The reply string.
+    *
+    * @see ReplyMessage
+    * @see ListUserMessage
+    * @see AddUserMessage
+    * @see RemoveUserMessage
+    */
   private def UserManagementMessageReply(reply: ReplyMessage): String = {
     reply.question match {
       case ListUserMessage() =>"" //TODO
@@ -59,7 +105,18 @@ class ReplyBuilder {
     }
   }
 
-  /** create reply String from permission management messages (ListPermission, AddPermission, RemovePermission) */
+  /**
+    * Builds string replies from a ReplyMessage message.
+    * Handles reply for ListPermissionMessage, AddPermissionMessage, and RemovePermissionMessage messages.
+    *
+    * @param reply The ReplyMessage message.
+    * @return The reply string.
+    *
+    * @see ReplyMessage
+    * @see ListPermissionMessage
+    * @see AddPermissionMessage
+    * @see RemovePermissionMessage
+    */
   private def PermissionsManagementMessageReply(reply: ReplyMessage): String = {
     reply.question match {
       case ListPermissionMessage(username:String) =>"" //TODO
@@ -69,14 +126,41 @@ class ReplyBuilder {
     }
   }
 
-  /** create reply String from actors' properties messages */
+  /**
+    * Builds string replies from a ReplyMessage message.
+    * Handles reply for SetNinjaMessage, SetWarehousemanMessage, MaxRowsMessage,
+    * MaxStorekeeperMessage and MaxStorefinderMessage messages.
+    *
+    * @param reply The ReplyMessage message.
+    * @return The reply string.
+    *
+    * @see SetNinjaMessage
+    * @see SetWarehousemanMessage
+    * @see AddPermissionMessage
+    * @see MaxRowsMessage
+    * @see MaxStorekeeperMessage
+    * @see MaxStorefinderMessage
+    */
   private def ActorPropertiesMessageMessageReply(reply: ReplyMessage): String = {
     reply.question match {
+      case SetNinjaMessage(number: Integer) => //TODO
+      case SetWarehousemanMessage(number: Integer) => //TODO
+      case MaxRowsMessage(number: Integer) => //TODO
+      case MaxStorekeeperMessage(number: Integer) => //TODO
+      case MaxStorefinderMessage(number: Integer) => //TODO
       case _ =>"" //TODO
     }
   }
 
-  /** create String from help messages (complete or specific ones) */
+  /**
+    * Builds string replies from a ReplyMessage message.
+    * Handles reply for HelpMessages messages.
+    *
+    * @param reply The ReplyMessage message.
+    * @return The reply string.
+    *
+    * @see ReplyMessage
+    */
   private def HelpMessageReply(reply: ReplyMessage): String = {
     reply.result match {
       case EnumReplyResult.Done => DoneHelpMessageReply(reply.question,reply.info)
@@ -84,8 +168,22 @@ class ReplyBuilder {
       case _ => "Unknown result on HelpMessage" //TODO
     }
   }
-  /**create final string for Done Help*/
-  private def DoneHelpMessageReply(question:QueryMessage,info:ReplyInfo): String ={
+
+  /**
+    * Builds string replies from a ReplyMessage message.
+    * Handles reply for ListPermissionMessage, AddPermissionMessage, and RemovePermissionMessage messages.
+    *
+    * @param question The HelpMessage message question.
+    * @param info The info of the ReplyMessage message.
+    * @return The reply string.
+    *
+    * @see QueryMessage
+    * @see CompleteHelpReplyInfo
+    * @see SpecificHelpMessage
+    * @see CompleteHelpReplyInfo
+    * @see SpecificHelpReplyInfo
+    */
+  private def DoneHelpMessageReply(question: QueryMessage, info: ReplyInfo): String ={
     question match{
       case CompleteHelpMessage() => {
         info match {
@@ -101,7 +199,25 @@ class ReplyBuilder {
       }
     }
   }
-  /** create reply String for database messages (ListDatabase, SelectDatabase, CreateDatabase and DeleteDatabase) */
+
+  /**
+    * Builds string replies from a ReplyMessage message.
+    * Handles reply for ListDatabaseMessage, SelectDatabaseMessage, CreateDatabaseMessage and DeleteDatabaseMessage messages.
+    *
+    * @param reply The ReplyMessage message.
+    * @return The reply string.
+    *
+    * @see ReplyMessage
+    * @see ListDatabaseMessage
+    * @see SelectDatabaseMessage
+    * @see CreateDatabaseMessage
+    * @see DeleteDatabaseMessage
+    * @see NoDBInfo
+    * @see NoReadPermissionInfo    *
+    * @see NoWritePermissionInfo
+    * @see DBDoesNotExistInfo
+    * @see DBAlreadyExistInfo
+    */
   private def DatabaseMessageReply(reply: ReplyMessage): String = {
     reply.result match {
         // db message question done
@@ -160,7 +276,25 @@ class ReplyBuilder {
     }
   }
 
-  /** create reply string for map messages */
+  /**
+    * Builds string replies from a ReplyMessage message.
+    * Handles reply for ListMapMessage, SelectMapMessage, CreateMapMessage and DeleteMapMessage messages.
+    *
+    * @param reply The ReplyMessage message.
+    * @return The reply string.
+    *
+    * @see ReplyMessage
+    * @see ListMapMessage
+    * @see SelectMapMessage
+    * @see CreateMapMessage
+    * @see DeleteMapMessage
+    * @see NoMapInfo
+    * @see NoDBSelectedInfo
+    * @see NoReadPermissionInfo    *
+    * @see NoWritePermissionInfo
+    * @see MapDoesNotExistInfo
+    * @see MapAlreadyExistInfo
+    */
   private def MapMessageReply(reply: ReplyMessage): String = {
     reply.result match {
       //question was done
@@ -227,7 +361,25 @@ class ReplyBuilder {
     }
   }
 
-  /** create reply string for row messages */
+  /**
+    * Builds string replies from a ReplyMessage message.
+    * Handles reply for ListMapMessage, SelectMapMessage, CreateMapMessage and DeleteMapMessage messages.
+    *
+    * @param reply The ReplyMessage message.
+    * @return The reply string.
+    *
+    * @see ReplyMessage
+    * @see ListMapMessage
+    * @see SelectMapMessage
+    * @see CreateMapMessage
+    * @see DeleteMapMessage
+    * @see NoMapInfo
+    * @see NoDBSelectedInfo
+    * @see NoReadPermissionInfo    *
+    * @see NoWritePermissionInfo
+    * @see MapDoesNotExistInfo
+    * @see MapAlreadyExistInfo
+    */
   private def RowMessageReply(reply: ReplyMessage): String = {
     reply.result match {
         //the question was correctly done
@@ -313,6 +465,13 @@ class ReplyBuilder {
     }
   }
 
+  /**
+    * Returns an 'Unhandled message' reply stirng.
+    *
+    * @param actor The actor path.
+    * @param method The method name.
+    * @return The 'unhandled message' string.
+    */
   def unhandledMessage(actor: String, method: String) : String = {
     "Unhandled message in actor; " + actor + ", method: " + method
   }
