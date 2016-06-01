@@ -87,13 +87,13 @@ class ReplyBuilder {
   /**create final string for Done Help*/
   private def DoneHelpMessageReply(question:QueryMessage,info:ReplyInfo): String ={
     question match{
-      case CompleteHelp() => {
+      case CompleteHelpMessage() => {
         info match {
           case CompleteHelpReplyInfo(commands: String) => commands
           case _ => "Unknown done CompleteHelp info" //TODO
         }
       }
-      case SpecificHelp(command: String) =>{
+      case SpecificHelpMessage(command: String) =>{
         info match {
           case SpecificHelpReplyInfo(command: String) => command
           case _ => "Unknown done SpecificHelp info" //TODO

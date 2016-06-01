@@ -1,54 +1,54 @@
 package server.actors
 
-import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.Props
 import server.Server
-import server.enums.{EnumPermission, EnumReplyResult}
 import server.enums.EnumPermission.UserPermission
+import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.HelpMessages._
 import server.messages.query.PermissionMessages._
-import server.messages.query.{QueryMessage, ReplyMessage}
-import server.messages.query.admin.ActorPropetiesMessages.ActorPropertiesMessage
+import server.messages.query.admin.ActorPropetiesMessages._
 import server.messages.query.admin.AdminMessage
-import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, PermissionsManagementMessage, RemovePermissionMessage}
-import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage, UsersManagementMessage}
+import server.messages.query.admin.PermissionsManagementMessages._
+import server.messages.query.admin.UsersManagementMessages._
 import server.messages.query.user.DatabaseMessages._
-import server.messages.query.user.MapMessages.{MapDoesNotExistInfo, MapMessage, NoMapSelectedInfo, SelectMapMessage}
+import server.messages.query.user.MapMessages._
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
+import server.messages.query.{QueryMessage, ReplyMessage}
 import server.utils.{Helper, ServerDependencyInjector, StandardServerInjector}
 
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
+import akka.dispatch.ExecutionContexts._
+import akka.pattern.ask
+import akka.util.Timeout
+
+import scala.concurrent.duration._
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
-  */
-
-/**
   * Actor that executes the messages from the client.
   * It processes database-level queries and admin-level queries by itself,
   * all other queries are sent to the right actor.
+  * It's the only actor that interacts with the Usermanger actor, every reply it's sent to it.
   *
   * @param permissions the user's permissions list.
   * @param server the server reference
+  *
+  * @see UserPermission
+  * @see Server
   */
 class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val server: ServerDependencyInjector = new StandardServerInjector {}) extends ReplyActor {
 
-  import akka.dispatch.ExecutionContexts._
-  import akka.pattern.ask
-  import akka.util.Timeout
-
-  import scala.concurrent.duration._
   // Values for futures
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
   // Instance of Helper class
-  var helper = new Helper
+  val helper = new Helper
   // Values for selected database and selected map
   var selectedDatabase = ""
   var selectedMap = ""
@@ -56,6 +56,9 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   /**
     * Processes all incoming messages.
     * It handles only QueryMessage messages
+    *
+    * @see QueryMessage
+    * @see #handleQueryMessage(QueryMessage)
     */
   def receive = {
     // If it's a query message
@@ -69,6 +72,12 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * calling the right method for each one.
     *
     * @param message The QueryMessage message to precess.
+    *
+    * @see QueryMessage
+    * @see UserMessage
+    * @see AdminMessage
+    * @see #handleUserMessage(UserMessage)
+    * @see #handleAdminMessage(AdminMessage)
     */
   private def handleQueryMessage(message: QueryMessage) = {
     message match {
@@ -86,6 +95,16 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * messages calling the right method for each one.
     *
     * @param message The UserMessage message to precess.
+    *
+    * @see UserMessage
+    * @see HelpMessage
+    * @see DatabaseMessage
+    * @see MapMessage
+    * @see RowMessage
+    * @see #handleHelpMessage(HelpMessage)
+    * @see #handleDatabaseMessage(DatabaseMessage)
+    * @see #handleMapMessage(MapMessage)
+    * @see #handleRowMessage(RowMessage)
     */
   private def handleUserMessage(message: UserMessage) = {
     message match {
@@ -107,6 +126,14 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * messages calling the right method for each one.
     *
     * @param message The AdminMessage message to precess.
+    *
+    * @see AdminMessage
+    * @see UsersManagementMessage
+    * @see PermissionsManagementMessage
+    * @see ActorPropertiesMessage
+    * @see #handleUserManagementMessage(UsersManagementMessage)
+    * @see #handlePermissionsManagementMessage(PermissionsManagementMessage)
+    * @see #handleActorPropertiesMessageMessage(ActorPropertiesMessage)
     */
   private def handleAdminMessage(message: AdminMessage) = {
     message match {
@@ -121,12 +148,17 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   }
 
   /**
-    * Processes UsersManagementMessage messages.
-    * Handles ListUserMessage messages returning the list of users,
-    * AddUserMessage messages adding an user and
-    * RemoveUserMessage messages removing the user.
+    * Processes UsersManagementMessage messages, it query the 'users' map in the 'master' database.
+    * Handles ListUserMessage messages returning the list of users in the map,
+    * AddUserMessage messages adding an user in the map and
+    * RemoveUserMessage messages removing from the map the user.
     *
     * @param message The UsersManagementMessage message to precess.
+    *
+    * @see UsersManagementMessage
+    * @see ListUserMessage
+    * @see AddUserMessage
+    * @see RemoveUserMessage
     */
   private def handleUserManagementMessage(message: UsersManagementMessage): Unit = {
     // Select the 'master' database and the 'user' map
@@ -144,12 +176,17 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   }
 
   /**
-    * Processes PermissionsManagementMessage messages.
-    * Handles ListPermissionMessage messages returning the list of user's permissions,
-    * AddPermissionMessage messages adding an user's permission and
-    * RemovePermissionMessage messages removing the user's permission.
+    * Processes PermissionsManagementMessage messages, it query the 'permissions' map in the 'master' database.
+    * Handles ListPermissionMessage messages returning the list of user's permissions in the map,
+    * AddPermissionMessage messages adding an user's permission in the map and
+    * RemovePermissionMessage messages removing the user's permission from the map.
     *
     * @param message The PermissionsManagementMessage message to precess.
+    *
+    * @see PermissionsManagementMessage
+    * @see ListPermissionMessage
+    * @see AddPermissionMessage
+    * @see RemovePermissionMessage
     */
   private def handlePermissionsManagementMessage(message: PermissionsManagementMessage): Unit = {
     // Select the 'master' database and the 'permissions' map
@@ -168,29 +205,59 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
 
   /**
     * Processes ActorPropertiesMessage messages.
-    * //TODO
+    * Handles SetNinjaMessage messages setting the number of Ninja actors for each Storekeeper actor-
+    * Handles SetWarehousemanMessage messages setting the number of Warehouseman actors for each Storekeeper actor.
+    * Handles MaxRowsMessage messages setting the maximum number of rows each Storekeeper actor can handles.
+    * Handles MaxStorekeeperMessage setting the maximum number of Storekeeper actor each Storefinder actor can handles.
+    * Handles MaxStorefinderMessage setting the maximum number of Storefinder actor each Storemanager actor can handles.
     *
     * @param message The ActorPropertiesMessage message to precess.
+    *
+    * @see ActorPropertiesMessage
+    * @see SetNinjaMessage
+    * @see SetWarehousemanMessage
+    * @see MaxRowsMessage
+    * @see MaxStorekeeperMessage
+    * @see MaxStorefinderMessage
+    * @see Storefinder
+    * @see Ninja
+    * @see Warehouseman
+    * @see Storefinder
+    * @see Storekeeper
     */
   private def handleActorPropertiesMessageMessage(message: ActorPropertiesMessage): Unit = {
     message match {
-      case _ => //TODO
+      // If the user types 'setninjanumber <number>'
+      case SetNinjaMessage(number: Integer) => //TODO
+      // If the user types 'setwarehousemannumber <number>'
+      case SetWarehousemanMessage(number: Integer) => //TODO
+      // If the user types 'setmaxrows <number>'
+      case MaxRowsMessage(number: Integer) => //TODO
+      // If the user types 'setmaxstorekeeper <number>'
+      case MaxStorekeeperMessage(number: Integer) => //TODO
+      // If the user types 'setmaxstorefinder <number>'
+      case MaxStorefinderMessage(number: Integer) => //TODO
+      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handlePermissionsManagementMessage"))
     }
   }
 
   /**
     * Processes HelpMessage messages.
-    * Handles CompleteHelp messages returning the list commands given by the Helper class and
-    * SpecificHelp messages returning the description of single command given by the Helper class.
+    * Handles CompleteHelpMessage messages returning the list commands given by the Helper class and
+    * SpecificHelpMessage messages returning the description of single command given by the Helper class.
     *
     * @param message The HelpMessage message to precess.
+    *
+    * @see CompleteHelpMessage
+    * @see SpecificHelpMessage
+    * @see ReplyMessage
     */
   private def handleHelpMessage(message: HelpMessage): Unit ={
     message match {
       // If the user types 'help' use the 'completeHelp' method from the Helper
-      case CompleteHelp() => reply(ReplyMessage(EnumReplyResult.Done, message, CompleteHelpReplyInfo(helper.completeHelp())))
+      case CompleteHelpMessage() => reply(ReplyMessage(EnumReplyResult.Done, message, CompleteHelpReplyInfo(helper.completeHelp())))
       // If the user types 'help <command>' use the 'specificHelp' method from the Helper
-      case SpecificHelp(command: String) => reply(ReplyMessage(EnumReplyResult.Done, message, SpecificHelpReplyInfo(helper.specificHelp(command))))
+      case SpecificHelpMessage(command: String) => reply(ReplyMessage(EnumReplyResult.Done, message, SpecificHelpReplyInfo(helper.specificHelp(command))))
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleHelpMessage"))
     }
   }
@@ -200,10 +267,18 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * Handles ListDatabaseMessage messages returning the list of databases
     * the user has, at least, read permissions on.
     * Handles SelectDatabaseMessage messages saving the selected database.
-    * Handles CreateDatabaseMessage messages creating a new Storemanager which represent the new database.
-    * Handles DeleteDatabaseMessage messages deleting the Storemanager which represent the database.
+    * Handles CreateDatabaseMessage messages creating a new Storemanager actor which represents the new database.
+    * Handles DeleteDatabaseMessage messages deleting Storemanager actors that represent the database.
     *
     * @param message The DatabaseMessage message to precess.
+    *
+    * @see DatabaseMessage
+    * @see ListDatabaseMessage
+    * @see SelectDatabaseMessage
+    * @see CreateDatabaseMessage
+    * @see DeleteDatabaseMessage
+    * @see Storemanager
+    * @see ReplyMessage
     */
   private def handleDatabaseMessage(message: DatabaseMessage): Unit = {
     message match {
@@ -269,6 +344,10 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * All other MapMessage messages are sent to the right Storemanager.
     *
     * @param message The MapMessage message to precess.
+    *
+    * @see MapMessage
+    * @see SelectMapMessage
+    * @see Storemanager
     */
   private def handleMapMessage(message: MapMessage): Unit = {
     // If there isn't a selected database
@@ -320,6 +399,9 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * All RowMessage messages are sent to the right Storemanager.
     *
     * @param message The RowMessage message to precess.
+    *
+    * @see RowMessage
+    * @see Storemanager
     */
   private def handleRowMessage(message: RowMessage): Unit = {
     // If there isn't a selected database
@@ -351,7 +433,13 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * @param message The message sent to the actor.
     * @param dbName The database selected by the client.
     *
-    * @return Return true if the user has the permission to execute the query.
+    * @return <code>true</code> if the user has the permission to execute the query, <code>false</code> otherwise.
+    *
+    * @see QueryMessage
+    * @see PermissionMessages
+    * @see ReadMessage
+    * @see ReadWriteMessage
+    * @see NoPermissionMessage
     */
   private def checkPermissions(message: QueryMessage, dbName:String): Boolean = {
     //TODO admin permissions

@@ -3,7 +3,7 @@ package server.utils
 import akka.event.LoggingAdapter
 import server.enums.EnumPermission
 import server.messages.query.ErrorMessages.InvalidQueryMessage
-import server.messages.query.HelpMessages.{CompleteHelp, SpecificHelp}
+import server.messages.query.HelpMessages.{CompleteHelpMessage, SpecificHelpMessage}
 import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, RemovePermissionMessage}
 import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage}
 import server.messages.query.{ErrorMessages, LoginMessage, QueryMessage}
@@ -73,7 +73,7 @@ class Parser {
       case "listdb" => return new ListDatabaseMessage
       case "listmap" => return new ListMapMessage
       case "keys" => return new ListKeysMessage
-      case "help" => return new CompleteHelp
+      case "help" => return new CompleteHelpMessage
 
       case _ => return new InvalidQueryMessage
     }
@@ -93,7 +93,7 @@ class Parser {
       case "removeuser" => return new RemoveUserMessage(arg)
       case "listpermission" => return new ListPermissionMessage(arg)
 
-      case "help" => return new SpecificHelp(arg)
+      case "help" => return new SpecificHelpMessage(arg)
 
       case _ => return new InvalidQueryMessage
     }

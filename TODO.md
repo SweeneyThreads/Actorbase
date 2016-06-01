@@ -47,6 +47,8 @@ Robe da sviluppare
 * Fare help specifici più lunghi con anche le stringhe in caso di errore
 * Gestire comandi su più pacchetti in Usermanager / Driver
 * Mostrare tipo di errore di connessione
+* Controllare currentMethodName nel log
+* Parsare comandi proprietà attori
 
 
 

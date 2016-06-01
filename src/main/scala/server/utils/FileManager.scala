@@ -13,7 +13,7 @@ import server.enums.EnumPermission.UserPermission
   * Created by matteobortolazzo on 09/05/2016.
   */
 
-class FileReader(fileName: String, log:LoggingAdapter) {
+class FileManager(path: String) {
   def WriteEntry(key: String, value: Array[Byte]): Unit = {
     //TODO
   }

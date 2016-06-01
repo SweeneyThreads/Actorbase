@@ -1,41 +1,44 @@
 package server.actors
 
 import java.util
-
-import server.enums.EnumReplyResult._
-import server.messages.query.ReplyMessage
-
-import scala.language.postfixOps
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{Actor, ActorRef, Props}
-import server.messages.internal.ScalabilityMessages.SendMapMessage
+import akka.actor.{ActorRef, Props}
+import server.enums.EnumReplyResult._
+import server.messages.query.ReplyMessage
 import server.messages.query.user.RowMessages._
 
 import scala.collection.JavaConversions._
+import scala.language.postfixOps
 import scala.util.matching.Regex
 import scala.util.{Failure, Success}
+import akka.dispatch.ExecutionContexts._
+import akka.pattern.ask
+import akka.util.Timeout
+
+import scala.concurrent.duration._
+
 
 /**
   * Created by matteobortolazzo on 02/05/2016.
+  * Actor that represent a map or part of it, it manages indexes and backups.
   */
-
-/** This actor represent a map */
 class Storefinder extends ReplyActor {
-
-  import akka.dispatch.ExecutionContexts._
-  import akka.pattern.ask
-  import akka.util.Timeout
-
-  import scala.concurrent.duration._
 
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
 
-  var storekeepers = new ConcurrentHashMap[Regex, ActorRef]()
+  val storekeepers = new ConcurrentHashMap[Regex, ActorRef]()
   storekeepers.put(".*".r, context.actorOf(Props(new Storekeeper(true)))) // Startup storekeeper
+  val ninjas = new ConcurrentHashMap[ActorRef, util.ArrayList[ActorRef]]()
+  val warehousemans = new ConcurrentHashMap[ActorRef, util.ArrayList[ActorRef]]()
 
-  /** Main receive method */
+  /**
+    * Processes all incoming messages.
+    * It handles only RowMessage messages
+    *
+    * @see #handleRowMessage(RowMessage)
+    */
   def receive = {
     // StoreFinder should receive and handle only RowMessages
     case m:RowMessage => handleRowMessage(m)
@@ -43,7 +46,22 @@ class Storefinder extends ReplyActor {
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString,currentMethodName()))
   }
 
-  /** Handles the messages of type RowMessage */
+  /**
+    * Processes RowMessage messages.
+    * Handles ListKeysMessage messages asking to every Storekeeper actor the list of keys
+    * and returning the complete list.
+    * All other RowMessage messages are sent to the right Storekeeper actor.
+    *
+    * @param message The RowMessage message to precess.
+    *
+    * @see #sendToStorekeeper(String, RowMessage)
+    * @see RowMessage
+    * @see ListKeysMessage
+    * @see InsertRowMessage
+    * @see UpdateRowMessage
+    * @see FindRowMessage
+    * @see Storekeeper
+    */
   private def handleRowMessage(message: RowMessage) : Unit = {
     message match {
       // if the user types 'keys'
@@ -110,7 +128,16 @@ class Storefinder extends ReplyActor {
     }
   }
 
-  /** Sends a RowMessage to the Storekeeper that could contain the key */
+  /**
+    * Sends the RowMessage message to the right Storekeeper actor using the findActor method.
+    *
+    * @param key The key of the entry.
+    * @param message The message to send
+    *
+    * @see #findActor(String)
+    * @see RowMessage
+    * @see Storekeeper
+    */
   private def sendToStorekeeper(key:String, message: RowMessage): Unit = {
     // storekeeper that could contain the key
     val sk = findActor(key)
@@ -125,7 +152,12 @@ class Storefinder extends ReplyActor {
     }
   }
 
-  /** Finds the storekeeper that could contain the key */
+  /**
+    * Finds the Storekeeper actor which manages the group of keys the given key should be in.
+    *
+    * @param key The key of the entry.
+    * @return The reference of the Storekeeper which manages the group of keys the given key should be in.
+    */
   private def findActor(key:String):ActorRef = {
     // for every storekeeper in the map
     for(r:Regex <- storekeepers.keys()) {
@@ -136,7 +168,7 @@ class Storefinder extends ReplyActor {
         // return the reference to the storekeeper
         return storekeepers.get(r)
     }
-    // if no match is found return null
+    // if no match is found return null (it should not arrives here)
     null
   }
 }

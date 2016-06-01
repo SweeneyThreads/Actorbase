@@ -1,32 +1,26 @@
 package server.actors
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{ActorRef, Props}
+import akka.dispatch.ExecutionContexts._
 import akka.io.Tcp
-import akka.util.ByteString
+import akka.pattern.ask
+import akka.util.{ByteString, Timeout}
 import server.Server
-import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.{LoginMessage, QueryMessage, ReplyMessage}
 import server.utils.Parser
 
+import scala.concurrent.duration._
+import scala.language.postfixOps
 import scala.util.{Failure, Success}
-import server.messages.query._
-import server.messages.query.user.DatabaseMessages.CreateDatabaseMessage
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
+  * This actor handles TCP requests from the client.
+  * It understands the query, sending it to the Main and giving the client the answer.
   */
-
-/** Every client talks with an instance of this actor.
-  * It creates messages from strings.
-  * */
 class Usermanager extends ReplyActor {
 
-  import akka.dispatch.ExecutionContexts._
-  import akka.pattern.ask
-  import akka.util.Timeout
-  import scala.language.postfixOps
-  import scala.concurrent.duration._
   // Values for futures
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
@@ -38,7 +32,15 @@ class Usermanager extends ReplyActor {
   // The main actor reference
   var mainActor: ActorRef = null
 
-  /** The main receive method */
+  /**
+    * Processes all incoming messages.
+    * It handles Received message buffering incoming packets,
+    * parsings it and sending the message to the Main actor.
+    *
+    * @see Helper
+    * @see #parseQuery(String)
+    * @see #replyToClient(String)
+    */
   def receive = {
     // When it receive data
     case Received(data: ByteString) => {
@@ -58,7 +60,18 @@ class Usermanager extends ReplyActor {
     }
   }
 
-  /** Parse the command like a query */
+  /**
+    * Uses the Parser class to parse the string to a message.
+    * If the message is an InvalidQueryMessage message it replies to the client,
+    * otherwise it handles it.
+    *
+    * @param query The query string.
+    *
+    * @see Parser
+    * @see InvalidQueryMessage
+    * @see QueryMessage
+    * @see #handleQueryMessage(QueryMessage)
+    */
   private def parseQuery(query: String): Unit = {
     // Use the parser to parse the string
     val message = parser.parseQuery(query)
@@ -71,7 +84,15 @@ class Usermanager extends ReplyActor {
     }
   }
 
-  /** Handles query messages */
+  /**
+    * Handles QueryMessage messages, if it's a LoginMessage message it handles it,
+    * otherwise it sends it to the Main actor.
+    *
+    * @param message The QueryMessage message to process.
+    *
+    * @see LoginMessage
+    * @see QueryMessage
+    */
   private def handleQueryMessage(message: QueryMessage): Unit = {
     message match {
       // If user types 'login <username> <password>'
@@ -96,7 +117,16 @@ class Usermanager extends ReplyActor {
     }
   }
 
-  /** Handles login messages */
+  /**
+    * Logs in the user if the user is not connected already.
+    * Checks if the given username is in the users list and if the password is the right one.
+    * It replies to the client the result of the operation.
+    *
+    * @param username The user's username.
+    * @param password The user's password.
+    *
+    * @see #replyToClient(String, ActorRef)
+    */
   private def handleLogin(username: String, password: String): Unit = {
     // if the user is connected
     if (!connected) {
@@ -118,8 +148,13 @@ class Usermanager extends ReplyActor {
     else replyToClient("N")
   }
 
-  /** Reply to the client */
-  private def replyToClient(str: String, sender: ActorRef = sender): Unit = {
-    sender ! Write(ByteString(str))
+  /**
+    * Sends the reply message to the original sender.
+    *
+    * @param reply The string to send to the client.
+    * @param sender The sender of the request.
+    */
+  private def replyToClient(reply: String, sender: ActorRef = sender): Unit = {
+    sender ! Write(ByteString(reply))
   }
 }

@@ -1,15 +1,11 @@
 package server.actors
-
 import java.net.InetSocketAddress
-
 import akka.actor.{Actor, Props}
 import akka.io.{IO, Tcp}
+import Tcp._
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
-  */
-
-/**
   * The actor that represents the entry point to the server.
   * It opens a port in the host and listens for new connections.
   * When a new client connects, the doorkeeper create an Usermanager actor
@@ -18,13 +14,16 @@ import akka.io.{IO, Tcp}
   */
 class Doorkeeper(port: Integer) extends Actor with akka.actor.ActorLogging {
 
-  import Tcp._
-  import context.system
   IO(Tcp) ! Bind(self, new InetSocketAddress(port))
 
   /**
-    * Processes messages in the mailbox.
-    * Handles only messages from the Akka TCP actor.
+    * Processes all incoming messages.
+    * It handles only messages coming from the TCP actor.
+    * Handles Bound messages logging the opened port.
+    * Handles CommandFailed killing itself.
+    * Handles Connected messages creating an Usermanager actor for the new client.
+    *
+    * @see Usermanager
     */
   def receive = {
     // When the socket is opened

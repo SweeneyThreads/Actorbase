@@ -3,7 +3,7 @@ package server.actors
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.ActorRef
 import server.enums.EnumReplyResult
 import server.enums.EnumReplyResult._
 import server.messages.internal.BecomeStorekeeperMessage
@@ -15,21 +15,37 @@ import scala.collection.JavaConversions._
 
 /**
   * Created by matteobortolazzo on 02/05/2016.
+  * Actor that represent a map or a porting of it.
+  * It manages all row-level operations and backups, on RAM and disk.
+  *
+  * @param isStorekeeper <code>true</code> if the actor has to behave like a Storekeeper actor,
+  *   <code>false</code> if the actor has to behave like a Ninja actor
   */
-
-/** This actor represent a map partition */
 class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
-  var db = new ConcurrentHashMap[String,  Array[Byte]]()
-
+  val db = new ConcurrentHashMap[String,  Array[Byte]]()
   import context._
 
-  /** Before the actor starts */
+  /**
+    * Override of the actor's preStart method.
+    * If the actor has to behave like a Storekeeper actor, its receive method changes.
+    *
+    * @see #become(Actor.receive)
+    */
   override def preStart(): Unit = {
     // If it has to behave like a Storekeeper it calls the become method
     if(isStorekeeper) become(receiveAsStorekeeper)
   }
 
-  /** The main receive method (Ninja behavior) */
+  /**
+    * Processes all incoming messages behaving like a Ninja actor.
+    * It handles BecomeStorekeeperMessage messages, SendMapMessage messages and RowMessage messages.
+    *
+    * @see BecomeStorekeeperMessage
+    * @see RowLevelMessage
+    * @see SendMapMessage
+    * @see #become(Actor.receive)
+    * @see #handleRowMessagesAsNinja(RowLevelMessage)
+    */
   def receive = {
     // If it's a become Storekeeper message it calls the become method and changes it's receive method
     case BecomeStorekeeperMessage => become(receiveAsStorekeeper)
@@ -42,7 +58,14 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString, currentMethodName()))
   }
 
-  /** The main receive method (Storekeeper behavior) */
+  /**
+    * Processes all incoming messages behaving like a Storekeeper actor.
+    * It handles SendMapMessage messages and RowMessage messages.
+    *
+    * @see RowLevelMessage
+    * @see SendMapMessage
+    * @see #handleRowMessages(RowLevelMessage)
+    */
   private def receiveAsStorekeeper: Receive = {
     // If it's a row level message
     case m: RowMessage => handleRowMessage(m)
@@ -53,7 +76,19 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString, currentMethodName()))
   }
 
-  /** Handle row level messages (Storekeeper behaviour) */
+  /**
+    * Processes RowMessage messages.
+    * Handles ListKeysMessage messages returning the list of keys in the actor.
+    * Handles InsertRowMessage messages adding an entry in the map.
+    * Handles UpdateRowMessage messages updating an entry in the map.
+    * Handles RemoveRowMessage messages removing an entry with the given key.
+    * Handles FindRowMessage messages returning the value of an entry with the given key.
+    *
+    * @param message The RowMessage message to precess.
+    *
+    * @see RowMessage
+    * @see ReplyMessage
+    */
   private def handleRowMessage(message: RowMessage): Unit = {
     message match {
       // If the user types "insert '<key>' <value>"
@@ -109,7 +144,17 @@ class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
     }
   }
 
-  /** Handle row level messages (Ninja behaviour) */
+  /**
+    * Processes RowMessage messages.
+    * Handles InsertRowMessage messages adding an entry in the map.
+    * Handles UpdateRowMessage messages updating an entry in the map.
+    * Handles RemoveRowMessage messages removing an entry with the given key.
+    *
+    * @param message The RowMessage message to precess.
+    *
+    * @see RowMessage
+    * @see ReplyMessage
+    */
   private def handleRowMessagesAsNinja(message: RowMessage): Unit = {
     message match {
       // If the storemanager send an insert message

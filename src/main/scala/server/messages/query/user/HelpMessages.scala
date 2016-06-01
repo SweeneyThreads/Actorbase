@@ -8,8 +8,8 @@ import server.messages.query.user.UserMessage
   */
 object HelpMessages {
   trait HelpMessage extends UserMessage
-  case class CompleteHelp() extends HelpMessage with NoPermissionMessage
-  case class SpecificHelp(command: String) extends HelpMessage with NoPermissionMessage
+  case class CompleteHelpMessage() extends HelpMessage with NoPermissionMessage
+  case class SpecificHelpMessage(command: String) extends HelpMessage with NoPermissionMessage
 
   case class CompleteHelpReplyInfo(commands:String) extends ReplyInfo
   case class SpecificHelpReplyInfo(command: String) extends ReplyInfo
