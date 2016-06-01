@@ -29,7 +29,14 @@ import scala.util.{Failure, Success}
   * Created by matteobortolazzo on 01/05/2016.
   */
 
-/** This actor executes client commands and checks permissions */
+/**
+  * Actor that executes the messages from the client.
+  * It processes database-level queries and admin-level queries by itself,
+  * all other queries are sent to the right actor.
+  *
+  * @param permissions the user's permissions list.
+  * @param server the server reference
+  */
 class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val server: ServerDependencyInjector = new StandardServerInjector {}) extends ReplyActor {
 
   import akka.dispatch.ExecutionContexts._
@@ -46,14 +53,23 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   var selectedDatabase = ""
   var selectedMap = ""
 
-  /** Receive method */
+  /**
+    * Processes all incoming messages.
+    * It handles only QueryMessage messages
+    */
   def receive = {
     // If it's a query message
     case m:QueryMessage => handleQueryMessage(m)
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString(), "receive"))
   }
 
-  /** Handle query messages (User and Admin) */
+  /**
+    * Processes QueryMessage messages.
+    * Handles UserMessage messages and AdminMessage ones
+    * calling the right method for each one.
+    *
+    * @param message The QueryMessage message to precess.
+    */
   private def handleQueryMessage(message: QueryMessage) = {
     message match {
       // If it's a user type command
@@ -64,7 +80,13 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
-  /** Handle user query messages (Help, Database, Map and Row) */
+  /**
+    * Processes UserMessage messages.
+    * Handles HelpMessage, DatabaseMessage, MapMessage and RowMessage
+    * messages calling the right method for each one.
+    *
+    * @param message The UserMessage message to precess.
+    */
   private def handleUserMessage(message: UserMessage) = {
     message match {
       // If it's an help message
@@ -79,7 +101,13 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
-  /** Handle admin query messages (UserManagement, PermissionManagement and Properties) */
+  /**
+    * Processes AdminMessage messages.
+    * Handles UsersManagementMessage, PermissionsManagementMessage and ActorPropertiesMessage
+    * messages calling the right method for each one.
+    *
+    * @param message The AdminMessage message to precess.
+    */
   private def handleAdminMessage(message: AdminMessage) = {
     message match {
       // If it's an user management command
@@ -92,7 +120,14 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
-  /** Handle user management messages (ListUser, AddUser and RemoveUser) */
+  /**
+    * Processes UsersManagementMessage messages.
+    * Handles ListUserMessage messages returning the list of users,
+    * AddUserMessage messages adding an user and
+    * RemoveUserMessage messages removing the user.
+    *
+    * @param message The UsersManagementMessage message to precess.
+    */
   private def handleUserManagementMessage(message: UsersManagementMessage): Unit = {
     // Select the 'master' database and the 'user' map
     selectedDatabase = "master"
@@ -108,7 +143,14 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
-  /** Handle permission management messages (ListPermission, AddPermission, RemovePermission) */
+  /**
+    * Processes PermissionsManagementMessage messages.
+    * Handles ListPermissionMessage messages returning the list of user's permissions,
+    * AddPermissionMessage messages adding an user's permission and
+    * RemovePermissionMessage messages removing the user's permission.
+    *
+    * @param message The PermissionsManagementMessage message to precess.
+    */
   private def handlePermissionsManagementMessage(message: PermissionsManagementMessage): Unit = {
     // Select the 'master' database and the 'permissions' map
     selectedDatabase = "master"
@@ -124,14 +166,25 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
-  /** Handle actors' properties messages */
+  /**
+    * Processes ActorPropertiesMessage messages.
+    * //TODO
+    *
+    * @param message The ActorPropertiesMessage message to precess.
+    */
   private def handleActorPropertiesMessageMessage(message: ActorPropertiesMessage): Unit = {
     message match {
       case _ => //TODO
     }
   }
 
-  /** Handle help messages (complete or specific ones) */
+  /**
+    * Processes HelpMessage messages.
+    * Handles CompleteHelp messages returning the list commands given by the Helper class and
+    * SpecificHelp messages returning the description of single command given by the Helper class.
+    *
+    * @param message The HelpMessage message to precess.
+    */
   private def handleHelpMessage(message: HelpMessage): Unit ={
     message match {
       // If the user types 'help' use the 'completeHelp' method from the Helper
@@ -142,7 +195,16 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
-  /** Handle database messages (ListDatabase, SelectDatabase, CreateDatabase and DeleteDatabase) */
+  /**
+    * Processes DatabaseMessage messages.
+    * Handles ListDatabaseMessage messages returning the list of databases
+    * the user has, at least, read permissions on.
+    * Handles SelectDatabaseMessage messages saving the selected database.
+    * Handles CreateDatabaseMessage messages creating a new Storemanager which represent the new database.
+    * Handles DeleteDatabaseMessage messages deleting the Storemanager which represent the database.
+    *
+    * @param message The DatabaseMessage message to precess.
+    */
   private def handleDatabaseMessage(message: DatabaseMessage): Unit = {
     message match {
       // If the user types 'listdb'
@@ -200,7 +262,14 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
-  /** Manages map messages */
+  /**
+    * Processes MapMessage messages if a database is selected.
+    * Handles SelectMapMessage messages asking to the right Storemanager
+    * if it contains the asked map, if so it saves the selected map.
+    * All other MapMessage messages are sent to the right Storemanager.
+    *
+    * @param message The MapMessage message to precess.
+    */
   private def handleMapMessage(message: MapMessage): Unit = {
     // If there isn't a selected database
     if(selectedDatabase == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoDBSelectedInfo()))
@@ -246,7 +315,12 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
-  /** Manages row messages */
+  /**
+    * Processes RowMessage messages if a a database and a map are selected.
+    * All RowMessage messages are sent to the right Storemanager.
+    *
+    * @param message The RowMessage message to precess.
+    */
   private def handleRowMessage(message: RowMessage): Unit = {
     // If there isn't a selected database
     if(selectedDatabase == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoDBSelectedInfo()))
@@ -267,7 +341,18 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     }
   }
 
-  /** Checks user permissions */
+  /**
+    * Checks if the logged user has the permission to execute the query.
+    * If the user is an admin it has all the the permissions,
+    * otherwise it checks if the user has some permissions on the selected database.
+    * If permissions are found and are equal or greater than what the query needs,
+    * it returns true otherwise false.
+    *
+    * @param message The message sent to the actor.
+    * @param dbName The database selected by the client.
+    *
+    * @return Return true if the user has the permission to execute the query.
+    */
   private def checkPermissions(message: QueryMessage, dbName:String): Boolean = {
     //TODO admin permissions
 

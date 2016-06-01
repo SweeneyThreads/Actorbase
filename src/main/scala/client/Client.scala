@@ -29,8 +29,8 @@ object Client {
   }
 
   /**
-    * Process a command line content, executing the client-side query. If no connection is established checkLogin
-    * method is called.
+    * Processes a command line content executing the client-side query.
+    * If the connection is not established checkLogin method is called.
     *
     * @param ln the query String to be processed
     */
@@ -55,7 +55,7 @@ object Client {
   }
 
   /**
-    * Try to establish a connection in case of a login query, print an error message otherwise.
+    * Tries to establish a connection in case of a login query, prints an error message otherwise.
     *
     * @param ln The query String to be processed
     */

@@ -27,7 +27,7 @@ object Welcome {
   val javaVersion = System.getProperty("java.version")
 
   /**
-    * Print welcome banner and user information on console.
+    * Prints welcome banner and user information on the console.
     */
   def printWelcomeMessage: Unit = {
     println(banner)

@@ -9,7 +9,7 @@ import java.net.SocketException
 object Driver {
 
   /**
-    * Creates a connection with the selected server, if no connection can be established a null value is returned
+    * Creates a connection with the selected server, if the connection cannot be established a null value is returned.
     *
     * @param host  The host name as String
     * @param port  The host port as Integer

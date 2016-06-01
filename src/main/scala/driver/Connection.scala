@@ -36,15 +36,15 @@ class ConcreteConnection(val host: String, val port: Integer, val username: Stri
   login(username,password)
 
   /**
-    * Close the connection, after invoking this method the connection can't be used anymore. Create a new object with
-    * the same parameters to re-establish the connection with the server.
+    * Closes the connection, after invoking this method the connection cannot be used anymore.
+    * Create a new object with the same parameters to re-establish the connection with the server.
     */
   def closeConnection(): Unit = {
     socket.close()
   }
 
   /**
-    * Execute a query on the connected server.
+    * Executes a query on the connected server.
     *
     * @param query The entire query to execute, expressed in Actorbase syntax as String
     * @return a the query result as a String, if the query requested was a value's request, the value is returned as a
@@ -65,7 +65,7 @@ class ConcreteConnection(val host: String, val port: Integer, val username: Stri
   }
 
   /**
-    * Login on the server, after the TCP connection is established
+    * Logs in on the server if the TCP connection is established.
     *
     * @param username The username to use for the login as String
     * @param password The password to use for the login as String
