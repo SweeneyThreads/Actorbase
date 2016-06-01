@@ -1,8 +1,7 @@
 package driver
 
-import java.io.{BufferedInputStream, PrintStream}
+import java.io.PrintStream
 import java.net.{InetAddress, Socket}
-import java.nio.charset.StandardCharsets
 
 /**
   * Created by eliamaino on 10/05/16.
@@ -30,11 +29,11 @@ trait Connection {
 class ConcreteConnection(val host: String, val port: Integer, val username: String, val password: String) extends Connection {
 
   val socket = new Socket(InetAddress.getByName(host), port)
+  socket.setSoTimeout(10000)
   val out = new PrintStream(socket.getOutputStream)
-  val in = new BufferedInputStream(socket.getInputStream)
+  val in = socket.getInputStream
 
   login(username,password)
-
   /**
     * Closes the connection, after invoking this method the connection cannot be used anymore.
     * Create a new object with the same parameters to re-establish the connection with the server.
@@ -57,7 +56,11 @@ class ConcreteConnection(val host: String, val port: Integer, val username: Stri
       out.flush()
       while(in.available() < 1) Thread.sleep(100)
       val buf = new Array[Byte](in.available())
-      in.read(buf)
+      try {
+        in.read(buf)
+      }catch{
+        case ie:InterruptedException => throw new InterruptedException
+      }
       new String(buf, "UTF-8")
     }
     else
@@ -78,7 +81,11 @@ class ConcreteConnection(val host: String, val port: Integer, val username: Stri
     out.flush()
     while(in.available() < 1) Thread.sleep(100)
     val buf = new Array[Byte](in.available())
-    in.read(buf)
+    try {
+      in.read(buf)
+    }catch{
+      case ie:InterruptedException => throw new InterruptedException
+    }
     val result = new String(buf)
     if(result != "Y") {
       socket.close()

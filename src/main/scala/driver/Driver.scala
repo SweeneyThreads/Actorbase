@@ -1,6 +1,5 @@
 package driver
 
-import java.net.SocketException
 /**
   * Created by eliamaino on 10/05/16.
   */
@@ -22,6 +21,7 @@ object Driver {
       new ConcreteConnection(host, port, username, password)
     }
     catch {
+      case ie:InterruptedException => throw new InterruptedException
       case se:Exception => null
     }
   }

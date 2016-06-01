@@ -1,9 +1,5 @@
 package client
-import java.io._
-
 import driver.{Connection, Driver}
-
-import scala.util.matching.Regex
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
@@ -48,7 +44,11 @@ object Client {
       }
       // execute the query otherwise
       else {
-        println(connection.executeQuery(ln))
+        try {
+          println(connection.executeQuery(ln))
+        }catch{
+          case ie:InterruptedException => connection.closeConnection(); connection = null; println("response time expired server, please reconnect to the server")
+        }
       }
     }
     else checkLogin(ln)
@@ -66,7 +66,11 @@ object Client {
     // If it's a connection command
     if (result.isDefined) {
       val regex = result.get
-      connection = Driver.connect(regex.group(1), Integer.parseInt(regex.group(2)), regex.group(3), regex.group(4))
+      try {
+        connection = Driver.connect(regex.group(1), Integer.parseInt(regex.group(2)), regex.group(3), regex.group(4))
+      }catch{
+        case ie:InterruptedException => connection.closeConnection(); connection = null; println("response time expired server, please reconnect to the server")
+      }
       if (connection != null) {
         println("You are connected!")
       }
