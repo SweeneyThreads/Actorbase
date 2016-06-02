@@ -52,31 +52,32 @@ class ConfigurationManager() {
   /**
     * Reads from file doorkeepers' start address and port.
     * Whenever anyone call this method, it needs to catch the following Exceptions
+    *
     * @throws IOException
     * @throws FileNotFoundException
     * @throws Exception
     * @param fileName The name of the file that contains the doorkeeper configuration.
     * @return A list with addresses and ports.
     */
-  def readDoorkeepersSettings(fileName: String = "access.json"): util.HashMap[String, Integer] = {
-    val toReturn : util.HashMap[String, Integer] = new util.HashMap[String, Integer]()
-
-      val source = scala.io.Source.fromFile(fileName)
-      val list = try source.getLines().mkString finally source.close()
-      val jsonObject = new JSONObject(list)
-      val accesses = jsonObject.getJSONArray("accesses")
-      for( i <- 0 until accesses.length()){
-        val singleAccessPoint = accesses.getJSONObject(i)
-        val ip = singleAccessPoint.getString("address")
-        val port = singleAccessPoint.getInt("port")
-        toReturn.put(ip, port)
-      }
+  def readDoorkeepersSettings(fileName: String): util.HashMap[String, Integer] = {
+    val toReturn: util.HashMap[String, Integer] = new util.HashMap[String, Integer]()
+    val source = scala.io.Source.fromFile(fileName)
+    val list = try source.getLines().mkString finally source.close()
+    val jsonObject = new JSONObject(list)
+    val accesses = jsonObject.getJSONArray("accesses")
+    for (i <- 0 until accesses.length()) {
+      val singleAccessPoint = accesses.getJSONObject(i)
+      val ip = singleAccessPoint.getString("address")
+      val port = singleAccessPoint.getInt("port")
+      toReturn.put(ip, port)
+    }
     return toReturn
   }
 
   /**
     * Reads from file actors' properties
     * Whenever anyone call this method, it needs to catch the following Exceptions
+    *
     * @throws IOException
     * @throws FileNotFoundException
     * @throws Exception

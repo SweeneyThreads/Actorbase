@@ -1,5 +1,6 @@
 package server
 
+import java.io.FileNotFoundException
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorSystem, Props}
@@ -42,11 +43,12 @@ object Server {
     loadUsers()
     loadUsersPermissions()
     loadDatabases(system)
+    createDoorkeepers(system)
     log.info("Server started")
   }
 
   /**
-    * Load the list of usernames and password of the users who can access the server. The server will use these
+    * Loads the list of usernames and password of the users who can access the server. The server will use these
     * informations to manage login queries.
     */
   private def loadUsers(): Unit = {
@@ -57,7 +59,7 @@ object Server {
   }
 
   /**
-    * Load user access permission data. Each user has specific access permissions for the databases present on the
+    * Loads user access permission data. Each user has specific access permissions for the databases present on the
     * server. Access to those database is filtered using these permissions.
     */
   private def loadUsersPermissions(): Unit = {
@@ -69,9 +71,9 @@ object Server {
   }
 
   /**
+    * Loads all the databases.
     *
-    *
-    * @param system
+    * @param system The actor system.
     */
   private def loadDatabases(system: ActorSystem): Unit = {
     system.actorOf(Props(new Storemanager("test")), name="test")
@@ -80,15 +82,21 @@ object Server {
   }
 
   /**
+    * Reads the doorkeeper's configuration file and creates the Doorkeeper
     *
-    * @param system
+    * @param system The actor system.
     */
   private def createDoorkeepers(system: ActorSystem): Unit ={
     val confManager = new ConfigurationManager
-    val accesses = confManager.readDoorkeepersSettings()
-    for(address <- accesses.keySet()) {
-      val port = accesses.get(address)
-      system.actorOf(Props(classOf[Doorkeeper], port))
+    try {
+      val accesses = confManager.readDoorkeepersSettings("conf\\accesses.json")
+      for (address <- accesses.keySet()) {
+        val port = accesses.get(address)
+        system.actorOf(Props(classOf[Doorkeeper], port))
+      }
+    }
+    catch {
+      case e:Exception => println("File not found")
     }
   }
 }
