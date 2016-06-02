@@ -29,7 +29,6 @@ object Server {
   var log:LoggingAdapter = null
   var fileReader:ConfigurationManager = null
 
-  var storemanagers: ConcurrentHashMap[String, ActorRef] = null
   var users: ConcurrentHashMap[String, String] = null
   var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]] = null
 
@@ -86,12 +85,8 @@ object Server {
 
   //* Loads databases */
   private def loadDatabases(s: ActorSystem): Unit = {
-    storemanagers = new ConcurrentHashMap[String, ActorRef]()
-    storemanagers.put("test", s.actorOf(Props[Storemanager], name="test"))
-
-    val master = s.actorOf(Props[Storemanager], name="master")
-    storemanagers.put("master", master)
-
+    s.actorOf(Props[Storemanager], name="test")
+    s.actorOf(Props[Storemanager], name="master")
     log.info("Databases loaded")
   }
 }

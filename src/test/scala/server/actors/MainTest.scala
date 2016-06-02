@@ -1,3 +1,4 @@
+/*
 package server.actors
 
 import server.enums.EnumReplyResult
@@ -12,7 +13,6 @@ import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
 import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.MapMessages.SelectMapMessage
-import server.utils.{ServerDependencyInjector}
 
 import akka.testkit.TestActorRef
 
@@ -251,3 +251,4 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
 
 
 
+*/

@@ -3,33 +3,32 @@ package server.actors
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.Props
-import server.Server
+import akka.actor.{ActorRef, Props}
+import akka.dispatch.ExecutionContexts._
+import akka.pattern.ask
+import akka.util.Timeout
+import server.StoremanagersRefs
 import server.enums.EnumPermission.UserPermission
 import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.PermissionMessages._
 import server.messages.query.admin.AdminMessage
 import server.messages.query.admin.PermissionsManagementMessages._
+import server.messages.query.admin.SettingsMessages._
 import server.messages.query.admin.UsersManagementMessages._
 import server.messages.query.user.DatabaseMessages._
+import server.messages.query.user.HelpMessages._
 import server.messages.query.user.MapMessages._
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
 import server.messages.query.{QueryMessage, ReplyMessage}
-import server.utils.{Helper, Serializer, ServerDependencyInjector, StandardServerInjector}
-
-import scala.collection.JavaConversions._
-import scala.language.postfixOps
-import scala.util.{Failure, Success}
-import akka.dispatch.ExecutionContexts._
-import akka.pattern.ask
-import akka.util.Timeout
-import server.messages.query.admin.SettingsMessages._
-import server.messages.query.user.HelpMessages._
+import server.utils.{Helper, Serializer}
 import sun.net.ftp.FtpDirEntry.Permission
 
+import scala.collection.JavaConversions._
 import scala.concurrent.duration._
+import scala.language.postfixOps
+import scala.util.{Failure, Success}
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
@@ -40,12 +39,10 @@ import scala.concurrent.duration._
   *
   * @constructor Create a new Main actor instance from a ConcurrentHashMap and a ServerDependencyInjector.
   * @param permissions the user's permissions list.
-  * @param server the server reference.
-  *
   * @see UserPermission
   * @see Server
   */
-class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val server: ServerDependencyInjector = new StandardServerInjector {}) extends ReplyActor {
+class Main(permissions: ConcurrentHashMap[String, UserPermission] = null) extends ReplyActor {
 
   // Values for futures
   implicit val timeout = Timeout(25 seconds)
@@ -75,7 +72,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * calling the right method for each one.
     *
     * @param message The QueryMessage message to precess.
-    *
     * @see QueryMessage
     * @see UserMessage
     * @see AdminMessage
@@ -98,7 +94,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * messages calling the right method for each one.
     *
     * @param message The UserMessage message to precess.
-    *
     * @see UserMessage
     * @see HelpMessage
     * @see DatabaseMessage
@@ -129,7 +124,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * messages calling the right method for each one.
     *
     * @param message The AdminMessage message to precess.
-    *
     * @see AdminMessage
     * @see UsersManagementMessage
     * @see PermissionsManagementMessage
@@ -157,7 +151,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * RemoveUserMessage messages removing from the map the user.
     *
     * @param message The UsersManagementMessage message to precess.
-    *
     * @see UsersManagementMessage
     * @see ListUserMessage
     * @see AddUserMessage
@@ -185,7 +178,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * RemovePermissionMessage messages removing the user's permission from the map.
     *
     * @param message The PermissionsManagementMessage message to precess.
-    *
     * @see PermissionsManagementMessage
     * @see ListPermissionMessage
     * @see AddPermissionMessage
@@ -211,7 +203,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * Handles RefreshSettings message, reloading settings parameters from the configuration file
     *
     * @param message The SettingMessage message to precess.
-    *
     * @see SettingMessages
     */
   private def handleSettingMessage(message: SettingMessage): Unit = {
@@ -228,7 +219,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * SpecificHelpMessage messages returning the description of single command given by the Helper class.
     *
     * @param message The HelpMessage message to precess.
-    *
     * @see CompleteHelpMessage
     * @see SpecificHelpMessage
     * @see ReplyMessage
@@ -252,7 +242,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * Handles DeleteDatabaseMessage messages deleting Storemanager actors that represent the database.
     *
     * @param message The DatabaseMessage message to precess.
-    *
     * @see DatabaseMessage
     * @see ListDatabaseMessage
     * @see SelectDatabaseMessage
@@ -267,7 +256,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
       case ListDatabaseMessage() => {
         var dbs = List[String]()
         // Foreach database
-        for (k: String <- server.getStoremanagers.keys())
+        for (k: String <- StoremanagersRefs.refs.keys())
           // If the user is a super admin or has permissions on the current database, add the db name to the list
           if (permissions == null || permissions.get(k) != null) dbs = dbs.::(k)
         // If the database is empty it return a 'no dbs error'
@@ -278,7 +267,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
       // If the user types 'selectdb <db_name>'
       case SelectDatabaseMessage(name: String) => {
         // If the selected database doesn't exists
-        if(!server.getStoremanagers.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+        if(!StoremanagersRefs.refs.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
         // If the user doesn't have at least read permissions on the selected database
         else if(!checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
         // If the selected database exists and the user has at least read permissions on it
@@ -292,24 +281,26 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
       // If the user types 'createdb <db_name>'
       case CreateDatabaseMessage(name: String) => {
         // If the selected database already exists
-        if(server.getStoremanagers.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBAlreadyExistInfo()))
+        if(StoremanagersRefs.refs.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBAlreadyExistInfo()))
         // If the selected database doesn't exist
         else {
           // Add the new database
-          Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
+          context.system.actorOf(Props[Storemanager])
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }
       // If the user types 'deletedb <db_name>'
       case DeleteDatabaseMessage(name: String) => {
         // If the selected database doesn't exists
-        if(!server.getStoremanagers.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+        if(!StoremanagersRefs.refs.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
         // If the user doesn't have write permissions on the selected database
         else if(!checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoWritePermissionInfo()))
         // If the selected database exists and the user has write permissions on it
         else {
-          // Remove the database
-          server.getStoremanagers.remove(name)
+          // Kills the actor and removes the reference
+          val ref = StoremanagersRefs.refs.get(name)
+          context.stop(ref)
+          StoremanagersRefs.refs.remove(name)
           // Deselect the database
           selectedDatabase = ""
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
@@ -325,7 +316,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * All other MapMessage messages are sent to the right Storemanager.
     *
     * @param message The MapMessage message to precess.
-    *
     * @see MapMessage
     * @see SelectMapMessage
     * @see Storemanager
@@ -334,9 +324,9 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     // If there isn't a selected database
     if(selectedDatabase == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoDBSelectedInfo()))
     // If the selected database doesn't exists
-    else if(!server.getStoremanagers.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+    else if(!StoremanagersRefs.refs.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
     // It gets the right storemanager
-    val sm = server.getStoremanagers.get(selectedDatabase)
+    val sm = StoremanagersRefs.refs.get(selectedDatabase)
     message match {
       // If the user types 'selectmap <db_name>'
       case SelectMapMessage(name: String) => {
@@ -380,7 +370,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * All RowMessage messages are sent to the right Storemanager.
     *
     * @param message The RowMessage message to precess.
-    *
     * @see RowMessage
     * @see Storemanager
     */
@@ -390,9 +379,9 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
       // If there isn't a selected map
     else if(selectedMap == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoMapSelectedInfo()))
     // If the selected database doesn't exists
-    else if(!server.getStoremanagers.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+    else if(!StoremanagersRefs.refs.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
     // It gets the right storemanager
-    val sm = server.getStoremanagers.get(selectedDatabase)
+    val sm = StoremanagersRefs.refs.get(selectedDatabase)
     // Save the original sender
     val origSender = sender
     // Send a StorefinderRowMessage to the storemanager and save the reply in a future
@@ -413,9 +402,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     *
     * @param message The message sent to the actor.
     * @param dbName The database selected by the client.
-    *
     * @return <code>true</code> if the user has the permission to execute the query, <code>false</code> otherwise.
-    *
     * @see QueryMessage
     * @see PermissionMessages
     * @see ReadMessage
@@ -452,10 +439,18 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     val singleUserPermission : util.HashMap[String, Permission] = new util.HashMap[String, Permission]()
     val serializer : Serializer = new Serializer
 
-    
-
     selectedDatabase = ""
     selectedMap = ""
 
+  }
+
+  /**
+    *
+    *
+    * @param databaseName The name of the database.
+    * @return The ActorRef of the Storemanager actor that represent the database.
+    */
+  private def findStoremanager(databaseName: String): ActorRef = {
+    StoremanagersRefs.refs.get(databaseName)
   }
 }

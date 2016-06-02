@@ -143,7 +143,7 @@ class Parser {
     * @param command The command to check.
     * @param arg1 The fist parameter.
     * @param arg2 The second parameter.
-    * @return The QueryMessage message
+    * @return The QueryMessage message.
     *
     * @see AddUserMessage
     * @see RemovePermissionMessage
@@ -166,7 +166,7 @@ class Parser {
     * @param arg1 The fist parameter.
     * @param arg2 The second parameter.
     * @param arg3 The third parameter.
-    * @return The QueryMessage message
+    * @return The QueryMessage message.
     *
     * @see AddPermissionMessage
     * @see InvalidQueryMessage

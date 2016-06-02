@@ -22,6 +22,7 @@ Robe da sviluppare
 * Togliere spazi iniziali e finali nei comandi in entrata (da più margine d'errore)
 * Spostare risposte testuali da tutti gli attori a solo Usermanager
 * Gestire comandi su più pacchetti in Usermanager / Driver
+* Spostare responsabilità usermanger da Server and ActorSystem
 
 ## DA FINIRE
 * Gestire utenti e permessi in database 'master'
@@ -33,7 +34,6 @@ Robe da sviluppare
 * Fare un README decente
 
 ##DA INIZIARE
-* Spostare responsabilità usermanger da Server and ActorSystem
 * Gestione morte storekeeper -> trasformazione Ninja
 * Gestione Ninja e Warehouseman di uno Storekeeper (messaggi ed invio)
 * Crezione dinamica storekeeper
@@ -49,3 +49,4 @@ Robe da sviluppare
 * Mostrare tipo di errore di connessione
 * Controllare currentMethodName nel log
 * Fare comando refresh config
+* Fare test Main e Storemanager

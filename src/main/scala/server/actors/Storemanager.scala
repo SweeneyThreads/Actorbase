@@ -12,10 +12,10 @@ import server.messages.query.user.RowMessages.{RowMessage, StorefinderRowMessage
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
-
 import akka.dispatch.ExecutionContexts._
 import akka.pattern.ask
 import akka.util.Timeout
+import server.StoremanagersRefs
 
 import scala.concurrent.duration._
 
@@ -24,7 +24,9 @@ import scala.concurrent.duration._
   * Actor that represent a database or part of it, it manages indexes and backups.  *
   * if it's  the 'master' database it creates the 'users' and the 'permissions' map.
   */
-class Storemanager extends ReplyActor {
+class Storemanager(name: String) extends ReplyActor {
+  // Registers itself to the list of usermanager
+  StoremanagersRefs.refs.put(name, self)
    // Values for futures
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
@@ -32,7 +34,7 @@ class Storemanager extends ReplyActor {
   val storefinders = new ConcurrentHashMap[String, ActorRef]()
   // Add a default map (Storefinder). If the present Soremanager represents the Master database, it
   // does not create the default map, instead it creates the users map and the permissions map
-  if(self.path.name == "master") {
+  if(name == "master") {
     storefinders.put("users", context.actorOf(Props[Storefinder]))
     storefinders.put("permissions", context.actorOf(Props[Storefinder]))
   }
@@ -65,7 +67,6 @@ class Storemanager extends ReplyActor {
     * Handles DeleteMapMessage messages deleting Storefinder actors that represent the map.
     *
     * @param message The MapMessage message to precess.
-    *
     * @see MapMessage
     * @see ListMapMessage
     * @see CreateMapMessage
@@ -119,7 +120,6 @@ class Storemanager extends ReplyActor {
     * Finds the right Storefinder actor and sends the RowMessage message to it.
     *
     * @param message The RowMessage message to precess.
-    *
     * @see RowMessage
     * @see StorefinderRowMessage
     */

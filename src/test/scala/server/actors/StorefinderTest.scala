@@ -1,37 +1,31 @@
 package server.actors
 
-import server.enums.EnumReplyResult
-import server.messages.query.ReplyMessage
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
-import scala.language.postfixOps
+import akka.actor.{ActorSystem, Props}
+import akka.event.{Logging, LoggingAdapter}
+import akka.testkit.TestActorRef
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
-import java.util.concurrent.ConcurrentHashMap
-
-import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.event.{Logging, LoggingAdapter}
+import server.enums.EnumReplyResult
+import server.messages.query.ReplyMessage
 import server.messages.query.user.DatabaseMessages._
-import server.messages.query.user.MapMessages._
-import server.utils.ServerDependencyInjector
-import akka.testkit.TestActorRef
-import server.enums.EnumReplyResult.Done
 import server.messages.query.user.RowMessages._
 
-import scala.util.matching.Regex
-
-import java.text.SimpleDateFormat
-import java.util.Calendar
+import scala.language.postfixOps
 
 /**
   * Created by mattia on 29/05/2016.
   */
 class Storefinderest extends FlatSpec with Matchers with MockFactory {
 
-  import akka.util.Timeout
-  import scala.concurrent.duration._
-  import akka.pattern.ask
   import akka.dispatch.ExecutionContexts._
+  import akka.pattern.ask
+  import akka.util.Timeout
+
+  import scala.concurrent.duration._
 
 
   var System: ActorSystem = ActorSystem("System")
