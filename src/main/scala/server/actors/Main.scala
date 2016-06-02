@@ -3,7 +3,8 @@ package server.actors
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.Props
+import akka.actor.{Deploy, Props}
+import akka.remote.RemoteScope
 import server.Server
 import server.enums.{EnumPermission, EnumReplyResult}
 import server.enums.EnumPermission.UserPermission
@@ -45,8 +46,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
 
   import scala.concurrent.duration._
   // Values for futures
-  implicit val timeout = Timeout(25 seconds)
-  implicit val ec = global
   // Instance of Helper class
   var helper = new Helper
   // Values for selected database and selected map
@@ -240,7 +239,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
         // If the selected database doesn't exist
         else {
           // Add the new database
-          Server.storemanagers.put(name, context.actorOf(Props[Storemanager]))
+          Server.storemanagers.put(name, context.actorOf(Props[Storemanager].withDeploy(Deploy(scope=RemoteScope(nextAddress)))))
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }
@@ -350,7 +349,6 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     *
     * @param message The message sent to the actor.
     * @param dbName The database selected by the client.
-    *
     * @return Return true if the user has the permission to execute the query.
     */
   private def checkPermissions(message: QueryMessage, dbName:String): Boolean = {

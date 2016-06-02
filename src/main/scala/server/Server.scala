@@ -33,7 +33,7 @@ object Server {
   var users: ConcurrentHashMap[String, String] = null
   var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]] = null
 
-  var indirizzi: ActorRef = null
+  var clusterListener: ActorRef = null
 
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
@@ -43,7 +43,7 @@ object Server {
     system = ActorSystem("System", conf)
     log = Logging.getLogger(system, this)
 
-    indirizzi = system.actorOf(Props[Addresser])
+    clusterListener = system.actorOf(Props[ClusterListener])
 
 
     loadUsers()

@@ -1,7 +1,6 @@
 package server.actors
 
 import akka.remote.RemoteScope
-import server.Server
 import server.enums.EnumReplyResult._
 import server.messages.query.ReplyMessage
 
@@ -9,7 +8,6 @@ import scala.language.postfixOps
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor._
-import server.messages.internal.ScalabilityMessages.SendMapMessage
 import server.messages.query.user.RowMessages._
 
 import scala.collection.JavaConversions._
@@ -23,29 +21,11 @@ import scala.util.{Failure, Success}
 /** This actor represent a map */
 class Storefinder extends ReplyActor {
 
-  import akka.dispatch.ExecutionContexts._
   import akka.pattern.ask
-  import akka.util.Timeout
-
-  import scala.concurrent.duration._
-
-  implicit val timeout = Timeout(25 seconds)
-  implicit val ec = global
-
-  def getAddress: Address ={
-    var aux :Address = null
-    Server.indirizzi ? "GiveItToMeBitch" onSuccess {
-      case result => aux = result.asInstanceOf[Address]
-    }
-    while(aux == null){
-      Thread.sleep(100)
-    }
-    aux
-  }
 
   var storekeepers = new ConcurrentHashMap[Regex, ActorRef]()
 //  storekeepers.put(".*".r, context.actorOf(Props(new Storekeeper(true)))) // Startup storekeeper
-  storekeepers.put(".*".r, context.actorOf(Props(new Storekeeper(true)).withDeploy(Deploy(scope = RemoteScope(getAddress))))) // Startup storekeeper
+  storekeepers.put(".*".r, context.actorOf(Props(new Storekeeper(true)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))) // Startup storekeeper
 
   /** Main receive method */
   def receive = {

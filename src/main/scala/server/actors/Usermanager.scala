@@ -1,17 +1,16 @@
 package server.actors
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Deploy, ActorRef, Props}
 import akka.io.Tcp
+import akka.remote.RemoteScope
 import akka.util.ByteString
 import server.Server
-import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.{LoginMessage, QueryMessage, ReplyMessage}
 import server.utils.Parser
 
 import scala.util.{Failure, Success}
-import server.messages.query._
-import server.messages.query.user.DatabaseMessages.CreateDatabaseMessage
+
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
@@ -22,14 +21,10 @@ import server.messages.query.user.DatabaseMessages.CreateDatabaseMessage
   * */
 class Usermanager extends ReplyActor {
 
-  import akka.dispatch.ExecutionContexts._
   import akka.pattern.ask
-  import akka.util.Timeout
   import scala.language.postfixOps
-  import scala.concurrent.duration._
+
   // Values for futures
-  implicit val timeout = Timeout(25 seconds)
-  implicit val ec = global
   import Tcp._
   // The parser instance
   val parser = new Parser()
@@ -107,9 +102,9 @@ class Usermanager extends ReplyActor {
         // If the login is valid it creates a main actor that contains the user permissions
         connected = true
         // 'admin' is the super admin so it has no permissions
-        if(username == "admin") mainActor = context.actorOf(Props(new Main()))
+        if(username == "admin") mainActor = context.actorOf(Props(new Main())withDeploy(Deploy(scope = RemoteScope(nextAddress))))
         // If the user is not 'admin' the main receive the user's permissions
-        else mainActor = context.actorOf(Props(new Main(Server.permissions.get(username))))
+        else mainActor = context.actorOf(Props(new Main(Server.permissions.get(username))).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
         replyToClient("Y")
         log.info(username + " is connected")
       }

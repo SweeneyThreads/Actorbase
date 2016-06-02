@@ -2,8 +2,9 @@ package server.actors
 
 import java.net.InetSocketAddress
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Deploy, Props}
 import akka.io.{IO, Tcp}
+import akka.remote.RemoteScope
 
 /**
   * Created by matteobortolazzo on 01/05/2016.
@@ -14,9 +15,10 @@ import akka.io.{IO, Tcp}
   * It opens a port in the host and listens for new connections.
   * When a new client connects, the doorkeeper create an Usermanager actor
   * which will manage all the request from that client.
+  *
   * @param port
   */
-class Doorkeeper(port: Integer) extends Actor with akka.actor.ActorLogging {
+class Doorkeeper(port: Integer) extends ClusterAwareActor with akka.actor.ActorLogging {
 
   import Tcp._
   import context.system
@@ -34,7 +36,7 @@ class Doorkeeper(port: Integer) extends Actor with akka.actor.ActorLogging {
     // When a client connects for the first time
     case c@Connected(remote, local) => {
       // Create an usermanager
-      val usermanager = context.actorOf(Props[Usermanager])
+      val usermanager = context.actorOf(Props[Usermanager].withDeploy(Deploy(scope = RemoteScope(nextAddress))))
       val connection = sender()
       // Bind the client to the usermanager
       connection ! Register(usermanager)
