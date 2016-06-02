@@ -279,13 +279,13 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null) extend
         }
       }
       // If the user types 'createdb <db_name>'
-      case CreateDatabaseMessage(name: String) => {
+      case CreateDatabaseMessage(dbName: String) => {
         // If the selected database already exists
-        if(StoremanagersRefs.refs.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBAlreadyExistInfo()))
+        if(StoremanagersRefs.refs.containsKey(dbName)) reply(ReplyMessage(EnumReplyResult.Error, message, DBAlreadyExistInfo()))
         // If the selected database doesn't exist
         else {
           // Add the new database
-          context.system.actorOf(Props[Storemanager])
+          context.system.actorOf(Props(new Storemanager(dbName)), name=dbName)
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }

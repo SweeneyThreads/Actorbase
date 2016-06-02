@@ -85,8 +85,8 @@ object Server {
 
   //* Loads databases */
   private def loadDatabases(s: ActorSystem): Unit = {
-    s.actorOf(Props[Storemanager], name="test")
-    s.actorOf(Props[Storemanager], name="master")
+    s.actorOf(Props(new Storemanager("test")), name="test")
+    s.actorOf(Props(new Storemanager("master")), name="master")
     log.info("Databases loaded")
   }
 }
