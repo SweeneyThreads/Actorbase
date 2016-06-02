@@ -36,8 +36,9 @@ import scala.concurrent.duration._
   * all other queries are sent to the right actor.
   * It's the only actor that interacts with the Usermanger actor, every reply it's sent to it.
   *
+  * @constructor Create a new Main actor instance from a ConcurrentHashMap and a ServerDependencyInjector.
   * @param permissions the user's permissions list.
-  * @param server the server reference
+  * @param server the server reference.
   *
   * @see UserPermission
   * @see Server
@@ -55,7 +56,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
 
   /**
     * Processes all incoming messages.
-    * It handles only QueryMessage messages
+    * It handles only QueryMessage messages.
     *
     * @see QueryMessage
     * @see #handleQueryMessage(QueryMessage)

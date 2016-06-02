@@ -13,6 +13,7 @@ import server.utils.FileManager
   * Created by lucan on 11/05/2016.
   * Manages the filesystem writing and reading on the sisk.
   *
+  * @constructor create a new Warehouseman actor instance from a String.
   * @param path The map's saving path.
   */
 class Warehouseman(path : String) extends ReplyActor {

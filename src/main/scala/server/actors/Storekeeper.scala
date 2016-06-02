@@ -18,6 +18,7 @@ import scala.collection.JavaConversions._
   * Actor that represent a map or a porting of it.
   * It manages all row-level operations and backups, on RAM and disk.
   *
+  * @constructor create a new Storekeeper actor instance using a Boolean to define his behaviour.
   * @param isStorekeeper <code>true</code> if the actor has to behave like a Storekeeper actor,
   *   <code>false</code> if the actor has to behave like a Ninja actor
   */

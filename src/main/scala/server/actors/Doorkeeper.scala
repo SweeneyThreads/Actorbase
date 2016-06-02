@@ -10,7 +10,9 @@ import Tcp._
   * It opens a port in the host and listens for new connections.
   * When a new client connects, the doorkeeper create an Usermanager actor
   * which will manage all the request from that client.
-  * @param port
+  *
+  * @constructor Create a new Doorkeeper actor instance from an Integer.
+  * @param port Integer that represents the port to use for manage the connection.
   */
 class Doorkeeper(port: Integer) extends Actor with akka.actor.ActorLogging {
 
