@@ -1,0 +1,12 @@
+{
+  "accesses": [
+    {
+      "address": "localhost",
+      "port": "8181"
+    },
+    {
+      "address": "127.0.0.1",
+      "port": "8282"
+    }
+  ]
+}

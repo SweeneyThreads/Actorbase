@@ -7,25 +7,30 @@ import java.io._
   */
 class Serializer {
 
-  def serialize(obj: Unit): Array[Byte] = {
-    try {
-      val b: ByteArrayOutputStream = new ByteArrayOutputStream()
-      try {
-        val o: ObjectOutputStream = new ObjectOutputStream(b)
-        o.writeObject(obj)
-      }
-      return b.toByteArray()
-    }
+  /**
+    *
+    * @param obj
+    * @return
+    */
+  def serialize(obj: Object): Array[Byte] = {
+    val b: ByteArrayOutputStream = new ByteArrayOutputStream()
+
+    val o: ObjectOutputStream = new ObjectOutputStream(b)
+    o.writeObject(obj)
+
+    return b.toByteArray()
   }
 
-  def deserialize(array: Array[Byte]): Unit = {
-    try {
-      val b: ByteArrayInputStream = new ByteArrayInputStream(array)
-      try {
-        val o: ObjectInputStream = new ObjectInputStream(b)
-        return o.readObject();
-      }
-    }
+  /**
+    *
+    * @param array
+    */
+  def deserialize(array: Array[Byte]): Object = {
+    val b: ByteArrayInputStream = new ByteArrayInputStream(array)
+
+    val o: ObjectInputStream = new ObjectInputStream(b)
+    return o.readObject();
+
   }
 
 }

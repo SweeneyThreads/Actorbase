@@ -60,7 +60,7 @@ class ConfigurationManager() {
     */
   def readDoorkeepersSettings(fileName: String = "access.json"): util.HashMap[String, Integer] = {
     val toReturn : util.HashMap[String, Integer] = new util.HashMap[String, Integer]()
-    try{
+
       val source = scala.io.Source.fromFile(fileName)
       val list = try source.getLines().mkString finally source.close()
       val jsonObject = new JSONObject(list)
@@ -71,7 +71,6 @@ class ConfigurationManager() {
         val port = singleAccessPoint.getInt("port")
         toReturn.put(ip, port)
       }
-    }
     return toReturn
   }
 
@@ -85,7 +84,7 @@ class ConfigurationManager() {
     */
   def readActorsProperties(fileName: String = "actor_properties.json"): util.HashMap[ActorProperties, Integer] = {
     val toReturn : util.HashMap[ActorProperties, Integer] = new util.HashMap[ActorProperties, Integer]()
-    try{
+
       val source = scala.io.Source.fromFile(fileName)
       val list = try source.getLines().mkString finally source.close()
       val jsonObject = new JSONObject(list)
@@ -102,7 +101,7 @@ class ConfigurationManager() {
         val num = singleProperty.getInt("value")
         toReturn.put(prop, num)
       }
-    }
+
     return toReturn
   }
 }

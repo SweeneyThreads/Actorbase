@@ -2,7 +2,7 @@ package server
 
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.actor.{ActorSystem, Props}
 import akka.dispatch.ExecutionContexts._
 import akka.event.{Logging, LoggingAdapter}
 import akka.util.Timeout
@@ -12,6 +12,7 @@ import server.enums.EnumPermission
 import server.enums.EnumPermission.UserPermission
 import server.utils.ConfigurationManager
 
+import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -25,9 +26,7 @@ import scala.language.postfixOps
   * The Actorbase server, contains the main method of the server-side application of Actorbase.
   */
 object Server {
-  var system:ActorSystem = null
   var log:LoggingAdapter = null
-  var fileReader:ConfigurationManager = null
 
   var users: ConcurrentHashMap[String, String] = null
   var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]] = null
@@ -37,27 +36,13 @@ object Server {
 
   def main(args: Array[String]) {
     val conf = ConfigFactory.load()
-    system = ActorSystem("System", conf)
+    val system = ActorSystem("System", conf)
     log = Logging.getLogger(system, this)
 
     loadUsers()
     loadUsersPermissions()
     loadDatabases(system)
-    system.actorOf(Props(classOf[Doorkeeper], 8181))
     log.info("Server started")
-
-    /* TEST IF DB EXISTS
-    val name = "/user/test"
-    system.actorSelection(name).resolveOne().onComplete {
-      case Success(actor) => log.error(name + " exists")
-      case Failure(ex) => log.error(name + " doesn't exist")
-    }
-    val name2 = "/user/main"
-    system.actorSelection(name2).resolveOne().onComplete {
-      case Success(actor) => log.error(name2 + " exists")
-      case Failure(ex) => log.error(name2 + " doesn't exist")
-    }
-    */
   }
 
   /**
@@ -83,11 +68,28 @@ object Server {
     log.info("Permissions loaded")
   }
 
-  //* Loads databases */
-  private def loadDatabases(s: ActorSystem): Unit = {
-    s.actorOf(Props(new Storemanager("test")), name="test")
-    s.actorOf(Props(new Storemanager("master")), name="master")
+  /**
+    *
+    *
+    * @param system
+    */
+  private def loadDatabases(system: ActorSystem): Unit = {
+    system.actorOf(Props(new Storemanager("test")), name="test")
+    system.actorOf(Props(new Storemanager("master")), name="master")
     log.info("Databases loaded")
+  }
+
+  /**
+    *
+    * @param system
+    */
+  private def createDoorkeepers(system: ActorSystem): Unit ={
+    val confManager = new ConfigurationManager
+    val accesses = confManager.readDoorkeepersSettings()
+    for(address <- accesses.keySet()) {
+      val port = accesses.get(address)
+      system.actorOf(Props(classOf[Doorkeeper], port))
+    }
   }
 }
 
