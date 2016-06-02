@@ -8,17 +8,17 @@ object EnumReplyResult {
   val replyResultType = Seq(Done, Error)
 
   /**
-    * Represent a reply result type
+    * Represents a reply result type
     */
   sealed trait ReplyResult
 
   /**
-    * Represent a successful reply
+    * Represents a successful reply
     */
   case object Done extends ReplyResult
 
   /**
-    * Represent an error reply
+    * Represents an error reply
     */
   case object Error extends ReplyResult
 }

@@ -8,17 +8,17 @@ object EnumPermission {
   val permissionsType = Seq(Read, ReadWrite)
 
   /**
-    * Represent an user permission
+    * Represents an user permission
     */
   sealed trait UserPermission
 
   /**
-    * Represent an user read permission
+    * Represents an user read permission
     */
   case object Read extends UserPermission
 
   /**
-    * Represent an user write permission
+    * Represents an user write permission
     */
   case object ReadWrite extends UserPermission
 }

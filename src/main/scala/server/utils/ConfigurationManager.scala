@@ -1,10 +1,14 @@
 package server.utils
 
+import java.io.{FileNotFoundException, IOException}
 import java.util
-
-import akka.event.LoggingAdapter
+import org.json.JSONObject
+import server.enums.EnumActorsProperties
+import server.enums.EnumActorsProperties.ActorProperties
 
 /*
+
+EXAMPLES of JSON files nedeed by these methods
 {
   "accesses": [
     {
@@ -16,7 +20,27 @@ import akka.event.LoggingAdapter
       "port": "8282"
     }
   ]
+
 }
+
+{
+  "properties": [
+    {
+      "name" : "numberofninja",
+      "value" : 4
+    },
+    {
+      "name" : "numberofwarehouseman",
+      "value" : 4
+    },
+    {
+      "name" : "maxstorekeeper",
+      "value" : 4
+    },
+    {
+      "name" : "maxstorefinder",
+      "value" : 4
+    }
 */
 
 /**
@@ -27,56 +51,58 @@ class ConfigurationManager() {
 
   /**
     * Reads from file doorkeepers' start address and port.
-    *
+    * Whenever anyone call this method, it needs to catch the following Exceptions
+    * @throws IOException
+    * @throws FileNotFoundException
+    * @throws Exception
     * @param fileName The name of the file that contains the doorkeeper configuration.
     * @return A list with addresses and ports.
     */
   def readDoorkeepersSettings(fileName: String = "access.json"): util.HashMap[String, Integer] = {
-    //TODO
-    new util.HashMap[String, Integer]()
+    val toReturn : util.HashMap[String, Integer] = new util.HashMap[String, Integer]()
+    try{
+      val source = scala.io.Source.fromFile(fileName)
+      val list = try source.getLines().mkString finally source.close()
+      val jsonObject = new JSONObject(list)
+      val accesses = jsonObject.getJSONArray("accesses")
+      for( i <- 0 until accesses.length()){
+        val singleAccessPoint = accesses.getJSONObject(i)
+        val ip = singleAccessPoint.getString("address")
+        val port = singleAccessPoint.getInt("port")
+        toReturn.put(ip, port)
+      }
+    }
+    return toReturn
   }
 
   /**
     * Reads from file actors' properties
-    *
+    * Whenever anyone call this method, it needs to catch the following Exceptions
+    * @throws IOException
+    * @throws FileNotFoundException
+    * @throws Exception
     * @param fileName The name of the file that contains the actors properties.
     */
-  def readActorsProperties(fileName: String = "actor_properties.json"): Unit ={
-    //TODO
-  }
-
-  /**
-    * Reads to file actors' properties
-    *
-    * @param fileName The name of the file that contains the actors properties.
-    */
-  def writeActorPropertis(fileName: String = "actor_properties.json"): Unit ={
-    //TODO
-  }
-
-  /*def readUsers(path: String): ConcurrentHashMap[String, String] = {
-    val users = new ConcurrentHashMap[String, String]()
-
-    try {
-      //* Open the file that should be on the same level as SRC folder */
-      val source = scala.io.Source.fromFile(path)
-      //* Loads the list of user from the file and close the file */
+  def readActorsProperties(fileName: String = "actor_properties.json"): util.HashMap[ActorProperties, Integer] = {
+    val toReturn : util.HashMap[ActorProperties, Integer] = new util.HashMap[ActorProperties, Integer]()
+    try{
+      val source = scala.io.Source.fromFile(fileName)
       val list = try source.getLines().mkString finally source.close()
       val jsonObject = new JSONObject(list)
-      val accounts = jsonObject.getJSONArray("accounts")
-      for (i <- 0 until accounts.length()) {
-        val singleAccount = accounts.getJSONObject(i)
-        val id = singleAccount.getString("id")
-        val pw = singleAccount.getString("pw")
-        users.put(id, pw)
+      val properties = jsonObject.getJSONArray("properties")
+      for( i <- 0 until properties.length()){
+        val singleProperty = properties.getJSONObject(i)
+        val name = singleProperty.getString("name")
+        val prop = name match {
+          case "numberofninja" => EnumActorsProperties.NumberOfNinjas
+          case "numberofwarehouseman" => EnumActorsProperties.NumberOfWarehouseman
+          case "maxstorefinder" => EnumActorsProperties.MaxStorefinderNumber
+          case "maxstorekeeper" => EnumActorsProperties.MaxStorekeeperNumber
+        }
+        val num = singleProperty.getInt("value")
+        toReturn.put(prop, num)
       }
     }
-    catch {
-      case e: FileNotFoundException => log.warning("File " + path + " not found")
-      case e: IOException => log.warning("Error while reading " + path)
-      case e: Exception => log.warning(e.getMessage)
-    }
-
-    return users;
-  }*/
+    return toReturn
+  }
 }
