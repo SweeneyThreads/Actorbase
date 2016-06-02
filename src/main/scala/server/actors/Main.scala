@@ -1,5 +1,6 @@
 package server.actors
 
+import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.Props
@@ -16,7 +17,7 @@ import server.messages.query.user.MapMessages._
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
 import server.messages.query.{QueryMessage, ReplyMessage}
-import server.utils.{Helper, ServerDependencyInjector, StandardServerInjector}
+import server.utils.{Helper, Serializer, ServerDependencyInjector, StandardServerInjector}
 
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
@@ -26,6 +27,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import server.messages.query.admin.SettingsMessages._
 import server.messages.query.user.HelpMessages._
+import sun.net.ftp.FtpDirEntry.Permission
 
 import scala.concurrent.duration._
 
@@ -444,5 +446,16 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
       // If the message doesn't require permissions
       case n: NoPermissionMessage => true
     }
+  }
+
+  private def listPermissionsHandle(username:String) : Unit = {
+    val singleUserPermission : util.HashMap[String, Permission] = new util.HashMap[String, Permission]()
+    val serializer : Serializer = new Serializer
+
+    
+
+    selectedDatabase = ""
+    selectedMap = ""
+
   }
 }
