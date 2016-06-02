@@ -34,6 +34,8 @@ object Server {
   var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]] = null
 
   var clusterListener: ActorRef = null
+  var sFclusterListener: ActorRef = null
+  var sKclusterListener: ActorRef = null
 
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
@@ -44,6 +46,8 @@ object Server {
     log = Logging.getLogger(system, this)
 
     clusterListener = system.actorOf(Props[ClusterListener])
+    sFclusterListener = system.actorOf(Props[ClusterListener])
+    sKclusterListener = system.actorOf(Props[ClusterListener])
 
 
     loadUsers()

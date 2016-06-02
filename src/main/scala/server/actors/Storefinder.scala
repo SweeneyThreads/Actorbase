@@ -1,5 +1,7 @@
 package server.actors
 
+import server.Server
+
 import akka.remote.RemoteScope
 import server.enums.EnumReplyResult._
 import server.messages.query.ReplyMessage
@@ -22,6 +24,10 @@ import scala.util.{Failure, Success}
 class Storefinder extends ReplyActor {
 
   import akka.pattern.ask
+
+  println("STOREFINDER HERE")
+
+  clusterListener = Server.sFclusterListener
 
   var storekeepers = new ConcurrentHashMap[Regex, ActorRef]()
 //  storekeepers.put(".*".r, context.actorOf(Props(new Storekeeper(true)))) // Startup storekeeper

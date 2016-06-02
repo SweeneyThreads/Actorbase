@@ -1,5 +1,6 @@
 package server.actors
 
+import server.Server
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
@@ -20,6 +21,9 @@ import scala.collection.JavaConversions._
 /** This actor represent a map partition */
 class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
   var db = new ConcurrentHashMap[String,  Array[Byte]]()
+
+  clusterListener = Server.sKclusterListener
+  println("STOREKEEPER HERE")
 
   import context._
 

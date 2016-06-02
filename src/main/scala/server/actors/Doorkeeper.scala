@@ -36,7 +36,7 @@ class Doorkeeper(port: Integer) extends ClusterAwareActor with akka.actor.ActorL
     // When a client connects for the first time
     case c@Connected(remote, local) => {
       // Create an usermanager
-      val usermanager = context.actorOf(Props[Usermanager].withDeploy(Deploy(scope = RemoteScope(nextAddress))))
+      val usermanager = context.actorOf(Props[Usermanager])
       val connection = sender()
       // Bind the client to the usermanager
       connection ! Register(usermanager)

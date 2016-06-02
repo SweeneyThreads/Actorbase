@@ -24,6 +24,8 @@ trait ClusterAwareActor extends Actor {
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
 
+  var clusterListener = Server.clusterListener
+
   /**
     * Returns an address of one node in the cluster.
     * This method sends a message to the ClusterListener of the same node of this actor
@@ -35,7 +37,7 @@ trait ClusterAwareActor extends Actor {
     // auxiliary variable
     var aux :Address = null
     // send a message to the ClusterListener of this node to get an address
-    Server.clusterListener ? "next" onSuccess {
+    clusterListener ? "next" onSuccess {
       // save the response as an address
       case result => aux = result.asInstanceOf[Address]
     }
@@ -46,5 +48,4 @@ trait ClusterAwareActor extends Actor {
     // return the address
     aux
   }
-
 }
