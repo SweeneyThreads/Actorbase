@@ -8,3 +8,5 @@ package server.messages.query
   * Trait that every message that belongs to query operations has to extend.
   */
 trait QueryMessage
+
+case class ServiceErrorInfo(error : String) extends ReplyInfo

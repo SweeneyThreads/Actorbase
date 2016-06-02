@@ -1,16 +1,20 @@
 package server.actors
 
 import java.nio.{ByteBuffer, ByteOrder}
+import java.util
 
 import akka.actor.{ActorRef, Props}
 import akka.dispatch.ExecutionContexts._
 import akka.io.Tcp
 import akka.pattern.ask
 import akka.util.{ByteString, ByteStringBuilder, Timeout}
-import server.Server
+import server.enums.EnumPermission.UserPermission
+import server.{Server, StoremanagersRefs}
+import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.query.ErrorMessages.InvalidQueryMessage
-import server.messages.query.{LoginMessage, QueryMessage, ReplyMessage}
-import server.utils.Parser
+import server.messages.query.user.RowMessages.{FindInfo, FindRowMessage, KeyAlreadyExistInfo, StorefinderRowMessage}
+import server.messages.query.{LoginMessage, QueryMessage, ReplyMessage, ServiceErrorInfo}
+import server.utils.{Parser, Serializer}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -25,7 +29,9 @@ class Usermanager extends ReplyActor {
   // Values for futures
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
+
   import Tcp._
+
   // The parser instance
   val parser = new Parser()
   // Value that tells if
@@ -59,11 +65,11 @@ class Usermanager extends ReplyActor {
     *
     * @param data The bytes coming from the client.
     */
-  def receiveData(data: ByteString): Unit ={
+  def receiveData(data: ByteString): Unit = {
     builder.putBytes(data.toArray)
     var message = builder.result()
     // If the message has at least 8 bytes
-    if(message.length > 8) {
+    if (message.length > 8) {
       // If the message starts with 01 and ends with 02,
       // It's a complete message
       if (message(0) == 0 &&
@@ -119,9 +125,9 @@ class Usermanager extends ReplyActor {
     val message = parser.parseQuery(query)
     message match {
       // If the user command is not a valid query
-      case m:InvalidQueryMessage => replyToClient("Invalid query")
+      case m: InvalidQueryMessage => replyToClient("Invalid query")
       // If the user command is a valid query
-      case m:QueryMessage => handleQueryMessage(m)
+      case m: QueryMessage => handleQueryMessage(m)
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString, currentMethodName()))
     }
   }
@@ -177,9 +183,37 @@ class Usermanager extends ReplyActor {
         // If the login is valid it creates a main actor that contains the user permissions
         connected = true
         // 'admin' is the super admin so it has no permissions
-        if(username == "admin") mainActor = context.actorOf(Props(new Main()))
+        if (username == "admin") mainActor = context.actorOf(Props(new Main()))
         // If the user is not 'admin' the main receive the user's permissions
-        else mainActor = context.actorOf(Props(new Main(Server.permissions.get(username))))
+        else {
+          var singleUserPermission: util.HashMap[String, EnumPermission.UserPermission] =
+            new util.HashMap[String, EnumPermission.UserPermission]()
+          val serializer: Serializer = new Serializer
+          val sm = StoremanagersRefs.refs.get("master")
+          val origSender = sender
+          val future = sm ? StorefinderRowMessage("permissions", new FindRowMessage(username))
+          future.onComplete {
+            case Success(result) => {
+              val reply = result.asInstanceOf[ReplyMessage]
+              reply.result match {
+                case EnumReplyResult.Done => {
+                  val array = reply.info.asInstanceOf[FindInfo].value
+                  singleUserPermission =
+                    serializer.deserialize(array).asInstanceOf[util.HashMap[String, UserPermission]]
+                }
+                case EnumReplyResult.Error => {
+                  reply.info.asInstanceOf[KeyAlreadyExistInfo]
+                }
+              }
+            }
+            case Failure(t) => {
+              log.error("Error sending message: " + t.getMessage);
+              reply(new ReplyMessage(EnumReplyResult.Error, new FindRowMessage(username),
+                new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
+            }
+          }
+          mainActor = context.actorOf(Props(new Main(singleUserPermission)))
+        }
         replyToClient("Y")
         log.info(username + " is connected")
       }

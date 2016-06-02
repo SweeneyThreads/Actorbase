@@ -1,5 +1,8 @@
 package server.messages.query.admin
+import java.util
+
 import server.enums.EnumPermission.UserPermission
+import server.messages.query.ReplyInfo
 /**
   * Created by lucan on 10/05/2016.
   */
@@ -43,4 +46,6 @@ object PermissionsManagementMessages {
     * @see PermissionManagementMessage
     */
   case class RemovePermissionMessage(username : String, database: String) extends PermissionsManagementMessage
+
+  case class ListPermissionsInfo(permissions: util.HashMap[String, UserPermission]) extends ReplyInfo
 }
