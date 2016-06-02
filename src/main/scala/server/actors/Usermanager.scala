@@ -63,23 +63,26 @@ class Usermanager extends ReplyActor {
   def receiveData(data: ByteString): Unit ={
     builder.putBytes(data.toArray)
     var message = builder.result()
-    // If the message starts with 01 and ends with 02,
-    // It's a complete message
-    if (message(0) == 0 &&
-      message(1) == 1 &&
-      message(message.length - 2) == 0 &&
-      message(message.length - 1) == 2) {
-      // Remove starting and ending bytes
-      message = message.drop(2)
-      message = message.dropRight(2)
-      // Gets the length of the query and removes the 4 bytes
-      val lengthBytes = new Array[Byte](4)
-      message.copyToArray(lengthBytes, 0, 4)
-      val length = ByteBuffer.wrap(lengthBytes).order(ByteOrder.LITTLE_ENDIAN).getInt()
-      message = message.drop(4)
-      // If the length is equal to the remaining message length less the operation byte
-      if(length == message.length - 1 )
-        processRequest(message)
+    // If the message has at least 8 bytes
+    if(message.length > 8) {
+      // If the message starts with 01 and ends with 02,
+      // It's a complete message
+      if (message(0) == 0 &&
+        message(1) == 1 &&
+        message(message.length - 2) == 0 &&
+        message(message.length - 1) == 2) {
+        // Remove starting and ending bytes
+        message = message.drop(2)
+        message = message.dropRight(2)
+        // Gets the length of the query and removes the 4 bytes
+        val lengthBytes = new Array[Byte](4)
+        message.copyToArray(lengthBytes, 0, 4)
+        val length = ByteBuffer.wrap(lengthBytes).order(ByteOrder.LITTLE_ENDIAN).getInt()
+        message = message.drop(4)
+        // If the length is equal to the remaining message length less the operation byte
+        if (length == message.length - 1)
+          processRequest(message)
+      }
     }
   }
 
