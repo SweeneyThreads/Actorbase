@@ -45,6 +45,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
     val actorRef=TestActorRef(new Storemanager)
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
+    actor.storefinders.put("defaultMap", system.actorOf(Props[Storefinder]))
     // now I send the message
     val future = actorRef ? AskMapMessage("defaultMap")
     //when the message is completed i check that the StoremanagerActor reply correctly
@@ -78,7 +79,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
     val future = actorRef ? ListMapMessage()
     //when the message is completed i check that the StoremanagerActor reply correctly
     ScalaFutures.whenReady(future) {
-      val dbs = List[String]("defaultMap","map1","map2")
+      val dbs = List[String]("map1","map2")
       result => result should be(new ReplyMessage (EnumReplyResult.Done,new ListMapMessage(),ListMapInfo(dbs)))
     }
   }
@@ -150,13 +151,14 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
     val actorRef=TestActorRef(new Storemanager)
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
+    val value=new Array[Byte](123)
     // putting extra FakeStorefinder map in the storefinders map
-    actor.storefinders.put("map1",System.actorOf(Props[FakeStorefinder]))
+    actor.storefinders.put("map1",System.actorOf(Props(classOf[FakeStorefinder],value)))
     // now I send the message
     val future = actorRef ? StorefinderRowMessage("map1", FindRowMessage("1"))
     //when the message is completed i check that the StoremanagerActor reply correctly
     ScalaFutures.whenReady(future) {
-      result => result should be(ReplyMessage(Done, new FindRowMessage("1"), FindInfo("2".getBytes("UTF-8"))))
+      result => result should be(ReplyMessage(Done, new FindRowMessage("1"), FindInfo(value)))
     }
     val future2 = actorRef ? StorefinderRowMessage("map2", FindRowMessage("1"))
     //when the message is completed i check that the StoremanagerActor reply correctly
@@ -167,12 +169,12 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
 }
 
 /*FakeStoremanage for test porpuse always answers in the same way*/
-class FakeStorefinder extends Storefinder{
+class FakeStorefinder(returnInfo: Array[Byte]) extends Storefinder{
 
   override def receive = {
     case m:RowMessage => {
       val origSender = sender
-      reply(ReplyMessage(Done, new FindRowMessage("1"), FindInfo("2".getBytes("UTF-8"))), origSender)
+      reply(ReplyMessage(Done, new FindRowMessage("1"), FindInfo(returnInfo)), origSender)
     }
   }
 

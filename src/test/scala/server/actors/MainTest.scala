@@ -40,7 +40,14 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
 
   //creating a map that simulates a plausible list of databasename=>Storemanager
   val fakeStoremanagersMap=new ConcurrentHashMap[String,ActorRef]
-  fakeStoremanagersMap.put("test", System.actorOf(Props[Storemanager]))
+
+  // TestActorRef is a exoteric function provided by akka-testkit
+  // it creates a special actorRef that could be used for test purpose
+  val actorRef=TestActorRef(new Storemanager)
+  // retrieving the underlying actor
+  val actor = actorRef.underlyingActor
+  actor.storefinders.put("defaultMap",System.actorOf(Props[Storefinder]))
+  fakeStoremanagersMap.put("test", actorRef)
   fakeStoremanagersMap.put("biggestDBEu", System.actorOf(Props[Storemanager]))
   fakeStoremanagersMap.put("lastDBForNow", System.actorOf(Props[Storemanager]))
   //creating a fake server
@@ -106,6 +113,11 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   class FakeMain extends Main(null, new FakeServerInjector {})
   it should "reply correctly when receiving a SelectDatabaseMessage(s: String) - - - database should not be actually selected, just testing correct answer" in {
     //a fake main with the desired injector
+
+
+
+
+
     val main3 = System.actorOf(Props(new FakeMain))
     val future3 = main3 ? SelectDatabaseMessage("test")
     ScalaFutures.whenReady(future3) {
