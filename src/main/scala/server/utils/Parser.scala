@@ -2,7 +2,7 @@ package server.utils
 
 import server.enums.EnumPermission
 import server.messages.query.ErrorMessages.InvalidQueryMessage
-import server.messages.query.HelpMessages.{CompleteHelpMessage, SpecificHelpMessage}
+import server.messages.query.user.HelpMessages.{CompleteHelpMessage, SpecificHelpMessage}
 import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, RemovePermissionMessage}
 import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage}
 import server.messages.query.user.DatabaseMessages.{CreateDatabaseMessage, DeleteDatabaseMessage, ListDatabaseMessage, SelectDatabaseMessage}

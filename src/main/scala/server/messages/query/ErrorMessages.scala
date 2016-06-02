@@ -10,10 +10,22 @@ package server.messages.query
 object ErrorMessages {
 
   /**
-    * This trait has to be extended by messages which have to express an error condition.
+    * Trait that every message which belongs to error operations has to extend.
     */
-  trait ErrorMessage {}
+  trait ErrorMessage
+
+  /**
+    * An InvalidQueryMessage is used to inform that a requested query is not valid.
+    *
+    * @see QueryMessage
+    * @see ErrorMessage
+    */
   case class InvalidQueryMessage() extends QueryMessage with ErrorMessage
 
+  /**
+    * A QueryErrorInfo is used as response to an operation which has not been executed correctly.
+    *
+    * @see ReplyInfo
+    */
   case class QueryErrorInfo() extends ReplyInfo
 }

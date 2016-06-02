@@ -7,9 +7,7 @@ import server.Server
 import server.enums.EnumPermission.UserPermission
 import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.internal.AskMessages.AskMapMessage
-import server.messages.query.HelpMessages._
 import server.messages.query.PermissionMessages._
-import server.messages.query.admin.ActorPropetiesMessages._
 import server.messages.query.admin.AdminMessage
 import server.messages.query.admin.PermissionsManagementMessages._
 import server.messages.query.admin.UsersManagementMessages._
@@ -26,6 +24,8 @@ import scala.util.{Failure, Success}
 import akka.dispatch.ExecutionContexts._
 import akka.pattern.ask
 import akka.util.Timeout
+import server.messages.query.admin.SettingsMessages._
+import server.messages.query.user.HelpMessages._
 
 import scala.concurrent.duration._
 
@@ -123,7 +123,7 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
 
   /**
     * Processes AdminMessage messages.
-    * Handles UsersManagementMessage, PermissionsManagementMessage and ActorPropertiesMessage
+    * Handles UsersManagementMessage, PermissionsManagementMessage and SettingMessage
     * messages calling the right method for each one.
     *
     * @param message The AdminMessage message to precess.
@@ -131,10 +131,10 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
     * @see AdminMessage
     * @see UsersManagementMessage
     * @see PermissionsManagementMessage
-    * @see ActorPropertiesMessage
+    * @see SettingMessage
     * @see #handleUserManagementMessage(UsersManagementMessage)
     * @see #handlePermissionsManagementMessage(PermissionsManagementMessage)
-    * @see #handleActorPropertiesMessageMessage(ActorPropertiesMessage)
+    * @see #handleSettingMessage(SettingsMessage)
     */
   private def handleAdminMessage(message: AdminMessage) = {
     message match {
@@ -142,8 +142,8 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
       case m:UsersManagementMessage => handleUserManagementMessage(m)
       // If it's an permission management command
       case m:PermissionsManagementMessage => handlePermissionsManagementMessage(m)
-      // If it's an actor property command
-      case m:ActorPropertiesMessage =>  handleActorPropertiesMessageMessage(m)
+      // If it's a setting command
+      case m:SettingMessage =>  handleSettingMessage(m)
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleAdminMessage"))
     }
   }
@@ -205,39 +205,17 @@ class Main(permissions: ConcurrentHashMap[String, UserPermission] = null, val se
   }
 
   /**
-    * Processes ActorPropertiesMessage messages.
-    * Handles SetNinjaMessage messages setting the number of Ninja actors for each Storekeeper actor-
-    * Handles SetWarehousemanMessage messages setting the number of Warehouseman actors for each Storekeeper actor.
-    * Handles MaxRowsMessage messages setting the maximum number of rows each Storekeeper actor can handles.
-    * Handles MaxStorekeeperMessage setting the maximum number of Storekeeper actor each Storefinder actor can handles.
-    * Handles MaxStorefinderMessage setting the maximum number of Storefinder actor each Storemanager actor can handles.
+    * Processes SettingMessages messages.
+    * Handles RefreshSettings message, reloading settings parameters from the configuration file
     *
-    * @param message The ActorPropertiesMessage message to precess.
+    * @param message The SettingMessage message to precess.
     *
-    * @see ActorPropertiesMessage
-    * @see SetNinjaMessage
-    * @see SetWarehousemanMessage
-    * @see MaxRowsMessage
-    * @see MaxStorekeeperMessage
-    * @see MaxStorefinderMessage
-    * @see Storefinder
-    * @see Ninja
-    * @see Warehouseman
-    * @see Storefinder
-    * @see Storekeeper
+    * @see SettingMessages
     */
-  private def handleActorPropertiesMessageMessage(message: ActorPropertiesMessage): Unit = {
+  private def handleSettingMessage(message: SettingMessage): Unit = {
     message match {
-      // If the user types 'setninjanumber <number>'
-      case SetNinjaMessage(number: Integer) => //TODO
-      // If the user types 'setwarehousemannumber <number>'
-      case SetWarehousemanMessage(number: Integer) => //TODO
-      // If the user types 'setmaxrows <number>'
-      case MaxRowsMessage(number: Integer) => //TODO
-      // If the user types 'setmaxstorekeeper <number>'
-      case MaxStorekeeperMessage(number: Integer) => //TODO
-      // If the user types 'setmaxstorefinder <number>'
-      case MaxStorefinderMessage(number: Integer) => //TODO
+      // Refresh the settings from the conf file if requested
+      case RefreshSettingsMessage() => //TODO
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handlePermissionsManagementMessage"))
     }
   }

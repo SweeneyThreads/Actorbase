@@ -29,7 +29,7 @@ object Welcome {
   /**
     * Prints welcome banner and user information on the console.
     */
-  def printWelcomeMessage: Unit = {
+  def printWelcomeMessage(): Unit = {
     println(banner)
     println("Hello " + user + "! And welcome to ACTORBASE \n")
     println("You are using " + os + " " + version + " with Java " + javaVersion + "\n " )

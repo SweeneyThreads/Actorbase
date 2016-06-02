@@ -13,31 +13,39 @@ import akka.actor.ActorRef
 object LinkMessages {
 
   /**
-    * Trait that every LinkMessage has to extend to express a link or unlink operation between actors.
+    * Trait that every message that belongs to link operations has to extend.
     */
   trait LinkMessage
 
   /**
     * An AddNinjaMessage is used by a Storefinder to require the addition of a Ninja actor.
     * @param ref The reference to the actor.
+    *
+    * @see LinkMessage
     */
   case class AddNinjaMessage(ref : ActorRef) extends LinkMessage
 
   /**
     * An AddWarehousemanMessage is used by a Storefinder to require the addition of a Warehouseman actor.
     * @param ref The reference to the actor.
+    *
+    * @see LinkMessage
     */
   case class AddWarehousemanMessage(ref : ActorRef) extends LinkMessage
 
   /**
     * A RemoveNinjaMessage is used by a Storefinder to require the removal of a Ninja actor.
     * @param ref The reference to the actor.
+    *
+    * @see LinkMessage
     */
   case class RemoveNinjaMessage(ref : ActorRef) extends LinkMessage
 
   /**
     * A RemoveWarehousemanMessage is used by a Storefinder to require the removal of a Warehouseman actor.
     * @param ref The reference to the actor.
+    *
+    * @see LinkMessage
     */
   case class RemoveWarehousemanMessage(ref : ActorRef) extends LinkMessage
 

@@ -2,9 +2,9 @@ package server.utils
 
 import server.enums.EnumPermission.UserPermission
 import server.enums.EnumReplyResult
-import server.messages.query.HelpMessages._
+import server.messages.query.user.HelpMessages._
 import server.messages.query.PermissionMessages.{NoReadPermissionInfo, NoWritePermissionInfo}
-import server.messages.query.admin.ActorPropetiesMessages.{MaxStorefinderMessage, _}
+import server.messages.query.admin.SettingsMessages._
 import server.messages.query.admin.AdminMessage
 import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, PermissionsManagementMessage, RemovePermissionMessage}
 import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage, UsersManagementMessage}
@@ -65,7 +65,7 @@ class ReplyBuilder {
 
   /**
     * Builds string replies from a ReplyMessage message.
-    * Handles reply for UsersManagementMessage, PermissionsManagementMessage, and ActorPropertiesMessage messages.
+    * Handles reply for UsersManagementMessage, PermissionsManagementMessage, and SettingMessage messages.
     *
     * @param reply The ReplyMessage message.
     * @return The reply string.
@@ -73,13 +73,13 @@ class ReplyBuilder {
     * @see ReplyMessage
     * @see UsersManagementMessage
     * @see PermissionsManagementMessage
-    * @see ActorPropertiesMessage
+    * @see SettingMessage
     */
   private def AdminMessageReply(reply: ReplyMessage): String = {
     reply.question match {
       case m:UsersManagementMessage => UserManagementMessageReply(reply)
       case m:PermissionsManagementMessage => PermissionsManagementMessageReply(reply)
-      case m:ActorPropertiesMessage =>  ActorPropertiesMessageMessageReply(reply)
+      case m:SettingMessage =>  SettingMessageReply(reply)
       case _ => "Unknown question AdminMessage"//TODO
     }
   }
@@ -141,13 +141,9 @@ class ReplyBuilder {
     * @see MaxStorekeeperMessage
     * @see MaxStorefinderMessage
     */
-  private def ActorPropertiesMessageMessageReply(reply: ReplyMessage): String = {
+  private def SettingMessageReply(reply: ReplyMessage): String = {
     reply.question match {
-      case SetNinjaMessage(number: Integer) => //TODO
-      case SetWarehousemanMessage(number: Integer) => //TODO
-      case MaxRowsMessage(number: Integer) => //TODO
-      case MaxStorekeeperMessage(number: Integer) => //TODO
-      case MaxStorefinderMessage(number: Integer) => //TODO
+      case RefreshSettingsMessage() => "" //TODO
       case _ =>"" //TODO
     }
   }
