@@ -10,7 +10,7 @@ import com.typesafe.config.ConfigFactory
 import server.actors.{Doorkeeper, Storemanager}
 import server.enums.EnumPermission
 import server.enums.EnumPermission.UserPermission
-import server.utils.{ConfigurationManager, FileReader}
+import server.utils.ConfigurationManager
 
 import scala.concurrent.duration._
 import scala.language.postfixOps

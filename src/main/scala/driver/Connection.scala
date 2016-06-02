@@ -2,6 +2,7 @@ package driver
 
 import java.io.PrintStream
 import java.net.{InetAddress, Socket}
+import java.nio.{ByteBuffer, ByteOrder}
 
 /**
   * Created by eliamaino on 10/05/16.
@@ -51,8 +52,13 @@ class ConcreteConnection(val host: String, val port: Integer, val username: Stri
     */
   def executeQuery(query: String): String = {
     if(socket.isConnected) {
-      out.write(1) // 01 = query
+      out.print("\0")
+      out.write(1)
+      out.write(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(query.length).array())
+      out.write(1) // 1 = query
       out.print(query)
+      out.print("\0")
+      out.write(2)
       out.flush()
       while(in.available() < 1) Thread.sleep(100)
       val buf = new Array[Byte](in.available())
@@ -76,17 +82,7 @@ class ConcreteConnection(val host: String, val port: Integer, val username: Stri
     */
   private def login(username: String, password: String): Unit = {
     val login = "login " + username + " " + password
-    out.write(1)
-    out.print(login)
-    out.flush()
-    while(in.available() < 1) Thread.sleep(100)
-    val buf = new Array[Byte](in.available())
-    try {
-      in.read(buf)
-    }catch{
-      case ie:InterruptedException => throw new InterruptedException
-    }
-    val result = new String(buf)
+    val result = executeQuery(login)
     if(result != "Y") {
       socket.close()
       throw new RuntimeException

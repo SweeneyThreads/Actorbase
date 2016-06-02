@@ -16,6 +16,7 @@ import Tcp._
   */
 class Doorkeeper(port: Integer) extends Actor with akka.actor.ActorLogging {
 
+  import context.system
   IO(Tcp) ! Bind(self, new InetSocketAddress(port))
 
   /**

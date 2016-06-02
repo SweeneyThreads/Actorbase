@@ -25,42 +25,38 @@ class Parser {
     * @return The message representing the user's query
     */
   def parseQuery(query: String) : QueryMessage = {
-    // Connect command
-    var pattern = "login\\s(\\S+)\\s(\\S+)$".r
-    var m = getMatch(pattern, query)
-    if(m != null)  new LoginMessage(m.group(1), m.group(2))
 
     // Row command (two parameters)
-    pattern = "(\\S+)\\s\\'(.+)\\'\\s(\\S+)$".r
-    m = getMatch(pattern, query)
-    if(m != null)  parseRowCommandTwoParams(m.group(1).toLowerCase(), m.group(2), m.group(3))
+    var pattern = "(\\S+)\\s\\'(.+)\\'\\s(\\S+)$".r
+    var m = getMatch(pattern, query)
+    if(m != null) return parseRowCommandTwoParams(m.group(1).toLowerCase(), m.group(2), m.group(3))
 
     // Row command (one parameter)
     pattern = "(\\S+)\\s\\'(.+)\\'$".r
     m = getMatch(pattern, query)
-    if(m != null)  parseRowCommandOneParam(m.group(1).toLowerCase(), m.group(2))
+    if(m != null) return parseRowCommandOneParam(m.group(1).toLowerCase(), m.group(2))
 
     // Command with three params
     pattern = "(\\S+)\\s(\\S+)\\s(\\S+)\\s(\\S+)$".r
     m = getMatch(pattern, query)
-    if(m != null)  parseCommandWithThreeParams(m.group(1).toLowerCase(), m.group(2), m.group(3), m.group(4))
+    if(m != null) return parseCommandWithThreeParams(m.group(1).toLowerCase(), m.group(2), m.group(3), m.group(4))
 
     // Command with two params
     pattern = "(\\S+)\\s(\\S+)\\s(\\S+)$".r
     m = getMatch(pattern, query)
-    if(m != null)  parseCommandWithTwoParams(m.group(1).toLowerCase(), m.group(2), m.group(3))
+    if(m != null) return parseCommandWithTwoParams(m.group(1).toLowerCase(), m.group(2), m.group(3))
 
     // Command with parameters
     pattern = "(\\S+)\\s(\\S+)$".r
     m = getMatch(pattern, query)
-    if(m != null)  parseCommandWithParam(m.group(1).toLowerCase(), m.group(2))
+    if(m != null) return parseCommandWithParam(m.group(1).toLowerCase(), m.group(2))
 
     // Command without parameters
     pattern = "(\\S+)$".r
     m = getMatch(pattern, query)
-    if(m != null)  parseCommandWithoutParam(m.group(1).toLowerCase())
+    if(m != null) return parseCommandWithoutParam(m.group(1).toLowerCase())
 
-     new InvalidQueryMessage
+    new InvalidQueryMessage
   }
 
   /**
@@ -157,6 +153,7 @@ class Parser {
     command match {
       case "adduser" =>  new AddUserMessage(arg1, arg2)
       case "removepermission" =>  new RemovePermissionMessage(arg1, arg2)
+      case "login" => new LoginMessage(arg1, arg2)
 
       case _ => new InvalidQueryMessage
     }

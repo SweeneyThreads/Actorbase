@@ -1,10 +1,12 @@
 package server.actors
 
+import java.nio.{ByteBuffer, ByteOrder}
+
 import akka.actor.{ActorRef, Props}
 import akka.dispatch.ExecutionContexts._
 import akka.io.Tcp
 import akka.pattern.ask
-import akka.util.{ByteString, Timeout}
+import akka.util.{ByteString, ByteStringBuilder, Timeout}
 import server.Server
 import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.{LoginMessage, QueryMessage, ReplyMessage}
@@ -31,6 +33,7 @@ class Usermanager extends ReplyActor {
   var connected = false
   // The main actor reference
   var mainActor: ActorRef = null
+  val builder = new ByteStringBuilder()
 
   /**
     * Processes all incoming messages.
@@ -43,20 +46,58 @@ class Usermanager extends ReplyActor {
     */
   def receive = {
     // When it receive data
-    case Received(data: ByteString) => {
-      // The first byte represents the operation type
-      val op = data.slice(0, 1).toArray
-      // Match on the first byte
-      op(0) match {
-        // If  the byte is equals to 1 the command it's a query
-        case 1 => parseQuery(data.slice(1, data.length).utf8String)
-        case _ => replyToClient("Invalid command")
-      }
-    }
+    case Received(data: ByteString) => receiveData(data)
     // When a client disconnects
     case PeerClosed => {
       log.info("Client disconnected")
       context stop self
+    }
+  }
+
+  /**
+    * Buffers the bytes coming from the client and
+    * checks if the message is in the correct form.
+    *
+    * @param data The bytes coming from the client.
+    */
+  def receiveData(data: ByteString): Unit ={
+    builder.putBytes(data.toArray)
+    var message = builder.result()
+    // If the message starts with 01 and ends with 02,
+    // It's a complete message
+    if (message(0) == 0 &&
+      message(1) == 1 &&
+      message(message.length - 2) == 0 &&
+      message(message.length - 1) == 2) {
+      // Remove starting and ending bytes
+      message = message.drop(2)
+      message = message.dropRight(2)
+      // Gets the length of the query and removes the 4 bytes
+      val lengthBytes = new Array[Byte](4)
+      message.copyToArray(lengthBytes, 0, 4)
+      val length = ByteBuffer.wrap(lengthBytes).order(ByteOrder.LITTLE_ENDIAN).getInt()
+      message = message.drop(4)
+      // If the length is equal to the remaining message length less the operation byte
+      if(length == message.length - 1 )
+        processRequest(message)
+    }
+  }
+
+  /**
+    * Processes the bytes coming from the client.
+    *
+    * @param request The bytes request from the client.
+    */
+  def processRequest(request: ByteString): Unit = {
+    builder.clear()
+    // Gets the operation type
+    val operation = request(0)
+    // Gets the body of the request as a String
+    val req = new String(request.drop(1).toArray)
+    operation match {
+      // If  the byte is equals to 1 the command it's a query
+      case 1 => parseQuery(req)
+      case _ => replyToClient("Invalid command")
     }
   }
 
@@ -66,7 +107,6 @@ class Usermanager extends ReplyActor {
     * otherwise it handles it.
     *
     * @param query The query string.
-    *
     * @see Parser
     * @see InvalidQueryMessage
     * @see QueryMessage
@@ -89,7 +129,6 @@ class Usermanager extends ReplyActor {
     * otherwise it sends it to the Main actor.
     *
     * @param message The QueryMessage message to process.
-    *
     * @see LoginMessage
     * @see QueryMessage
     */
@@ -124,7 +163,6 @@ class Usermanager extends ReplyActor {
     *
     * @param username The user's username.
     * @param password The user's password.
-    *
     * @see #replyToClient(String, ActorRef)
     */
   private def handleLogin(username: String, password: String): Unit = {

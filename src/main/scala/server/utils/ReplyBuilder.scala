@@ -143,11 +143,11 @@ class ReplyBuilder {
     */
   private def ActorPropertiesMessageMessageReply(reply: ReplyMessage): String = {
     reply.question match {
-      case SetNinjaMessage(number: Integer) => //TODO
-      case SetWarehousemanMessage(number: Integer) => //TODO
-      case MaxRowsMessage(number: Integer) => //TODO
-      case MaxStorekeeperMessage(number: Integer) => //TODO
-      case MaxStorefinderMessage(number: Integer) => //TODO
+      case SetNinjaMessage(number: Integer) => "" //TODO
+      case SetWarehousemanMessage(number: Integer) => "" //TODO
+      case MaxRowsMessage(number: Integer) => ""//TODO
+      case MaxStorekeeperMessage(number: Integer) => ""//TODO
+      case MaxStorefinderMessage(number: Integer) => ""//TODO
       case _ =>"" //TODO
     }
   }
