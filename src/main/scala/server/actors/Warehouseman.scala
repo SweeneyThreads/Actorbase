@@ -4,7 +4,8 @@ import java.util
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import server.enums.EnumReplyResult
-import server.messages.internal.ScalabilityMessages.{ReadMapMessage, SendMapMessage, WriteMapMessage}
+import server.messages.internal.ScalabilityMessages._
+import server.messages.internal.StorageMessages._
 import server.messages.query.ReplyMessage
 import server.messages.query.user.RowMessages.{InsertRowMessage, RemoveRowMessage, RowMessage, UpdateRowMessage}
 import server.utils.FileManager
