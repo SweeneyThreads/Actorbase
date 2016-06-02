@@ -450,17 +450,17 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
     future.onComplete {
       // Reply the usermanager with the reply from the storemanager
       case Success(result) => {
-        val reply = result.asInstanceOf[ReplyMessage]
-        reply.result match {
+        val replyMes = result.asInstanceOf[ReplyMessage]
+        replyMes.result match {
           case EnumReplyResult.Done => {
-            val array = reply.info.asInstanceOf[FindInfo].value
+            val array = replyMes.info.asInstanceOf[FindInfo].value
             val singleUserPermissions: util.HashMap[String, EnumPermission.UserPermission] =
               serializer.deserialize(array).asInstanceOf[util.HashMap[String, UserPermission]]
             reply(new ReplyMessage(EnumReplyResult.Done, message,
               new ListPermissionsInfo(singleUserPermissions)), origSender)
           }
           case EnumReplyResult.Error => {
-            reply.info.asInstanceOf[KeyAlreadyExistInfo]
+            replyMes.info.asInstanceOf[NoKeyInfo]
           }
         }
       }

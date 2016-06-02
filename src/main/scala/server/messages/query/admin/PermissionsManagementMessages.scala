@@ -47,5 +47,11 @@ object PermissionsManagementMessages {
     */
   case class RemovePermissionMessage(username : String, database: String) extends PermissionsManagementMessage
 
+  /**
+    * A ListPermissionsInfo is used to store the list of permissions assigned to a user
+    * @param permissions contains the map with the user permissions
+    *
+    * @see ReplyInfo
+    */
   case class ListPermissionsInfo(permissions: util.HashMap[String, UserPermission]) extends ReplyInfo
 }
