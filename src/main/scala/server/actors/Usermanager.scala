@@ -22,7 +22,6 @@ import scala.util.{Failure, Success}
   * It understands the query, sending it to the Main and giving the client the answer.
   */
 class Usermanager extends ReplyActor {
-
   // Values for futures
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global

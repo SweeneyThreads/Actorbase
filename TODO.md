@@ -21,6 +21,7 @@ Robe da sviluppare
 * Permessi utente admin
 * Togliere spazi iniziali e finali nei comandi in entrata (da più margine d'errore)
 * Spostare risposte testuali da tutti gli attori a solo Usermanager
+* Gestire comandi su più pacchetti in Usermanager / Driver
 
 ## DA FINIRE
 * Gestire utenti e permessi in database 'master'
@@ -45,10 +46,6 @@ Robe da sviluppare
 * Azzerare selectmap quando viene eliminata la mappa
 * Mettere selectmap quando viene creata
 * Fare help specifici più lunghi con anche le stringhe in caso di errore
-* Gestire comandi su più pacchetti in Usermanager / Driver
 * Mostrare tipo di errore di connessione
 * Controllare currentMethodName nel log
-* Parsare comandi proprietà attori
-
-
-
+* Fare comando refresh config

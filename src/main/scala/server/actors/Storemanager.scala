@@ -25,7 +25,6 @@ import scala.concurrent.duration._
   * if it's  the 'master' database it creates the 'users' and the 'permissions' map.
   */
 class Storemanager extends ReplyActor {
-
    // Values for futures
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global

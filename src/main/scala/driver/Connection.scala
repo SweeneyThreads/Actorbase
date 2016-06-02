@@ -52,12 +52,12 @@ class ConcreteConnection(val host: String, val port: Integer, val username: Stri
     */
   def executeQuery(query: String): String = {
     if(socket.isConnected) {
-      out.print("\0")
+      out.write(0)
       out.write(1)
       out.write(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(query.length).array())
       out.write(1) // 1 = query
       out.print(query)
-      out.print("\0")
+      out.write(0)
       out.write(2)
       out.flush()
       while(in.available() < 1) Thread.sleep(100)
