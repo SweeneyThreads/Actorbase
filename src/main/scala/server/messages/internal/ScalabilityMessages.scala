@@ -28,12 +28,12 @@ object ScalabilityMessages {
   case class SendMapMessage (map: HashMap[String, Array[Byte]], actorRef: ActorRef) extends ScalabilityMessage
 
   /**
-    * Set the max number of Ninja actors.
+    * Set the number of Ninja actors.
     * @param number The number of actors.
     *
     * @see ScalabilityMessage
     */
-  case class MaxNinjaMessage (number : Integer) extends ScalabilityMessage
+  case class SetNinjaMessage (number : Integer) extends ScalabilityMessage
 
   /**
     * Set the max number of Storekeeper actors.
@@ -52,12 +52,12 @@ object ScalabilityMessages {
   case class MaxStorefinderMessage (number : Integer) extends ScalabilityMessage
 
   /**
-    * Set the max number of Warehouseman actors.
+    * Set the number of Warehouseman actors.
     * @param number The number of actors.
     *
     * @see ScalabilityMessage
     */
-  case class MaxWarehousemanMessage (number : Integer) extends ScalabilityMessage
+  case class SetWarehousemanMessage (number : Integer) extends ScalabilityMessage
 
   /**
     * Set the max number of rows which can be contained in a single Storekeeper map.

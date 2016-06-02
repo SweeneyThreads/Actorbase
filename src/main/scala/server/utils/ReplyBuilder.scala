@@ -2,13 +2,13 @@ package server.utils
 
 import server.enums.EnumPermission.UserPermission
 import server.enums.EnumReplyResult
-import server.messages.query.HelpMessages._
+import server.messages.internal.ScalabilityMessages._
 import server.messages.query.PermissionMessages.{NoReadPermissionInfo, NoWritePermissionInfo}
-import server.messages.query.admin.ActorPropetiesMessages.{MaxStorefinderMessage, _}
 import server.messages.query.admin.AdminMessage
 import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, PermissionsManagementMessage, RemovePermissionMessage}
 import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage, UsersManagementMessage}
 import server.messages.query.user.DatabaseMessages._
+import server.messages.query.user.HelpMessages._
 import server.messages.query.user.MapMessages._
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
@@ -79,7 +79,6 @@ class ReplyBuilder {
     reply.question match {
       case m:UsersManagementMessage => UserManagementMessageReply(reply)
       case m:PermissionsManagementMessage => PermissionsManagementMessageReply(reply)
-      case m:ActorPropertiesMessage =>  ActorPropertiesMessageMessageReply(reply)
       case _ => "Unknown question AdminMessage"//TODO
     }
   }
@@ -122,32 +121,6 @@ class ReplyBuilder {
       case ListPermissionMessage(username:String) =>"" //TODO
       case AddPermissionMessage(username: String, database:String, permissionType: UserPermission) =>"" //TODO
       case RemovePermissionMessage(username: String, database:String) =>"" //TODO
-      case _ =>"" //TODO
-    }
-  }
-
-  /**
-    * Builds string replies from a ReplyMessage message.
-    * Handles reply for SetNinjaMessage, SetWarehousemanMessage, MaxRowsMessage,
-    * MaxStorekeeperMessage and MaxStorefinderMessage messages.
-    *
-    * @param reply The ReplyMessage message.
-    * @return The reply string.
-    *
-    * @see SetNinjaMessage
-    * @see SetWarehousemanMessage
-    * @see AddPermissionMessage
-    * @see MaxRowsMessage
-    * @see MaxStorekeeperMessage
-    * @see MaxStorefinderMessage
-    */
-  private def ActorPropertiesMessageMessageReply(reply: ReplyMessage): String = {
-    reply.question match {
-      case SetNinjaMessage(number: Integer) => "" //TODO
-      case SetWarehousemanMessage(number: Integer) => "" //TODO
-      case MaxRowsMessage(number: Integer) => ""//TODO
-      case MaxStorekeeperMessage(number: Integer) => ""//TODO
-      case MaxStorefinderMessage(number: Integer) => ""//TODO
       case _ =>"" //TODO
     }
   }
