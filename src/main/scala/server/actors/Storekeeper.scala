@@ -25,6 +25,7 @@ import scala.collection.JavaConversions._
   */
 class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
   val db = new ConcurrentHashMap[String,  Array[Byte]]()
+  
   import context._
 
   clusterListener = Server.sKclusterListener

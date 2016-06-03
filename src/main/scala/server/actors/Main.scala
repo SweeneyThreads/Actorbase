@@ -45,9 +45,6 @@ import scala.util.{Failure, Success}
   */
 class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyActor {
 
-  // Values for futures
-  implicit val timeout = Timeout(25 seconds)
-  implicit val ec = global
   // Instance of Helper class
   val helper = new Helper
   // Values for selected database and selected map

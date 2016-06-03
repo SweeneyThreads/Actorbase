@@ -131,7 +131,7 @@ class ReplyBuilder {
               }
             }
           }
-          case Error => {
+          case EnumReplyResult.Error => {
             reply.info match {
               case NoKeyInfo() => "User does not exist."
             }

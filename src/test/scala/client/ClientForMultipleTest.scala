@@ -10,7 +10,7 @@ import scala.util.matching.Regex
   */
 class ClientForMultipleTest {
   var connection: Connection = null
-  var printOutput: Boolean = true
+  var printOutput: Boolean = false
 
   def main(args: Array[String]): Unit = {
     Welcome.printWelcomeMessage
@@ -174,7 +174,12 @@ class ClientForMultipleTest {
 
 object main extends App {
   override def main(args: Array[String]) {
-    val tonsOfThreads = new Array[Thread](10)
+
+
+
+
+
+    val tonsOfThreads = new Array[Thread](2000)
 
     for (i<-0 to tonsOfThreads.length-1)
       tonsOfThreads(i) = new Thread(new Runnable {
@@ -189,15 +194,15 @@ object main extends App {
       })
 
 
-    //println ("running 1 thread")
-    //tonsOfThreads(0).run()
+    println ("running 1 thread")
+    tonsOfThreads(0).run()
 
     Thread.sleep(1000)
 
     println("\n\n\nrunning multiple threads")
     for (t <- tonsOfThreads) {
       t.start()
-      Thread.sleep(25)
+      //Thread.sleep(25)
     }
 
   }

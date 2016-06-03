@@ -29,6 +29,7 @@ object ClientForTests {
           ClientForTests.printOutput = true
         }
         case "overload_test1" => executeOverloadTest1(25)
+        //case ""
         case _ =>  {
           var m = getMatch("createmap_test\\s(\\S+)\\s([0-9]+)$".r, ln)
           if(m != null) {
@@ -41,12 +42,7 @@ object ClientForTests {
           } else {
             m = getMatch("insert_test\\s(\\S+)\\s(\\S+)\\s([0-9]+)$".r,ln)
             if (m != null) {
-              println("inserting " + m.group(3) + " key -> value...")
-              val before: Long = System.currentTimeMillis
-              for (i <- 1 to m.group(3).toInt)
-                executeLine("insert '" + m.group(1) + i + "' " + m.group(2))
-              val after: Long = System.currentTimeMillis
-              formatTime(after-before)
+             insert_test(m.group(1),m.group(2),m.group(3).toInt)
             } else {
               m = getMatch("createdb_test\\s(\\S+)\\s([0-9]+)$".r,ln)
               if (m!=null) {
@@ -57,7 +53,18 @@ object ClientForTests {
                 val after: Long = System.currentTimeMillis
                 formatTime(after-before)
               } else {
-                executeLine(ln.trim)
+                m = getMatch("find_test\\s(\\S+)\\s([0-9]+)$".r,ln)
+                if (m!=null) {
+                  find_test(m.group(1),m.group(2).toInt)
+                } else {
+                  m = getMatch("insertfind_test\\s(\\S+)\\s(\\S+)\\s([0-9]+)$".r,ln)
+                  if (m!=null) {
+                    insert_test(m.group(1), m.group(2), m.group(3).toInt)
+                    find_test(m.group(1), m.group(3).toInt)
+                  } else {
+                    executeLine(ln.trim)
+                  }
+                }
               }
             }
           }
@@ -169,5 +176,31 @@ object ClientForTests {
     print ("\nTotal time= ")
     formatTime(keyFound-start)
 
+  }
+
+
+  def bigMapGenerator(mapName: String, i: Int) = {
+    executeLine(s"cretemap $mapName")
+    for (j<- 0 to i) {
+      executeLine(s"insert 'key$i' valuevaluevaluevaluevalue$i")
+    }
+  }
+
+  def find_test(key: String, i: Int): Unit = {
+    println(s"finding from ${key}1 to $key$i...")
+    val before=System.currentTimeMillis()
+    for (j<-1 to i)
+      executeLine(s"find '$key$i'")
+    val after=System.currentTimeMillis()
+    formatTime(after-before)
+  }
+
+  def insert_test(key: String, value: String, c: Int) = {
+    println("inserting " + c + " key -> value...")
+    val before: Long = System.currentTimeMillis
+    for (i <- 1 to c)
+      executeLine("insert '" + key + i + "' " + value)
+    val after: Long = System.currentTimeMillis
+    formatTime(after-before)
   }
 }
