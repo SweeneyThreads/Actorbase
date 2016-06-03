@@ -1,5 +1,6 @@
 package server.actors
 
+import server.Server
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
@@ -24,7 +25,10 @@ import scala.collection.JavaConversions._
   */
 class Storekeeper(isStorekeeper: Boolean = false) extends ReplyActor {
   val db = new ConcurrentHashMap[String,  Array[Byte]]()
+  
   import context._
+
+  clusterListener = Server.sKclusterListener
 
   /**
     * Override of the actor's preStart method.

@@ -3,10 +3,11 @@ package server.actors
 import java.nio.{ByteBuffer, ByteOrder}
 import java.util
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.{Deploy, ActorRef, Props}
 import akka.dispatch.ExecutionContexts._
 import akka.io.Tcp
 import akka.pattern.ask
+import akka.remote.RemoteScope
 import akka.util.{ByteString, ByteStringBuilder, Timeout}
 import server.enums.EnumPermission.UserPermission
 import server.{Server, StoremanagersRefs}
@@ -26,9 +27,6 @@ import scala.util.{Failure, Success}
   * It understands the query, sending it to the Main and giving the client the answer.
   */
 class Usermanager extends ReplyActor {
-  // Values for futures
-  implicit val timeout = Timeout(25 seconds)
-  implicit val ec = global
 
   import Tcp._
 
@@ -183,7 +181,7 @@ class Usermanager extends ReplyActor {
         // If the login is valid it creates a main actor that contains the user permissions
         connected = true
         // 'admin' is the super admin so it has no permissions
-        if (username == "admin") mainActor = context.actorOf(Props(new Main()))
+        if (username == "admin") mainActor = context.actorOf(Props(new Main()).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
         // If the user is not 'admin' the main receive the user's permissions
         else {
           var singleUserPermission: util.HashMap[String, EnumPermission.UserPermission] =
@@ -212,7 +210,7 @@ class Usermanager extends ReplyActor {
                 new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
             }
           }
-          mainActor = context.actorOf(Props(new Main(singleUserPermission)))
+          mainActor = context.actorOf(Props(new Main(singleUserPermission)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
         }
         replyToClient("Y")
         log.info(username + " is connected")

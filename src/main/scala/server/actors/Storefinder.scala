@@ -3,7 +3,8 @@ package server.actors
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.{Deploy, ActorRef, Props}
+import akka.remote.RemoteScope
 import server.enums.EnumReplyResult._
 import server.messages.query.ReplyMessage
 import server.messages.query.user.RowMessages._
@@ -12,11 +13,9 @@ import scala.collection.JavaConversions._
 import scala.language.postfixOps
 import scala.util.matching.Regex
 import scala.util.{Failure, Success}
-import akka.dispatch.ExecutionContexts._
-import akka.pattern.ask
-import akka.util.Timeout
 
-import scala.concurrent.duration._
+import akka.pattern.ask
+import server.Server
 
 
 /**
@@ -25,11 +24,10 @@ import scala.concurrent.duration._
   */
 class Storefinder extends ReplyActor {
 
-  implicit val timeout = Timeout(25 seconds)
-  implicit val ec = global
+  clusterListener=Server.sFclusterListener
 
   val storekeepers = new ConcurrentHashMap[Regex, ActorRef]()
-  storekeepers.put(".*".r, context.actorOf(Props(new Storekeeper(true)))) // Startup storekeeper
+  storekeepers.put(".*".r, context.actorOf(Props(new Storekeeper(true)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))) // Startup storekeeper
   val ninjas = new ConcurrentHashMap[ActorRef, util.ArrayList[ActorRef]]()
   val warehousemans = new ConcurrentHashMap[ActorRef, util.ArrayList[ActorRef]]()
 
@@ -53,7 +51,6 @@ class Storefinder extends ReplyActor {
     * All other RowMessage messages are sent to the right Storekeeper actor.
     *
     * @param message The RowMessage message to precess.
-    *
     * @see #sendToStorekeeper(String, RowMessage)
     * @see RowMessage
     * @see ListKeysMessage
@@ -133,7 +130,6 @@ class Storefinder extends ReplyActor {
     *
     * @param key The key of the entry.
     * @param message The message to send
-    *
     * @see #findActor(String)
     * @see RowMessage
     * @see Storekeeper

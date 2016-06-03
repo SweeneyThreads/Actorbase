@@ -5,7 +5,7 @@ import java.util
 import server.enums.EnumPermission.UserPermission
 import server.enums.EnumReplyResult
 import server.enums.EnumReplyResult.Done
-import server.messages.internal.ScalabilityMessages._
+import scala.collection.JavaConversions._
 import server.messages.query.PermissionMessages.{NoReadPermissionInfo, NoWritePermissionInfo}
 import server.messages.query.admin.AdminMessage
 import server.messages.query.admin.PermissionsManagementMessages._
@@ -131,7 +131,7 @@ class ReplyBuilder {
               }
             }
           }
-          case Error => {
+          case EnumReplyResult.Error => {
             reply.info match {
               case NoKeyInfo() => "User does not exist."
             }

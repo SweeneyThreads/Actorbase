@@ -1,6 +1,6 @@
 package server.actors
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.ActorRef
 import server.messages.query.ReplyMessage
 import server.utils.ReplyBuilder
 
@@ -8,7 +8,7 @@ import server.utils.ReplyBuilder
   * Created by matteobortolazzo on 26/05/2016.
   * Interface that gives an actor the ability to reply and log.
   */
-trait ReplyActor extends Actor with akka.actor.ActorLogging {
+trait ReplyActor extends ClusterAwareActor with akka.actor.ActorLogging {
 
   val replyBuilder = new ReplyBuilder()
 

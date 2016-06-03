@@ -3,7 +3,7 @@ package server
 import java.io.FileNotFoundException
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.dispatch.ExecutionContexts._
 import akka.event.{Logging, LoggingAdapter}
 import akka.util.Timeout
@@ -32,6 +32,10 @@ object Server {
   var users: ConcurrentHashMap[String, String] = null
   var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]] = null
 
+  var clusterListener: ActorRef = null
+  var sFclusterListener: ActorRef = null
+  var sKclusterListener: ActorRef = null
+
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
 
@@ -39,6 +43,10 @@ object Server {
     val conf = ConfigFactory.load()
     val system = ActorSystem("System", conf)
     log = Logging.getLogger(system, this)
+
+    clusterListener= system.actorOf(Props[ClusterListener])
+    sFclusterListener= system.actorOf(Props[ClusterListener])
+    sKclusterListener= system.actorOf(Props[ClusterListener])
 
     loadUsers()
     loadUsersPermissions()
