@@ -20,8 +20,8 @@ class ClusterListener extends Actor with ActorLogging{
   private val cluster = Cluster(context.system)
   // number of the nodes UP in cluster, initially 0
   private var nNodes: Integer = 0
-  // counter of requests. initially 1 cause of the module function in nextAddress function
-  var counter: Integer = 1
+  // counter of requests. initially 0. It must be incremented before the % operation
+  var counter: Integer = 0
   // list of the addresses of the nodes in the cluster
   var addresses: ArrayList[Address] = new ArrayList()
 
@@ -103,14 +103,11 @@ class ClusterListener extends Actor with ActorLogging{
     * @return the address chosen of type akka.actor.Address.
     */
   def nextAddress(): Address = {
-    // auxiliary variable
-    var aux: Address = null
-      // counter % nNodes will select addresses in a Round Robin way
-      aux= addresses.get(counter%nNodes)
-      // increment the number of requests
-      counter=counter+1
-    // return the address
-    aux
+    // increment the number of requests
+    counter=counter+1
+    println(counter)
+    // counter % nNodes will select addresses in a Round Robin way and returns it
+    addresses.get(counter%nNodes)
   }
 
 }
