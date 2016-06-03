@@ -2,7 +2,8 @@ package server.actors
 
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.{Deploy, ActorRef, Props}
+import akka.remote.RemoteScope
 import server.enums.EnumReplyResult
 import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.ReplyMessage
@@ -27,16 +28,13 @@ import scala.concurrent.duration._
 class Storemanager(name: String) extends ReplyActor {
   // Registers itself to the list of usermanager
   StoremanagersRefs.refs.put(name, self)
-   // Values for futures
-  implicit val timeout = Timeout(25 seconds)
-  implicit val ec = global
   // The list of storefinders
   val storefinders = new ConcurrentHashMap[String, ActorRef]()
   // Add a default map (Storefinder). If the present Soremanager represents the Master database, it
   // does not create the default map, instead it creates the users map and the permissions map
   if(name == "master") {
-    storefinders.put("users", context.actorOf(Props[Storefinder]))
-    storefinders.put("permissions", context.actorOf(Props[Storefinder]))
+    storefinders.put("users", context.actorOf(Props[Storefinder].withDeploy(Deploy(scope = RemoteScope(nextAddress)))))
+    storefinders.put("permissions", context.actorOf(Props[Storefinder].withDeploy(Deploy(scope = RemoteScope(nextAddress)))))
   }
 
   /**
@@ -95,7 +93,7 @@ class Storemanager(name: String) extends ReplyActor {
         // If the storefinder doesn't exists
         else {
           // Add the storefinder
-          storefinders.put(name, context.actorOf(Props[Storefinder]))
+          storefinders.put(name, context.actorOf(Props[Storefinder].withDeploy(Deploy(scope = RemoteScope(nextAddress)))))
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }

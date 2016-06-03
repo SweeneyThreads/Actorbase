@@ -3,9 +3,10 @@ package server.actors
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.{Deploy, ActorRef, Props}
 import akka.dispatch.ExecutionContexts._
 import akka.pattern.ask
+import akka.remote.RemoteScope
 import akka.util.Timeout
 import server.StoremanagersRefs
 import server.enums.EnumPermission.UserPermission
@@ -285,7 +286,7 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
         // If the selected database doesn't exist
         else {
           // Add the new database
-          context.system.actorOf(Props(new Storemanager(dbName)), name = dbName)
+          context.system.actorOf(Props(new Storemanager(dbName)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }

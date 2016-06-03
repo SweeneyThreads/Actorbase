@@ -1,6 +1,6 @@
 package server.actors
 
-import akka.actor.{Actor, Address}
+import akka.actor.{ActorRef, Actor, Address}
 import server.Server
 import scala.concurrent.duration._
 import akka.dispatch.ExecutionContexts._
@@ -24,7 +24,7 @@ trait ClusterAwareActor extends Actor {
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
 
-  var clusterListener = Server.clusterListener
+  var clusterListener: ActorRef = Server.clusterListener
 
   /**
     * Returns an address of one node in the cluster.
