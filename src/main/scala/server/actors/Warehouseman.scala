@@ -35,17 +35,6 @@ class Warehouseman(path : String) extends ReplyActor {
   def receive = {
     // If it's a row level message
     case m: RowMessage => handleRowMessages(m)
-    // If the storefinder send a write map message
-    case WriteMapMessage(map: util.HashMap[String, Array[Byte]]) => {
-      //TODO
-    }
-    // If the storefinder send a read map message
-    case ReadMapMessage() => {
-      //TODO
-    }
-    case SendMapMessage(map: util.HashMap[String, Array[Byte]], actorRef: ActorRef) => {
-      //TODO
-    }
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString, currentMethodName()))
   }
 

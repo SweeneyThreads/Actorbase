@@ -172,12 +172,8 @@ class ClientForMultipleTest {
 }
 
 
-object main extends App {
-  override def main(args: Array[String]) {
-
-
-
-
+object main {
+  def main(args: Array[String]) {
 
     val tonsOfThreads = new Array[Thread](2000)
 

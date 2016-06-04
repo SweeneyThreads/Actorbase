@@ -3,21 +3,19 @@ package server.actors
 import java.nio.{ByteBuffer, ByteOrder}
 import java.util
 
-import akka.actor.{Deploy, ActorRef, Props}
-import akka.dispatch.ExecutionContexts._
+import akka.actor.{ActorRef, Deploy, Props}
 import akka.io.Tcp
 import akka.pattern.ask
 import akka.remote.RemoteScope
-import akka.util.{ByteString, ByteStringBuilder, Timeout}
+import akka.util.{ByteString, ByteStringBuilder}
 import server.enums.EnumPermission.UserPermission
-import server.{Server, StoremanagersRefs}
 import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.user.RowMessages.{FindInfo, FindRowMessage, KeyAlreadyExistInfo, StorefinderRowMessage}
 import server.messages.query.{LoginMessage, QueryMessage, ReplyMessage, ServiceErrorInfo}
 import server.utils.{Parser, Serializer}
+import server.{StaticSettings, Server}
 
-import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
@@ -187,7 +185,7 @@ class Usermanager extends ReplyActor {
           var singleUserPermission: util.HashMap[String, EnumPermission.UserPermission] =
             new util.HashMap[String, EnumPermission.UserPermission]()
           val serializer: Serializer = new Serializer
-          val sm = StoremanagersRefs.refs.get("master")
+          val sm = StaticSettings.mapManagerRefs.get("master")
           val origSender = sender
           val future = sm ? StorefinderRowMessage("permissions", new FindRowMessage(username))
           future.onComplete {

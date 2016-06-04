@@ -8,7 +8,7 @@ import akka.dispatch.ExecutionContexts._
 import akka.event.{Logging, LoggingAdapter}
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
-import server.actors.{Doorkeeper, Storemanager}
+import server.actors.{Doorkeeper, MapManager}
 import server.enums.EnumPermission
 import server.enums.EnumPermission.UserPermission
 import server.utils.ConfigurationManager
@@ -84,8 +84,8 @@ object Server {
     * @param system The actor system.
     */
   private def loadDatabases(system: ActorSystem): Unit = {
-    system.actorOf(Props(new Storemanager("test")), name="test")
-    system.actorOf(Props(new Storemanager("master")), name="master")
+    system.actorOf(Props(new MapManager("test")), name="test")
+    system.actorOf(Props(new MapManager("master")), name="master")
     log.info("Databases loaded")
   }
 

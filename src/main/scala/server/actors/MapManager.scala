@@ -2,39 +2,33 @@ package server.actors
 
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{Deploy, ActorRef, Props}
-import akka.remote.RemoteScope
+import akka.actor.{ActorRef, Deploy, Props}
+import server.StaticSettings
 import server.enums.EnumReplyResult
 import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.ReplyMessage
-import server.messages.query.user.MapMessages._
+import server.messages.query.user.MapMessages.{DeleteMapMessage, MapAlreadyExistInfo, MapDoesNotExistInfo, _}
 import server.messages.query.user.RowMessages.{RowMessage, StorefinderRowMessage}
 
-import scala.collection.JavaConversions._
-import scala.language.postfixOps
-import scala.util.{Failure, Success}
-import akka.dispatch.ExecutionContexts._
 import akka.pattern.ask
-import akka.util.Timeout
-import server.StoremanagersRefs
+import akka.remote.RemoteScope
 
-import scala.concurrent.duration._
+import scala.util.{Failure, Success}
+import scala.collection.JavaConversions._
 
 /**
-  * Created by matteobortolazzo on 02/05/2016.
-  * Actor that represent a database or part of it, it manages indexes and backups.  *
-  * if it's  the 'master' database it creates the 'users' and the 'permissions' map.
+  * Created by matteobortolazzo on 04/06/2016.
   */
-class Storemanager(name: String) extends ReplyActor {
-  // Registers itself to the list of usermanager
-  StoremanagersRefs.refs.put(name, self)
+class MapManager(database: String) extends ReplyActor {
+  // Registers itself to the list of MapManager actors
+  StaticSettings.mapManagerRefs.put(database, self)
   // The list of storefinders
-  val storefinders = new ConcurrentHashMap[String, ActorRef]()
+  val indexManagers = new ConcurrentHashMap[String, ActorRef]()
   // Add a default map (Storefinder). If the present Soremanager represents the Master database, it
   // does not create the default map, instead it creates the users map and the permissions map
-  if(name == "master") {
-    storefinders.put("users", context.actorOf(Props[Storefinder].withDeploy(Deploy(scope = RemoteScope(nextAddress)))))
-    storefinders.put("permissions", context.actorOf(Props[Storefinder].withDeploy(Deploy(scope = RemoteScope(nextAddress)))))
+  if(database == "master") {
+    indexManagers.put("users",       context.actorOf(Props(new IndexManager(1)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="users"))
+    indexManagers.put("permissions", context.actorOf(Props(new IndexManager(1)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="permissions"))
   }
 
   /**
@@ -50,7 +44,7 @@ class Storemanager(name: String) extends ReplyActor {
     */
   def receive = {
     // Replay to the main actor if there's a map with that name
-    case AskMapMessage(mapName:String) => Some(sender).map(_ ! storefinders.containsKey(mapName))
+    case AskMapMessage(mapName:String) => Some(sender).map(_ ! indexManagers.containsKey(mapName))
     // If it's a map level message
     case m:MapMessage => handleMapMessage(m)
     // If it's a row level message
@@ -78,7 +72,7 @@ class Storemanager(name: String) extends ReplyActor {
         // Create a list
         var maps = List[String]()
         // For each storekeeper adds the map name to the list
-        for (k: String <- storefinders.keys()) maps = maps.::(k)
+        for (k: String <- indexManagers.keySet()) maps = maps.::(k)
         // If the map is empty reply with an error
         if (maps.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoMapInfo()))
         // If the map is not empty
@@ -87,25 +81,25 @@ class Storemanager(name: String) extends ReplyActor {
       // If the user types 'createmap <map_name>'
       case CreateMapMessage(name: String) => {
         // Get the storefinder
-        val sf = storefinders.get(name)
+        val sf = indexManagers.get(name)
         // If the storefinder already exists
         if (sf != null) reply(ReplyMessage(EnumReplyResult.Error, message, MapAlreadyExistInfo()))
         // If the storefinder doesn't exists
         else {
           // Add the storefinder
-          storefinders.put(name, context.actorOf(Props[Storefinder].withDeploy(Deploy(scope = RemoteScope(nextAddress)))))
+          indexManagers.put(name, context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress)))))
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }
       // If the user types 'deletemap <map_name>'
       case DeleteMapMessage(name: String) => {
         // Get the storefinder
-        val sf = storefinders.get(name)
+        val sf = indexManagers.get(name)
         if (sf == null) reply(ReplyMessage(EnumReplyResult.Error, message, MapDoesNotExistInfo()))
         // If the storefinder doesn't exists
         else {
           // Remove the storefinder
-          storefinders.remove(name)
+          indexManagers.remove(name)
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }
@@ -126,7 +120,7 @@ class Storemanager(name: String) extends ReplyActor {
       // If it's a StorefinderRowMessage
       case m: StorefinderRowMessage => {
         // Get the storefinder
-        val sf = storefinders.get(m.mapName)
+        val sf = indexManagers.get(m.mapName)
         if (sf == null) reply(ReplyMessage(EnumReplyResult.Error, message, MapDoesNotExistInfo()))
         else {
           // Save the original sender

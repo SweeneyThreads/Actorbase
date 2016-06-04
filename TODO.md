@@ -50,3 +50,4 @@ Robe da sviluppare
 * Controllare currentMethodName nel log
 * Fare comando refresh config
 * Fare test Main e Storemanager
+* Leggere proprietà attori da file

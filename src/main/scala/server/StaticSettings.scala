@@ -8,6 +8,9 @@ import akka.actor.ActorRef
   * Created by matteobortolazzo on 02/06/2016.
   * Contains the list of reference of all StoreManager actors
   */
-object StoremanagersRefs   {
-  var refs = new ConcurrentHashMap[String, ActorRef]()
+object StaticSettings   {
+  var mapManagerRefs = new ConcurrentHashMap[String, ActorRef]()
+  var maxRowNumber = 2
+  var ninjaNumber = 1
+  var warehousemanNumber = 1
 }

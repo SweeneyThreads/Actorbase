@@ -1,3 +1,4 @@
+/*
 
 package server.actors
 
@@ -180,3 +181,4 @@ class FakeStorefinder(returnInfo: Array[Byte]) extends Storefinder{
 
 }
 
+*/

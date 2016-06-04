@@ -1,16 +1,12 @@
 package server.actors
 
 import java.util
-import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{Deploy, ActorRef, Props}
-import akka.dispatch.ExecutionContexts._
+import akka.actor.{ActorRef, Deploy, Props}
 import akka.pattern.ask
 import akka.remote.RemoteScope
-import akka.util.Timeout
-import server.StoremanagersRefs
+import server.StaticSettings
 import server.enums.EnumPermission.UserPermission
-import server.enums.EnumReplyResult.Done
 import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.PermissionMessages._
@@ -25,10 +21,8 @@ import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
 import server.messages.query.{QueryMessage, ReplyMessage, ServiceErrorInfo}
 import server.utils.{Helper, Serializer}
-import sun.net.ftp.FtpDirEntry.Permission
 
 import scala.collection.JavaConversions._
-import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
@@ -44,7 +38,6 @@ import scala.util.{Failure, Success}
   * @see Server
   */
 class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyActor {
-
   // Instance of Helper class
   val helper = new Helper
   // Values for selected database and selected map
@@ -254,7 +247,7 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
       case ListDatabaseMessage() => {
         var dbs = List[String]()
         // Foreach database
-        for (k: String <- StoremanagersRefs.refs.keys())
+        for (k: String <- StaticSettings.mapManagerRefs.keys())
         // If the user is a super admin or has permissions on the current database, add the db name to the list
           if (perms == null || perms.get(k) != null) dbs = dbs.::(k)
         // If the database is empty it return a 'no dbs error'
@@ -265,7 +258,7 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
       // If the user types 'selectdb <db_name>'
       case SelectDatabaseMessage(name: String) => {
         // If the selected database doesn't exists
-        if (!StoremanagersRefs.refs.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+        if (!StaticSettings.mapManagerRefs.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
         // If the user doesn't have at least read permissions on the selected database
         else if (!checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
         // If the selected database exists and the user has at least read permissions on it
@@ -279,26 +272,26 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
       // If the user types 'createdb <db_name>'
       case CreateDatabaseMessage(dbName: String) => {
         // If the selected database already exists
-        if (StoremanagersRefs.refs.containsKey(dbName)) reply(ReplyMessage(EnumReplyResult.Error, message, DBAlreadyExistInfo()))
+        if (StaticSettings.mapManagerRefs.containsKey(dbName)) reply(ReplyMessage(EnumReplyResult.Error, message, DBAlreadyExistInfo()))
         // If the selected database doesn't exist
         else {
           // Add the new database
-          context.system.actorOf(Props(new Storemanager(dbName)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
+          context.system.actorOf(Props(new IndexManager(1)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }
       // If the user types 'deletedb <db_name>'
       case DeleteDatabaseMessage(name: String) => {
         // If the selected database doesn't exists
-        if (!StoremanagersRefs.refs.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+        if (!StaticSettings.mapManagerRefs.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
         // If the user doesn't have write permissions on the selected database
         else if (!checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoWritePermissionInfo()))
         // If the selected database exists and the user has write permissions on it
         else {
           // Kills the actor and removes the reference
-          val ref = StoremanagersRefs.refs.get(name)
+          val ref = StaticSettings.mapManagerRefs.get(name)
           context.stop(ref)
-          StoremanagersRefs.refs.remove(name)
+          StaticSettings.mapManagerRefs.remove(name)
           // Deselect the database
           selectedDatabase = ""
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
@@ -322,9 +315,9 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
     // If there isn't a selected database
     if (selectedDatabase == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoDBSelectedInfo()))
     // If the selected database doesn't exists
-    else if (!StoremanagersRefs.refs.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+    else if (!StaticSettings.mapManagerRefs.containsKey(selectedDatabase)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
     // It gets the right storemanager
-    val sm = StoremanagersRefs.refs.get(selectedDatabase)
+    val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
     message match {
       // If the user types 'selectmap <db_name>'
       case SelectMapMessage(name: String) => {
@@ -377,10 +370,10 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
     // If there isn't a selected map
     else if (selectedMap == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoMapSelectedInfo()))
     // If the selected database doesn't exists
-    else if (!StoremanagersRefs.refs.containsKey(selectedDatabase))
+    else if (!StaticSettings.mapManagerRefs.containsKey(selectedDatabase))
       reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
     // It gets the right storemanager
-    val sm = StoremanagersRefs.refs.get(selectedDatabase)
+    val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
     // Save the original sender
     val origSender = sender
     // Send a StorefinderRowMessage to the storemanager and save the reply in a future
@@ -440,7 +433,7 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
 
   private def listPermissionsHandle(message: ListPermissionMessage): Unit = {
     val serializer: Serializer = new Serializer
-    val sm = StoremanagersRefs.refs.get(selectedDatabase)
+    val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
     // Save the original sender
     val origSender = sender
     // Send a StorefinderRowMessage to the storemanager and save the reply in a future
@@ -480,7 +473,7 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
     * @return The ActorRef of the Storemanager actor that represent the database.
     */
   private def findStoremanager(databaseName: String): ActorRef = {
-    StoremanagersRefs.refs.get(databaseName)
+    StaticSettings.mapManagerRefs.get(databaseName)
   }
 }
 

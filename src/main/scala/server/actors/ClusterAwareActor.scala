@@ -7,6 +7,8 @@ import akka.dispatch.ExecutionContexts._
 import akka.pattern.ask
 import akka.util.Timeout
 
+import scala.language.postfixOps
+
 /**
   * Created by Paolo on 02/06/2016.
   */
