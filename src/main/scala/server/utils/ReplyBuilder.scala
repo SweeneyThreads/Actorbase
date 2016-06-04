@@ -5,11 +5,12 @@ import java.util
 import server.enums.EnumPermission.UserPermission
 import server.enums.EnumReplyResult
 import server.enums.EnumReplyResult.Done
+
 import scala.collection.JavaConversions._
 import server.messages.query.PermissionMessages.{NoReadPermissionInfo, NoWritePermissionInfo}
 import server.messages.query.admin.AdminMessage
 import server.messages.query.admin.PermissionsManagementMessages._
-import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage, UsersManagementMessage}
+import server.messages.query.admin.UsersManagementMessages._
 import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.HelpMessages._
 import server.messages.query.user.MapMessages._
@@ -35,10 +36,14 @@ class ReplyBuilder {
     * @see AdminMessage
     */
   def buildReply(reply: ReplyMessage): String = {
-    reply.question match {
-      case m: UserMessage => UserMessageReply(reply)
-      case m: AdminMessage => AdminMessageReply(reply)
-      case _ => "Unknown question " //TODO
+    if (reply.info.isInstanceOf[server.messages.query.ReplyErrorInfo])
+      "Unknown error, try again."
+    else {
+      reply.question match {
+        case m: UserMessage => UserMessageReply(reply)
+        case m: AdminMessage => AdminMessageReply(reply)
+        case _ => "Unknown question " //TODO
+      }
     }
   }
 
@@ -96,7 +101,25 @@ class ReplyBuilder {
     */
   private def UserManagementMessageReply(reply: ReplyMessage): String = {
     reply.question match {
-      case ListUserMessage() => "" //TODO
+      case ListUserMessage() => {
+        reply.result match {
+          case EnumReplyResult.Done => {
+            val list : List[String] = reply.info.asInstanceOf[ListUserInfo].userList
+            var toReturn : String = ""
+            for (l <- list){
+              toReturn = toReturn.concat(l + "\n")
+            }
+            toReturn = toReturn.dropRight(1)
+            return toReturn
+          }
+          case EnumReplyResult.Error => {
+            if (reply.info.isInstanceOf[NoUserInfo])
+              return "No users, first add some users."
+            else
+              return "WTF?!? Should not reach that point"
+          }
+        }
+      }
       case AddUserMessage(username: String, password: String) => "" //TODO
       case RemoveUserMessage(username: String) => "" //TODO
       case _ => "" //TODO
@@ -122,10 +145,12 @@ class ReplyBuilder {
             reply.info match {
               case ListPermissionsInfo(map: util.HashMap[String, UserPermission]) => {
                 var result: String = ""
+                if (map.size() == 0)
+                  return "User does not have any permission at the moment. Give him/her some permissions."
                 for (k <- map.keySet()) {
-                  result.concat(k)
-                  result.concat(" -> ")
-                  result.concat(map.get(k) + "\n")
+                  result = result.concat(k)
+                  result = result.concat(" -> ")
+                  result = result.concat(map.get(k) + "\n")
                 }
                 return result.dropRight(1)
               }
@@ -137,9 +162,20 @@ class ReplyBuilder {
             }
           }
         }
-      } //TODO
-      case AddPermissionMessage(username: String, database: String, permissionType: UserPermission) => "" //TODO
-      case RemovePermissionMessage(username: String, database: String) => "" //TODO
+      }
+      case AddPermissionMessage(username: String, database: String, permissionType: UserPermission) => {
+        reply.result match {
+          case EnumReplyResult.Done => {
+            return "Permission " + permissionType.toString + " added to user " + username + " on database " + database
+          }
+          case EnumReplyResult.Error => {
+            return "Something went wrong, try again."
+          }
+        }
+      }
+      case RemovePermissionMessage(username: String, database: String) => {
+        return "Removed all permissions of " + username + " on DB " + database;
+      }
       case _ => "" //TODO
     }
   }
