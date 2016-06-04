@@ -36,7 +36,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   /*########################################################################
     Testing AskMapMessage() receiving TU52
     ########################################################################*/
-  /*testing if the storemanager returns the correct reply to yhe Main when reciving an AskMapMessage*/
+  /*testing if the storemanager returns the correct reply to yhe Main when receiving an AskMapMessage*/
 
 
   "StoremanagerActor" should "actually return true if the storemanager contains the map asked with an AskMapMessage" in {
@@ -45,6 +45,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
     val actorRef=TestActorRef(new Storemanager("test"))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
+    //put a storefinder in storefinders map
     actor.storefinders.put("defaultMap", system.actorOf(Props[Storefinder]))
     // now I send the message
     val future = actorRef ? AskMapMessage("defaultMap")
@@ -63,7 +64,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   /*########################################################################
     Testing ListMapMessage() receiving TU53
     ########################################################################*/
-  /*testing if the storemanager contains the defaultMap and if return a correct reply when receving a ListMapMessage*/
+  /*testing if the storemanager contains the defaultMap and if return a correct reply when receiving a ListMapMessage*/
 
 
   it should "actually return correct maplist when receiving a ListMapMessage" in {
@@ -79,14 +80,14 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
     val future = actorRef ? ListMapMessage()
     //when the message is completed i check that the StoremanagerActor reply correctly
     ScalaFutures.whenReady(future) {
-      val dbs = List[String]("map1","map2")
-      result => result should be(new ReplyMessage (EnumReplyResult.Done,new ListMapMessage(),ListMapInfo(dbs)))
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new ListMapMessage(),ListMapInfo(List[String]("map1","map2"))))
     }
   }
 
   /*########################################################################
   Testing CreateMapMessage() receiving TU54
-  ########################################################################*/
+  ########################################################################
+  testing if the storemanager create the map and reply correctly or reply with the correct error if the map already exist*/
   it should "create the correct map and reply correctly or send the correct error when receving a CreateMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
@@ -97,6 +98,7 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
     val future = actorRef ? CreateMapMessage("map1")
     //when the message is completed i check that the StoremanagerActor reply correctly and delete correctly
     ScalaFutures.whenReady(future) {
+      //check if the map was correctly created
       actor.storefinders.containsKey("map1") should be (true)
       result => result should be(new ReplyMessage (EnumReplyResult.Done,new CreateMapMessage("map1"),null))
     }
@@ -168,7 +170,9 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   }
 }
 
-/*FakeStoremanage for test porpuse always answers in the same way*/
+/**fake storefinder for receiving RowMessage test,
+  * it builds with the value it has to return
+  * */
 class FakeStorefinder(returnInfo: Array[Byte]) extends Storefinder{
 
   override def receive = {

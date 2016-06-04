@@ -37,7 +37,7 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
   /*########################################################################
     Testing correct log after no RowMessage receiving TU35
     ########################################################################*/
-  /*testing if the storefinder returns the correct reply to yhe Main when reciving a ListKeysMessage*/
+  /*testing if the storefinder produces the correct log after receiving a not RowMessage in this case a ListDatabaseMessage()*/
 
 
   "StorefinderActor" should "create the correct log line" in {
@@ -65,14 +65,14 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
     //regular expression that match the error log produced by the storefinder
     val Pattern=(nowString+"....\\s.+\\sERROR server\\.actors\\.Storefinder\\s\\-\\sUnhandled\\smessage" +
       "\\sin\\sactor;\\sakka:\\/\\/default\\/user\\/\\$\\$.+,\\smethod:\\s.+").r
-    //if it doesn't find the line the log didn't appened correcly
+    //if it doesn't find the line the log didn't happened correctly
     Pattern.findFirstIn(lines) shouldNot be (None)
   }
 
   /*########################################################################
     Testing ListKeysMessage() receiving TU36
     ########################################################################*/
-  /*testing if the storefinder returns the correct reply to yhe Main when reciving a ListKeysMessage*/
+  /*testing if the storefinder returns the correct reply to yhe Main when receiving a ListKeysMessage*/
 
 
   it should "return the correct concatenation of the storekeepers keys" in {
@@ -97,7 +97,7 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
   /*########################################################################
     Testing InsertRowMessage, UpdateRowMessage, RemoveRowMessage, FindRowMessage receiving TU37
     ########################################################################*/
-  /*testing if the storefinder returns the correct reply to yhe Main when reciving a ListKeysMessage*/
+  /*testing if the storefinder send the InsertRowMessage, UpdateRowMessage, RemoveRowMessage, FindRowMessage to the correct storekeeper*/
 
   it should "actually send the InsertRowMessage, UpdateRowMessage, RemoveRowMessage, FindRowMessage to correct storekeeper" in {
     // TestActorRef is a exoteric function provided by akka-testkit
@@ -107,7 +107,7 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
     val actor = actorRef.underlyingActor
     //clear default storekeeper
     actor.storekeepers.clear()
-    //add two fakestorekeepers
+    //add two fakestorekeepers that answer differently and have different keys range
     val first=new Array[Byte](1)
     val second=new Array[Byte](2)
     actor.storekeepers.put("[a-cA-C]".r, System.actorOf(Props(classOf[FakeStorekeeper1],first)))
@@ -159,6 +159,10 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
 
 
 }
+
+/**FakeStorekkeper class for test receinving ListKeysMessage testing
+  *
+  */
 class FakeStorekeeper extends Storekeeper{
 
   override def receive = {
@@ -170,6 +174,9 @@ class FakeStorekeeper extends Storekeeper{
 
 }
 
+/**FakeStorekkeper class for test sending row messages to correct storekeeper, take an array[Byte]
+  * to allow different answers
+  * */
 class FakeStorekeeper1(returnInfo: Array[Byte]) extends Storekeeper{
 
   override def receive = {

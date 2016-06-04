@@ -70,7 +70,7 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
   Testing UpdateRowMessage() receiving TU40
   ########################################################################*/
   /*testing if the storekeeper Update the key and value, or reply with the correct error if the key not exist,
-   when receiving an UpdadeRowMessage*/
+   when receiving an UpdateRowMessage*/
 
 
   it should "actually reply correctly if the storekeeper receives a UpdateRowMessage with correct or incorrect key" in {
@@ -79,6 +79,7 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
     val actorRef = TestActorRef(new Storekeeper(true))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
+    // tow send and test values
     val value=new Array[Byte](123)
     val value2=new Array[Byte](321)
     // now I send the message
@@ -88,6 +89,7 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
     ScalaFutures.whenReady(future) {
       result => result should be(new ReplyMessage(EnumReplyResult.Done, new UpdateRowMessage("key", value2), null))
     }
+    //check if the value actually changes
     actor.db.get("key") should be(value2)
     // now I send the message to update not inserted key
     val future2 = actorRef ? UpdateRowMessage("NotExistingKey", value)
@@ -117,6 +119,7 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
     ScalaFutures.whenReady(future) {
       result => result should be(new ReplyMessage(EnumReplyResult.Done, new RemoveRowMessage("key"), null))
     }
+    //check if the key is actually removed
     actor.db.get("key") should be(null)
     // now I send the message to update not inserted key
     val future2 = actorRef ? RemoveRowMessage("NotExistingKey")
@@ -139,6 +142,7 @@ class StorekeeperTest extends FlatSpec with Matchers with MockFactory {
     val actorRef = TestActorRef(new Storekeeper(true))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
+    //create a value to put and test
     val value=new Array[Byte](123)
     //insert a key in the db of the storekeeper
     actor.db.put("key",value)
