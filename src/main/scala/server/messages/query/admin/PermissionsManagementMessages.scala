@@ -54,4 +54,5 @@ object PermissionsManagementMessages {
     * @see ReplyInfo
     */
   case class ListPermissionsInfo(permissions: util.HashMap[String, UserPermission]) extends ReplyInfo
+
 }

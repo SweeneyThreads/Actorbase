@@ -18,3 +18,5 @@ trait ReplyInfo
   * @param info The information about the response
   */
 case class ReplyMessage(result: ReplyResult, question: QueryMessage, info: ReplyInfo = null)
+
+case class ReplyErrorInfo() extends ReplyInfo

@@ -1,5 +1,7 @@
 package server.messages.query.admin
 
+import server.messages.query.ReplyInfo
+
 /**
   * Created by lucan on 10/05/2016.
   */
@@ -26,18 +28,22 @@ object UsersManagementMessages {
   /**
     * An AddUserMessage is used to add an user with username and password to the list of users who have access to
     * the server
+ *
     * @param username The user's username
     * @param password The user's password
-    *
     * @see UsersManagementMessage
     */
   case class AddUserMessage(username : String, password :String) extends UsersManagementMessage
 
   /**
     * A RemoveUserMessage is used to remove an user from the list of users who have acces to the server.
+ *
     * @param username The user's username
-    *
     * @see UsersManagementMessages
     */
   case class RemoveUserMessage(username : String) extends UsersManagementMessage
+
+  case class ListUserInfo(userList : List[String]) extends ReplyInfo
+  case class NoUserInfo() extends ReplyInfo
+
 }

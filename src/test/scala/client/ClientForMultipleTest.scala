@@ -175,10 +175,6 @@ class ClientForMultipleTest {
 object main extends App {
   override def main(args: Array[String]) {
 
-
-
-
-
     val tonsOfThreads = new Array[Thread](2000)
 
     for (i<-0 to tonsOfThreads.length-1)
@@ -192,7 +188,6 @@ object main extends App {
           client.executeOverloadTest1(10)
         }
       })
-
 
     println ("running 1 thread")
     tonsOfThreads(0).run()
