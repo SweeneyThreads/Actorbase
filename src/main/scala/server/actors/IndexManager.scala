@@ -2,10 +2,9 @@ package server.actors
 
 import java.util
 
-import akka.pattern.ask
 import akka.actor.{ActorRef, Deploy, Props}
+import akka.pattern.ask
 import akka.remote.RemoteScope
-import server.StaticSettings.{maxRowNumber, warehousemanNumber}
 import server.enums.EnumStoremanagerType
 import server.messages.query.ReplyMessage
 import server.messages.query.user.RowMessages.RowMessage
@@ -20,7 +19,7 @@ class IndexManager(warehousemansNumber: Integer) extends ReplyActor {
 
   // The main Storemanager actor reference
   val storemanager = context.actorOf(Props(
-    new SuperMegaTreeActor(("", null), EnumStoremanagerType.StorekeeperType)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
+    new Storemanager(("", null), EnumStoremanagerType.StorekeeperType)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
   // References to all Warehouseman actors
   val warehousemans = new util.ArrayList[ActorRef]()
   // Adds Warehouseman actors

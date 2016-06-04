@@ -21,7 +21,7 @@ import scala.collection.mutable
 /**
   * Created by matteobortolazzo on 03/06/2016.
   */
-class SuperMegaTreeActor(index: (String, String), storemanagerType: StoremanagerType)
+class Storemanager(index: (String, String), storemanagerType: StoremanagerType)
   extends ReplyActor {
 
   val map = new ConcurrentHashMap[String,  Array[Byte]]()
@@ -155,8 +155,8 @@ class SuperMegaTreeActor(index: (String, String), storemanagerType: Storemanager
     val index1 = (index._1, midElement)
     val index2 = (midElement, index._2)
     // Creates two children
-    val actor1 = context.actorOf(Props(new SuperMegaTreeActor(index1, StorekeeperType)))
-    val actor2 = context.actorOf(Props(new SuperMegaTreeActor(index2, StorekeeperType)))
+    val actor1 = context.actorOf(Props(new Storemanager(index1, StorekeeperType)))
+    val actor2 = context.actorOf(Props(new Storemanager(index2, StorekeeperType)))
     // Sends maps
     actor1.tell(new SendMapMessage(map1), self)
     actor2.tell(new SendMapMessage(map2), self)
@@ -173,7 +173,6 @@ class SuperMegaTreeActor(index: (String, String), storemanagerType: Storemanager
     * Handles SendMapMessage messages adding the received map to its own map.
     *
     * @param message The ScalabilityMessage message
-    *
     * @see ScalabilityMessage
     * @see SendMapMessage
     */
