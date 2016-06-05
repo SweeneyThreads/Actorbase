@@ -1,12 +1,16 @@
 package server.actors
 
 import java.util
+import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, Deploy, Props}
+import akka.dispatch.ExecutionContexts._
 import akka.pattern.ask
 import akka.remote.RemoteScope
+import akka.util.Timeout
 import server.StaticSettings
 import server.enums.EnumPermission.UserPermission
+import server.enums.EnumReplyResult.Done
 import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.PermissionMessages._
@@ -19,10 +23,13 @@ import server.messages.query.user.HelpMessages._
 import server.messages.query.user.MapMessages._
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
-import server.messages.query.{QueryMessage, ReplyMessage, ServiceErrorInfo}
+import server.messages.query.{QueryMessage, ReplyErrorInfo, ReplyMessage, ServiceErrorInfo}
 import server.utils.{Helper, Serializer}
+import sun.net.ftp.FtpDirEntry.Permission
 
 import scala.collection.JavaConversions._
+import scala.concurrent.Await
+import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
@@ -37,7 +44,8 @@ import scala.util.{Failure, Success}
   * @see UserPermission
   * @see Server
   */
-class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyActor {
+class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActor {
+
   // Instance of Helper class
   val helper = new Helper
   // Values for selected database and selected map
@@ -54,7 +62,7 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
   def receive = {
     // If it's a query message
     case m: QueryMessage => handleQueryMessage(m)
-    case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receive"))
+    case other => log.error(replyBuilder.unhandledMessage(self.path.toString(), "receive"))
   }
 
   /**
@@ -153,11 +161,23 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
     selectedMap = "users"
     message match {
       // If the user types 'listuser'
-      case ListUserMessage() => handleRowMessage(new ListKeysMessage)
+      case ListUserMessage() => handleListUserMessage(message.asInstanceOf[ListUserMessage])
       // If the user types 'adduser <username> <password>'
-      case AddUserMessage(username: String, password: String) => handleRowMessage(new InsertRowMessage(username, password.getBytes("UTF-8")))
+      case AddUserMessage(username: String, password: String) => {
+        handleRowMessage(new InsertRowMessage(username, password.getBytes("UTF-8")))
+        val singleUserPermissions : util.HashMap[String, EnumPermission.UserPermission] =
+          new util.HashMap[String, EnumPermission.UserPermission]()
+        val serializer: Serializer = new Serializer()
+        val mapSerialized = serializer.serialize(singleUserPermissions)
+        selectedMap = "permissions"
+        handleRowMessage(new InsertRowMessage(username, mapSerialized))
+      }
       // If the user types 'removeuser <username>'
-      case RemoveUserMessage(username: String) => handleRowMessage(new RemoveRowMessage(username))
+      case RemoveUserMessage(username: String) => {
+        handleRowMessage(new RemoveRowMessage(username))
+        selectedMap = "permissions"
+        handleRowMessage(new RemoveRowMessage(username))
+      }
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleUserManagementMessage"))
     }
   }
@@ -180,11 +200,13 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
     selectedMap = "permissions"
     message match {
       // If the user types 'listpermission <username>'
-      case ListPermissionMessage(username: String) => listPermissionsHandle(message.asInstanceOf[ListPermissionMessage])
+      case ListPermissionMessage(username: String) => handlePermissionsList(message.asInstanceOf[ListPermissionMessage])
       // If the user types 'addpermission <username> <database> <permission_type>'
-      case AddPermissionMessage(username: String, database: String, permissionType: UserPermission) => //TODO
+      case AddPermissionMessage(username: String, database: String, permissionType: UserPermission) =>
+        handleAddPermission(message.asInstanceOf[AddPermissionMessage])
       // If the user types 'removepermission <username> <database>'
-      case RemovePermissionMessage(username: String, database: String) => //TODO
+      case RemovePermissionMessage(username: String, database: String) =>
+        handleRemovePermissions(message.asInstanceOf[RemovePermissionMessage])
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handlePermissionsManagementMessage"))
     }
   }
@@ -276,8 +298,7 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
         // If the selected database doesn't exist
         else {
           // Add the new database
-          val actor = context.system.actorOf(Props(new MapManager(dbName)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
-          StaticSettings.mapManagerRefs.put(dbName, actor)
+          context.system.actorOf(Props(new MapManager(dbName)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }
@@ -432,27 +453,44 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
     }
   }
 
-  private def listPermissionsHandle(message: ListPermissionMessage): Unit = {
-    val serializer: Serializer = new Serializer
+  private def handlePermissionsList(message: ListPermissionMessage): Unit = {
     val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
-    // Save the original sender
     val origSender = sender
-    // Send a StorefinderRowMessage to the storemanager and save the reply in a future
     val future = sm ? StorefinderRowMessage(selectedMap, new FindRowMessage(message.username))
     future.onComplete {
-      // Reply the usermanager with the reply from the storemanager
       case Success(result) => {
-        val replyMes = result.asInstanceOf[ReplyMessage]
-        replyMes.result match {
+        val resultMessage = result.asInstanceOf[ReplyMessage]
+        resultMessage.result match {
           case EnumReplyResult.Done => {
-            val array = replyMes.info.asInstanceOf[FindInfo].value
+            val serializer: Serializer = new Serializer()
+            val array = resultMessage.info.asInstanceOf[FindInfo].value
             val singleUserPermissions: util.HashMap[String, EnumPermission.UserPermission] =
               serializer.deserialize(array).asInstanceOf[util.HashMap[String, UserPermission]]
+            selectedDatabase = ""
+            selectedMap = ""
             reply(new ReplyMessage(EnumReplyResult.Done, message,
               new ListPermissionsInfo(singleUserPermissions)), origSender)
           }
           case EnumReplyResult.Error => {
-            replyMes.info.asInstanceOf[NoKeyInfo]
+            if (resultMessage.info.isInstanceOf[KeyDoesNotExistInfo]){
+              val singleUserPermissions : util.HashMap[String, EnumPermission.UserPermission] =
+                new util.HashMap[String, EnumPermission.UserPermission]()
+              val serializer: Serializer = new Serializer()
+              val mapSerialized = serializer.serialize(singleUserPermissions)
+              val toInsert = sm ? StorefinderRowMessage(selectedMap, new InsertRowMessage(message.username, mapSerialized))
+              toInsert.onComplete{
+                case Success(result) => {
+                  handlePermissionsList(message)
+                }
+                case Failure(t) => {
+                  log.error("Error sending message: " + t.getMessage);
+                  reply(new ReplyMessage(EnumReplyResult.Error, message,
+                    new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
+                }
+              }
+            }
+            else
+              reply(new ReplyMessage(EnumReplyResult.Error, message, new ReplyErrorInfo()), origSender)
           }
         }
       }
@@ -462,13 +500,11 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
           new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
       }
     }
-    selectedDatabase = ""
-    selectedMap = ""
-
   }
 
+
   /**
-    *
+    * Returns the reference of a Storemanager actor for the given database
     *
     * @param databaseName The name of the database.
     * @return The ActorRef of the Storemanager actor that represent the database.
@@ -476,11 +512,146 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
   private def findStoremanager(databaseName: String): ActorRef = {
     StaticSettings.mapManagerRefs.get(databaseName)
   }
+
+  private def handleAddPermission(message: AddPermissionMessage): Unit = {
+    val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
+    // Save the original sender
+    val origSender = sender
+    // Send a StorefinderRowMessage to the storemanager and save the reply in a future
+    val future = sm ? StorefinderRowMessage(selectedMap, new FindRowMessage(message.username))
+    future.onComplete {
+      // Reply the usermanager with the reply from the storemanager
+      case Success(result) => {
+        result.asInstanceOf[ReplyMessage].result match {
+          case EnumReplyResult.Done => {
+            val serializer: Serializer = new Serializer()
+            val array = result.asInstanceOf[ReplyMessage].info.asInstanceOf[FindInfo].value
+            val singleUserPermissions: util.HashMap[String, EnumPermission.UserPermission] =
+              serializer.deserialize(array).asInstanceOf[util.HashMap[String, UserPermission]]
+            singleUserPermissions.put(message.database, message.permissionType)
+            val permissionsSerialized: Array[Byte] = serializer.serialize(singleUserPermissions)
+            val replyMes = sm ? StorefinderRowMessage(selectedMap,
+              new UpdateRowMessage(message.username, permissionsSerialized))
+            replyMes.onComplete {
+              case Success(result) => {
+                result.asInstanceOf[ReplyMessage].result match {
+                  case EnumReplyResult.Done => {
+                    selectedDatabase = ""
+                    selectedMap = ""
+                    reply(ReplyMessage(EnumReplyResult.Done, message), origSender)
+                  }
+                  case EnumReplyResult.Error => {
+                    selectedDatabase = ""
+                    selectedMap = ""
+                    reply(ReplyMessage(EnumReplyResult.Error, message, new ReplyErrorInfo())) // should never get there
+                  }
+                }
+              }
+            }
+          }
+          case EnumReplyResult.Error => {
+            val serializer: Serializer = new Serializer
+            val singleUserPermissions: util.HashMap[String, EnumPermission.UserPermission] =
+              new util.HashMap[String, EnumPermission.UserPermission]
+            val permissionsSerialized: Array[Byte] = serializer.serialize(singleUserPermissions)
+            val userPermissions = sm ? StorefinderRowMessage(selectedMap,
+              new InsertRowMessage(message.username, permissionsSerialized))
+            handleAddPermission(message)
+          }
+        }
+      }
+      case Failure(t) => {
+        log.error("Error sending message: " + t.getMessage);
+        reply(new ReplyMessage(EnumReplyResult.Error, message,
+          new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
+      }
+    }
+  }
+
+  private def handleRemovePermissions(message: RemovePermissionMessage): Unit = {
+    val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
+    // Save the original sender
+    val origSender = sender
+    // Send a StorefinderRowMessage to the storemanager and save the reply in a future
+    val future = sm ? StorefinderRowMessage(selectedMap, new FindRowMessage(message.username))
+    future.onComplete {
+      // Reply the usermanager with the reply from the storemanager
+      case Success(result) => {
+        result.asInstanceOf[ReplyMessage].result match {
+          case EnumReplyResult.Done => {
+            val serializer: Serializer = new Serializer()
+            val array = result.asInstanceOf[ReplyMessage].info.asInstanceOf[FindInfo].value
+            val singleUserPermissions: util.HashMap[String, EnumPermission.UserPermission] =
+              serializer.deserialize(array).asInstanceOf[util.HashMap[String, UserPermission]]
+            singleUserPermissions.remove(message.database)
+            val permissionsSerialized: Array[Byte] = serializer.serialize(singleUserPermissions)
+            val replyMes = sm ? StorefinderRowMessage(selectedMap,
+              new UpdateRowMessage(message.username, permissionsSerialized))
+            replyMes.onComplete {
+              case Success(result) => {
+                result.asInstanceOf[ReplyMessage].result match {
+                  case EnumReplyResult.Done => {
+                    selectedDatabase = ""
+                    selectedMap = ""
+                    reply(ReplyMessage(EnumReplyResult.Done, message), origSender)
+                  }
+                  case EnumReplyResult.Error => {
+                    selectedDatabase = ""
+                    selectedMap = ""
+                    reply(ReplyMessage(EnumReplyResult.Error, message, new ReplyErrorInfo())) // should never get there
+                  }
+                }
+              }
+            }
+          }
+          case EnumReplyResult.Error => {
+            selectedDatabase = ""
+            selectedMap = ""
+            reply(ReplyMessage(EnumReplyResult.Error, message, new NoKeyInfo()), origSender)
+          }
+        }
+      }
+      case Failure(t) => {
+        log.error("Error sending message: " + t.getMessage);
+        reply(new ReplyMessage(EnumReplyResult.Error, message,
+          new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
+      }
+    }
+  }
+
+  private def handleListUserMessage(message: ListUserMessage): Unit = {
+    val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
+    // Save the original sender
+    val origSender = sender
+    // Send a StorefinderRowMessage to the storemanager and save the reply in a future
+    val future = sm ? StorefinderRowMessage(selectedMap, new ListKeysMessage())
+    future.onComplete {
+      // Reply the usermanager with the reply from the storemanager
+      case Success(result) => {
+        val resultMessage = result.asInstanceOf[ReplyMessage]
+        resultMessage.result match {
+          case EnumReplyResult.Done => {
+            val userList: List[String] = resultMessage.info.asInstanceOf[ListKeyInfo].keys
+            selectedDatabase = ""
+            selectedMap = ""
+            reply(ReplyMessage(EnumReplyResult.Done, message, new ListUserInfo(userList)), origSender)
+          }
+          case EnumReplyResult.Error => {
+            selectedDatabase = ""
+            selectedMap = ""
+            if (resultMessage.info.isInstanceOf[NoKeyInfo])
+              reply(ReplyMessage(EnumReplyResult.Error, message, new NoUserInfo()), origSender)
+            else
+              reply(ReplyMessage(EnumReplyResult.Error, message, new ReplyErrorInfo()), origSender)
+          }
+        }
+      }
+      case Failure(t) => {
+        log.error("Error sending message: " + t.getMessage);
+        reply(new ReplyMessage(EnumReplyResult.Error, message,
+          new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
+      }
+    }
+  }
+
 }
-
-
-
-//case Failure(t) => {
-//  log.error("Error sending message: " + t.getMessage);
-//  return new ReplyMessage(EnumReplyResult.Error, message, new ServiceErrorInfo("Error sending message: " + t.getMessage))
-//}
