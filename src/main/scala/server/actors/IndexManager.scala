@@ -57,7 +57,7 @@ class IndexManager(warehousemenNumber: Integer) extends ReplyActor {
     val future = storemanager ? message
     future.onComplete {
       // Reply to the Main actor with the reply from the Storemanager actor
-      case Success(result) => logAndReply(result.asInstanceOf[ReplyMessage], origSender)
+      case Success(result) => reply(result.asInstanceOf[ReplyMessage], origSender)
       case Failure(t) => log.error("Error sending message: " + t.getMessage)
     }
     // Send the message to all Warehouseman actors

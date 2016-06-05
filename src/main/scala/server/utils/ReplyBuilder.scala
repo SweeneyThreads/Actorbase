@@ -105,6 +105,8 @@ class ReplyBuilder {
         reply.result match {
           case EnumReplyResult.Done => {
             val list : List[String] = reply.info.asInstanceOf[ListUserInfo].userList
+            if ( list.size == 0 )
+              return "No users at the moment, please insert some users."
             var toReturn : String = ""
             for (l <- list){
               toReturn = toReturn.concat(l + "\n")

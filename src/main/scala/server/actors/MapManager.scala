@@ -8,8 +8,7 @@ import server.enums.EnumReplyResult
 import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.ReplyMessage
 import server.messages.query.user.MapMessages.{DeleteMapMessage, MapAlreadyExistInfo, MapDoesNotExistInfo, _}
-import server.messages.query.user.RowMessages.{RowMessage, StorefinderRowMessage}
-
+import server.messages.query.user.RowMessages.{InsertRowMessage, RowMessage, StorefinderRowMessage}
 import akka.pattern.ask
 import akka.remote.RemoteScope
 
@@ -29,6 +28,8 @@ class MapManager(database: String) extends ReplyActor {
   if(database == "master") {
     indexManagers.put("users",       context.actorOf(Props(new IndexManager(1)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="users"))
     indexManagers.put("permissions", context.actorOf(Props(new IndexManager(1)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="permissions"))
+    val actor = indexManagers.get("users")
+    actor.tell(new InsertRowMessage("admin", "admin".getBytes("UTF-8")), self)
   }
 
   /**

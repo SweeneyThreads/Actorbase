@@ -173,47 +173,17 @@ class Usermanager extends ReplyActor {
     // if the user is connected
     if (!connected) {
       // Get the password
-      val psw = Server.users.get(username)
-      // If the user exists and it's equal to the one inserted
-      if (psw != null && psw == password) {
-        // If the login is valid it creates a main actor that contains the user permissions
-        connected = true
-        // 'admin' is the super admin so it has no permissions
-        if (username == "admin") mainActor = context.actorOf(Props(new Main()).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
-        // If the user is not 'admin' the main receive the user's permissions
-        else {
-          var singleUserPermission: util.HashMap[String, EnumPermission.UserPermission] =
-            new util.HashMap[String, EnumPermission.UserPermission]()
-          val serializer: Serializer = new Serializer
-          val sm = StaticSettings.mapManagerRefs.get("master")
-          val origSender = sender
-          val future = sm ? StorefinderRowMessage("permissions", new FindRowMessage(username))
-          future.onComplete {
-            case Success(result) => {
-              val reply = result.asInstanceOf[ReplyMessage]
-              reply.result match {
-                case EnumReplyResult.Done => {
-                  val array = reply.info.asInstanceOf[FindInfo].value
-                  singleUserPermission =
-                    serializer.deserialize(array).asInstanceOf[util.HashMap[String, UserPermission]]
-                }
-                case EnumReplyResult.Error => {
-                  reply.info.asInstanceOf[KeyAlreadyExistInfo]
-                }
-              }
-            }
-            case Failure(t) => {
-              log.error("Error sending message: " + t.getMessage);
-              reply(new ReplyMessage(EnumReplyResult.Error, new FindRowMessage(username),
-                new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
-            }
-          }
-          mainActor = context.actorOf(Props(new Main(singleUserPermission)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
+      val future = StaticSettings.mapManagerRefs.get("master") ? FindRowMessage(username)
+      future.onComplete {
+        case Success(result) => {
+          val psw = result.asInstanceOf[ReplyMessage].info.asInstanceOf[FindInfo].value
+          val pass = new String(psw, "UTF-8")
+          handleLoginFuture(pass, username, password)
         }
-        replyToClient("Y")
-        log.info(username + " is connected")
+        case Failure(t) => {
+
+        }
       }
-      else replyToClient("N")
     }
     else replyToClient("N")
   }
@@ -226,5 +196,48 @@ class Usermanager extends ReplyActor {
     */
   private def replyToClient(reply: String, sender: ActorRef = sender): Unit = {
     sender ! Write(ByteString(reply))
+  }
+
+  private def handleLoginFuture(psw: String, username : String, password : String): Unit = {
+    // If the user exists and it's equal to the one inserted
+    if (psw != null && psw == password) {
+      // If the login is valid it creates a main actor that contains the user permissions
+      connected = true
+      // 'admin' is the super admin so it has no permissions
+      if (username == "admin") mainActor = context.actorOf(Props(new Main()).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
+      // If the user is not 'admin' the main receive the user's permissions
+      else {
+        var singleUserPermission: util.HashMap[String, EnumPermission.UserPermission] =
+          new util.HashMap[String, EnumPermission.UserPermission]()
+        val serializer: Serializer = new Serializer
+        val sm = StaticSettings.mapManagerRefs.get("master")
+        val origSender = sender
+        val future = sm ? StorefinderRowMessage("permissions", new FindRowMessage(username))
+        future.onComplete {
+          case Success(result) => {
+            val reply = result.asInstanceOf[ReplyMessage]
+            reply.result match {
+              case EnumReplyResult.Done => {
+                val array = reply.info.asInstanceOf[FindInfo].value
+                singleUserPermission =
+                  serializer.deserialize(array).asInstanceOf[util.HashMap[String, UserPermission]]
+              }
+              case EnumReplyResult.Error => {
+                reply.info.asInstanceOf[KeyAlreadyExistInfo]
+              }
+            }
+          }
+          case Failure(t) => {
+            log.error("Error sending message: " + t.getMessage);
+            reply(new ReplyMessage(EnumReplyResult.Error, new FindRowMessage(username),
+              new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
+          }
+        }
+        mainActor = context.actorOf(Props(new Main(singleUserPermission)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
+      }
+      replyToClient("Y")
+      log.info(username + " is connected")
+    }
+    else replyToClient("N")
   }
 }

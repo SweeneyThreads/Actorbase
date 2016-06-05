@@ -29,9 +29,6 @@ import scala.language.postfixOps
 object Server {
   var log:LoggingAdapter = null
 
-  var users: ConcurrentHashMap[String, String] = null
-  var permissions: ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]] = null
-
   var clusterListener: ActorRef = null
   var sFclusterListener: ActorRef = null
   var sKclusterListener: ActorRef = null
@@ -48,34 +45,9 @@ object Server {
     sFclusterListener= system.actorOf(Props[ClusterListener])
     sKclusterListener= system.actorOf(Props[ClusterListener])
 
-    loadUsers()
-    loadUsersPermissions()
     loadDatabases(system)
     createDoorkeepers(system)
     log.info("Server started")
-  }
-
-  /**
-    * Loads the list of usernames and password of the users who can access the server. The server will use these
-    * informations to manage login queries.
-    */
-  private def loadUsers(): Unit = {
-    users = new ConcurrentHashMap[String, String]()
-    users.put("admin", "admin")
-    users.put("user","user")
-    log.info("Users loaded")
-  }
-
-  /**
-    * Loads user access permission data. Each user has specific access permissions for the databases present on the
-    * server. Access to those database is filtered using these permissions.
-    */
-  private def loadUsersPermissions(): Unit = {
-    permissions = new ConcurrentHashMap[String, ConcurrentHashMap[String, UserPermission]]
-    val userP = new ConcurrentHashMap[String, UserPermission]
-    userP.put("test", EnumPermission.Read)
-    permissions.put("user",userP)
-    log.info("Permissions loaded")
   }
 
   /**
