@@ -35,6 +35,7 @@ class Usermanager extends ReplyActor {
   // The main actor reference
   var mainActor: ActorRef = null
   val builder = new ByteStringBuilder()
+  var tcpSender: ActorRef = null
 
   /**
     * Processes all incoming messages.
@@ -47,7 +48,10 @@ class Usermanager extends ReplyActor {
     */
   def receive = {
     // When it receive data
-    case Received(data: ByteString) => receiveData(data)
+    case Received(data: ByteString) => {
+      tcpSender = sender
+      receiveData(data)
+    }
     // When a client disconnects
     case PeerClosed => {
       log.info("Client disconnected")
@@ -143,13 +147,11 @@ class Usermanager extends ReplyActor {
       case _ => {
         // If the user is connected it sends the message to the main actor
         if (connected) {
-          // Save the original sender
-          val origSender = sender
           // Send the message to the main and save the reply in a future
           val future = mainActor ? message
           future.onComplete {
             // If the main reply successfully
-            case Success(result) => replyToClient(replyBuilder.buildReply(result.asInstanceOf[ReplyMessage]), origSender)
+            case Success(result) => replyToClient(replyBuilder.buildReply(result.asInstanceOf[ReplyMessage]))
             case Failure(t) => log.error("Error sending message: " + t.getMessage)
           }
         }
@@ -173,7 +175,7 @@ class Usermanager extends ReplyActor {
     // if the user is connected
     if (!connected) {
       // Get the password
-      val future = StaticSettings.mapManagerRefs.get("master") ? FindRowMessage(username)
+      val future = StaticSettings.mapManagerRefs.get("master") ? new StorefinderRowMessage("users", new FindRowMessage(username))
       future.onComplete {
         case Success(result) => {
           val psw = result.asInstanceOf[ReplyMessage].info.asInstanceOf[FindInfo].value
@@ -192,10 +194,9 @@ class Usermanager extends ReplyActor {
     * Sends the reply message to the original sender.
     *
     * @param reply The string to send to the client.
-    * @param sender The sender of the request.
     */
-  private def replyToClient(reply: String, sender: ActorRef = sender): Unit = {
-    sender ! Write(ByteString(reply))
+  private def replyToClient(reply: String): Unit = {
+    tcpSender ! Write(ByteString(reply))
   }
 
   private def handleLoginFuture(psw: String, username : String, password : String): Unit = {
@@ -204,7 +205,8 @@ class Usermanager extends ReplyActor {
       // If the login is valid it creates a main actor that contains the user permissions
       connected = true
       // 'admin' is the super admin so it has no permissions
-      if (username == "admin") mainActor = context.actorOf(Props(new Main()).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
+      if (username == "admin")
+        mainActor = context.actorOf(Props(new Main()).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
       // If the user is not 'admin' the main receive the user's permissions
       else {
         var singleUserPermission: util.HashMap[String, EnumPermission.UserPermission] =
