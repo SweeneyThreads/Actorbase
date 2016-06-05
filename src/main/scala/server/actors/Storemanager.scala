@@ -6,7 +6,6 @@ import akka.actor.{ActorRef, Props}
 import server.enums.EnumReplyResult
 import server.enums.EnumReplyResult.{Done, Error}
 import server.enums.EnumStoremanagerType._
-import server.messages.internal.ScalabilityMessages.{ScalabilityMessage, SendMapMessage}
 import server.messages.query.ReplyMessage
 import server.messages.query.user.RowMessages._
 
@@ -21,12 +20,15 @@ import scala.collection.mutable
 /**
   * Created by matteobortolazzo on 03/06/2016.
   */
-class Storemanager(index: (String, String), storemanagerType: StoremanagerType)
+class Storemanager(data: ConcurrentHashMap[String,  Array[Byte]],index: (String, String), storemanagerType: StoremanagerType)
   extends ReplyActor {
 
-  val map = new ConcurrentHashMap[String,  Array[Byte]]()
+  val map = data
   val children = new mutable.LinkedHashMap[ActorRef, (String,String)]()
   var maxRows = StaticSettings.maxRowNumber
+
+  if(map.keySet().size() >= maxRows)
+    divideActor()
 
   /**
     * Override of the actor's preStart method.
@@ -57,7 +59,6 @@ class Storemanager(index: (String, String), storemanagerType: StoremanagerType)
   def receive = {
     // StoreFinder should receive and handle only RowMessages
     case m:RowMessage => handleRowMessageAsStorekeeper(m)
-    case m:ScalabilityMessage => handleScalabilityMessageAsStorekeeper(m)
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString,currentMethodName()))
   }
 
@@ -136,9 +137,9 @@ class Storemanager(index: (String, String), storemanagerType: StoremanagerType)
     */
   private def divideActor() : Unit = {
     context.become(receiveAsStoreFinder)
-    // Creates maps to send
-    val map1 = new scala.collection.mutable.HashMap[String, Array[Byte]]()
-    val map2 = new scala.collection.mutable.HashMap[String, Array[Byte]]()
+    // Creates maps to pass at children
+    val map1 = new ConcurrentHashMap[String, Array[Byte]]()
+    val map2 = new ConcurrentHashMap[String, Array[Byte]]()
     // Fills the two maps and finds the mid element
     var midElement = ""
     var i = 0
@@ -154,33 +155,15 @@ class Storemanager(index: (String, String), storemanagerType: StoremanagerType)
     // Creates new indexes
     val index1 = (index._1, midElement)
     val index2 = (midElement, index._2)
-    // Creates two children
-    val actor1 = context.actorOf(Props(new Storemanager(index1, StorekeeperType)))
-    val actor2 = context.actorOf(Props(new Storemanager(index2, StorekeeperType)))
-    // Sends maps
-    actor1.tell(new SendMapMessage(map1), self)
-    actor2.tell(new SendMapMessage(map2), self)
+    // Creates two children with the created maps
+    val actor1 = context.actorOf(Props(new Storemanager(map1, index1, StorekeeperType)))
+    val actor2 = context.actorOf(Props(new Storemanager(map2, index2, StorekeeperType)))
     // Adds children
     children.put(actor1, index1)
     children.put(actor2, index2)
     // Erase the map
     map.clear()
     log.info("Storekeeper split")
-  }
-
-  /**
-    * Processes ScalabilityMessage messages.
-    * Handles SendMapMessage messages adding the received map to its own map.
-    *
-    * @param message The ScalabilityMessage message
-    * @see ScalabilityMessage
-    * @see SendMapMessage
-    */
-  def handleScalabilityMessageAsStorekeeper(message: ScalabilityMessage): Unit = {
-    message match {
-      case SendMapMessage(newMap: mutable.HashMap[String, Array[Byte]]) => map.putAll(newMap)
-      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString,currentMethodName()))
-    }
   }
 
   // Storefinder behaviour

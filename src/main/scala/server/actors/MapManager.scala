@@ -87,7 +87,7 @@ class MapManager(database: String) extends ReplyActor {
         // If the storefinder doesn't exists
         else {
           // Add the storefinder
-          indexManagers.put(name, context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress)))))
+          indexManagers.put(name, context.actorOf(Props(new IndexManager(1)).withDeploy(Deploy(scope = RemoteScope(nextAddress)))))
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }

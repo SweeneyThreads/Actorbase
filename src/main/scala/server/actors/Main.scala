@@ -54,7 +54,7 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
   def receive = {
     // If it's a query message
     case m: QueryMessage => handleQueryMessage(m)
-    case other => log.error(replyBuilder.unhandledMessage(self.path.toString(), "receive"))
+    case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receive"))
   }
 
   /**
@@ -276,7 +276,8 @@ class Main(perms : util.HashMap[String, UserPermission] = null) extends ReplyAct
         // If the selected database doesn't exist
         else {
           // Add the new database
-          context.system.actorOf(Props(new IndexManager(1)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
+          val actor = context.system.actorOf(Props(new MapManager(dbName)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
+          StaticSettings.mapManagerRefs.put(dbName, actor)
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }

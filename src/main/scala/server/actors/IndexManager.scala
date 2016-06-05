@@ -1,6 +1,7 @@
 package server.actors
 
 import java.util
+import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, Deploy, Props}
 import akka.pattern.ask
@@ -15,17 +16,17 @@ import scala.util.{Failure, Success}
 /**
   * Created by matteobortolazzo on 04/06/2016.
   */
-class IndexManager(warehousemansNumber: Integer) extends ReplyActor {
+class IndexManager(warehousemenNumber: Integer) extends ReplyActor {
 
   // The main Storemanager actor reference
   val storemanager = context.actorOf(Props(
-    new Storemanager(("", null), EnumStoremanagerType.StorekeeperType)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
+    new Storemanager(new ConcurrentHashMap[String, Array[Byte]](), ("", null), EnumStoremanagerType.StorekeeperType)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
   // References to all Warehouseman actors
-  val warehousemans = new util.ArrayList[ActorRef]()
+  val warehousemen = new util.ArrayList[ActorRef]()
   // Adds Warehouseman actors
   var i = 0
-  for(i <- 0 to warehousemansNumber) {
-    warehousemans.add(context.actorOf(Props(new Warehouseman("file"))))
+  for(i <- 0 to warehousemenNumber) {
+    warehousemen.add(context.actorOf(Props(new Warehouseman("file"))))
   }
 
   /**
@@ -60,7 +61,7 @@ class IndexManager(warehousemansNumber: Integer) extends ReplyActor {
       case Failure(t) => log.error("Error sending message: " + t.getMessage)
     }
     // Send the message to all Warehouseman actors
-    for(wh <- warehousemans) wh.tell(message, self)
+    for(wh <- warehousemen) wh.tell(message, self)
   }
 }
 

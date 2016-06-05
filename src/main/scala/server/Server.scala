@@ -97,7 +97,7 @@ object Server {
   private def createDoorkeepers(system: ActorSystem): Unit ={
     val confManager = new ConfigurationManager
     try {
-      val accesses = confManager.readDoorkeepersSettings("conf\\accesses.json")
+      val accesses = confManager.readDoorkeepersSettings("conf/accesses.json")
       for (address <- accesses.keySet()) {
         val port = accesses.get(address)
         system.actorOf(Props(classOf[Doorkeeper], port))
