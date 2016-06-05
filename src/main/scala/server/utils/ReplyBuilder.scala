@@ -122,8 +122,8 @@ class ReplyBuilder {
           }
         }
       }
-      case AddUserMessage(username: String, password: String) => "" //TODO
-      case RemoveUserMessage(username: String) => "" //TODO
+      case AddUserMessage(username: String, password: String) => return "User " + username + " has been added."
+      case RemoveUserMessage(username: String) => return "User " + username + " has been removed."
       case _ => "" //TODO
     }
   }

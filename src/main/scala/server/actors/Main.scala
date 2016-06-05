@@ -163,21 +163,10 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
       // If the user types 'listuser'
       case ListUserMessage() => handleListUserMessage(message.asInstanceOf[ListUserMessage])
       // If the user types 'adduser <username> <password>'
-      case AddUserMessage(username: String, password: String) => {
-        handleRowMessage(new InsertRowMessage(username, password.getBytes("UTF-8")))
-        val singleUserPermissions : util.HashMap[String, EnumPermission.UserPermission] =
-          new util.HashMap[String, EnumPermission.UserPermission]()
-        val serializer: Serializer = new Serializer()
-        val mapSerialized = serializer.serialize(singleUserPermissions)
-        selectedMap = "permissions"
-        handleRowMessage(new InsertRowMessage(username, mapSerialized))
-      }
+      case AddUserMessage(username: String, password: String) =>
+        handleAddUser(message.asInstanceOf[AddUserMessage], username, password)
       // If the user types 'removeuser <username>'
-      case RemoveUserMessage(username: String) => {
-        handleRowMessage(new RemoveRowMessage(username))
-        selectedMap = "permissions"
-        handleRowMessage(new RemoveRowMessage(username))
-      }
+      case RemoveUserMessage(username: String) => handleRemoveUser(message.asInstanceOf[RemoveUserMessage], username)
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleUserManagementMessage"))
     }
   }
@@ -652,6 +641,77 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
           new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
       }
     }
+  }
+
+  /**
+    *
+    *
+    *
+    * @param message The AddUser message to precess.
+    * @param username The name of new user to be add
+    * @param password The password of new user to be add
+    * @see RowMessage
+    * @see Storemanager
+    */
+  private def handleAddUser(message: AddUserMessage, username: String, password : String): Unit = {
+    val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
+    // Save the original sender
+    val origSender = sender
+    // Send a StorefinderRowMessage to the storemanager and save the reply in a future
+    val future = sm ? StorefinderRowMessage(selectedMap, new InsertRowMessage(username, password.getBytes("UTF-8")))
+    future.onComplete {
+      // Reply the usermanager with the reply from the storemanager
+      case Success(result) => {
+        val singleUserPermissions: util.HashMap[String, EnumPermission.UserPermission] =
+          new util.HashMap[String, EnumPermission.UserPermission]()
+        val serializer: Serializer = new Serializer()
+        val mapSerialized = serializer.serialize(singleUserPermissions)
+        selectedMap = "permissions"
+        handleRowMessage(new InsertRowMessage(username, mapSerialized))
+        selectedMap = ""
+        selectedDatabase = ""
+        reply(ReplyMessage(EnumReplyResult.Error, message, new AddUserInfo()), origSender)
+      }
+      case Failure(t) => {
+        log.error("Error sending message: " + t.getMessage);
+        reply(new ReplyMessage(EnumReplyResult.Error, message,
+          new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
+      }
+    }
+  }
+
+  /**
+    *
+    *
+    *
+    * @param message The RemoveUser message to precess.
+    * @param username The name of user to be remove
+    * @see RowMessage
+    * @see Storemanager
+    */
+  private def handleRemoveUser(message: RemoveUserMessage, username: String): Unit = {
+    // It gets the right storemanager
+    val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
+    // Save the original sender
+    val origSender = sender
+    // Send a StorefinderRowMessage to the storemanager and save the reply in a future
+    val future = sm ? StorefinderRowMessage(selectedMap, new RemoveRowMessage(username))
+    future.onComplete {
+      // Reply the usermanager with the reply from the storemanager
+      case Success(result) => {
+        selectedMap = "permissions"
+        handleRowMessage(new RemoveRowMessage(username))
+        selectedMap = ""
+        selectedDatabase = ""
+        reply(ReplyMessage(EnumReplyResult.Error, message, new RemoveUserInfo()), origSender)
+      }
+      case Failure(t) => {
+        log.error("Error sending message: " + t.getMessage);
+        reply(new ReplyMessage(EnumReplyResult.Error, message,
+          new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
+      }
+    }
+
   }
 
 }
