@@ -49,4 +49,15 @@ object LinkMessages {
     */
   case class RemoveWarehousemanMessage(ref : ActorRef) extends LinkMessage
 
+  /**
+    * A BecomeStorefinderNinjaMessage is used by a Usermanager who has just become a Storefinder to tell his ninjas
+    * to become StorefinderNinjas
+    * @param c An array containing all the references to children
+    * @param i An array containing all the indexes of children
+    * @param n An array containing all the ninjas of children
+    *
+    * @see LinkMessage
+    */
+  case class BecomeStorefinderNinjaMessage(c : Array[ActorRef], i : Array[(String, String)], n : Array[Array[ActorRef]]) extends LinkMessage
+
 }
