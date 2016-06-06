@@ -34,7 +34,7 @@ class DoorkeeperTest extends FlatSpec with Matchers with MockFactory {
   var log: LoggingAdapter = Logging.getLogger(System, this)
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
-  implicit val system = ActorSystem()
+  //implicit val system = ActorSystem()
 
   /*########################################################################
     Testing doorkeeper correct log after bound message receiving TU11
@@ -45,9 +45,7 @@ class DoorkeeperTest extends FlatSpec with Matchers with MockFactory {
   "DoorkeeperActor" should "create the correct log line when receiving a bound message" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef = TestActorRef(new Doorkeeper(3131))
-    // retrieving the underlying actor
-    val actor = actorRef.underlyingActor
+    val actorRef = System.actorOf(Props(classOf[Doorkeeper],3131))
     // now I send the message
     actorRef ! Bound(new InetSocketAddress(3131))
     //take the time now
@@ -78,11 +76,9 @@ class DoorkeeperTest extends FlatSpec with Matchers with MockFactory {
   "DoorkeeperActor" should "create the correct log line whan receinving a connected message" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef = TestActorRef(new Doorkeeper(3131))
-    // retrieving the underlying actor
-    val actor = actorRef.underlyingActor
+    val actorRef = System.actorOf(Props(classOf[Doorkeeper],5151))
     // now I send the message
-    actorRef ! Connected(new InetSocketAddress(3131),new InetSocketAddress(3131))
+    actorRef ! Connected(new InetSocketAddress(2121),new InetSocketAddress(5151))
     // a take the time now
     val today = Calendar.getInstance.getTime
     // date format for year month and day
@@ -90,7 +86,7 @@ class DoorkeeperTest extends FlatSpec with Matchers with MockFactory {
     //create a String with today values
     val todayString: String = todayFormat.format(today)
     //sleep for ensuring that the doorkeeper has product the log
-    Thread.sleep(10)
+    Thread.sleep(100)
     //get the today log file
     val source = scala.io.Source.fromFile("logs/actorbase." + todayString + ".0.log")
     //get the string of all the file and close the file
