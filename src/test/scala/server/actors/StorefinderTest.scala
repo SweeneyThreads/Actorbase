@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
 import akka.testkit.TestActorRef
 import com.typesafe.config.ConfigFactory
@@ -51,7 +51,7 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
   "StorefinderActor" should "create the correct log line" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef = System.actorOf(Props(classOf[Storemanager],new ConcurrentHashMap[String, Array[Byte]](), ("", null), EnumStoremanagerType.StorefinderType))
+    val actorRef = System.actorOf(Props(classOf[Storemanager],new ConcurrentHashMap[String, Array[Byte]](), ("", null), EnumStoremanagerType.StorefinderType,null))
     // now I send the message
     val future = actorRef ? ListDatabaseMessage()
     // a take the time now
@@ -86,22 +86,20 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
   it should "return the correct concatenation of the storekeepers keys" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef = TestActorRef(new Storemanager(new ConcurrentHashMap[String, Array[Byte]](), ("", null), EnumStoremanagerType.StorefinderType))
+    val actorRef = TestActorRef(new Storemanager(new ConcurrentHashMap[String, Array[Byte]](), ("", null), EnumStoremanagerType.StorefinderType,null))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     //clear default storekeeper
-    actor.children.clear()
-    //add two fakestorekeepers
     val index1= ("","d")
     val index2 = ("d",null)
     val aux =new ConcurrentHashMap[String, Array[Byte]]()
-    actor.children.put(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123))),index1)
-    actor.children.put(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index2, EnumStoremanagerType.StorekeeperType,new Array[Byte](123))),index2)
+    actor.children.update(0,new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)),index1, null))
+    actor.children.update(1,new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)),index2, null))
+    //add two fakestorekeepers
     // now I send the message
     val future = actorRef ? ListKeysMessage()
     //when the message is completed i check that the StorefinderActor reply correctly
 
-    Thread.sleep(0)
     ScalaFutures.whenReady(future) {
       result => result should be(ReplyMessage(EnumReplyResult.Done, ListKeysMessage(), ListKeyInfo(List[String]("1","1","2","2","3","3"))))
     }
@@ -115,11 +113,10 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
   it should "actually send the InsertRowMessage, UpdateRowMessage, RemoveRowMessage, FindRowMessage to correct storekeeper" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef = TestActorRef(new Storemanager(new ConcurrentHashMap[String, Array[Byte]](), ("", null), EnumStoremanagerType.StorefinderType))
+    val actorRef = TestActorRef(new Storemanager(new ConcurrentHashMap[String, Array[Byte]](), ("", null), EnumStoremanagerType.StorefinderType,null))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     //clear default storekeeper
-    actor.children.clear()
     //add two fakestorekeepers
     val index1= ("","c")
     val index2 = ("c",null)
@@ -127,8 +124,8 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
     val first =new Array[Byte](111)
     val second = new Array[Byte](222)
     val aux =new ConcurrentHashMap[String, Array[Byte]]()
-    actor.children.put(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,first)),index1)
-    actor.children.put(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index2, EnumStoremanagerType.StorekeeperType,second)),index2)
+    actor.children.update(0,new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,first,new Array[ActorRef](0))),index1,new Array[ActorRef](0) ))
+    actor.children.update(1,new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index2, EnumStoremanagerType.StorekeeperType,second,new Array[ActorRef](0))),index2, new Array[ActorRef](0)))
     // now I send the message
     val InsertRowMessage1future = actorRef ? InsertRowMessage("c",value)
     //when the message is completed i check that the StorefinderActor reply correctly
@@ -173,7 +170,7 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
   }
 }
 
-class FakeStoremanagerStorekeeper(data: ConcurrentHashMap[String,  Array[Byte]],index: (String, String), storemanagerType: StoremanagerType,wich: Array[Byte]=new Array[Byte](135)) extends Storemanager(data,index,storemanagerType){
+class FakeStoremanagerStorekeeper(data: ConcurrentHashMap[String,  Array[Byte]],index: (String, String), storemanagerType: StoremanagerType,wich: Array[Byte]=new Array[Byte](135),ninjas: Array[ActorRef]) extends Storemanager(data,index,storemanagerType,ninjas){
   override def receive = {
     case m:ListKeysMessage => {
       val origSender = sender
@@ -183,6 +180,9 @@ class FakeStoremanagerStorekeeper(data: ConcurrentHashMap[String,  Array[Byte]],
       val origSender = sender
       reply(ReplyMessage(EnumReplyResult.Done,m,FindInfo(wich)), origSender)
     }
+    case _ =>
+      val origSender = sender
+      reply(ReplyMessage(EnumReplyResult.Done,ListKeysMessage(),FindInfo(wich)), origSender)
   }
 
 }

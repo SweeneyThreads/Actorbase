@@ -30,7 +30,7 @@ import server.messages.internal.LinkMessages.{BecomeStorefinderNinjaMessage, Lin
   * @param storemanagerType the behaviour of the storemanager
   * @param ninjas the ninjas of the storemanager
   */
-class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (String, String), storemanagerType: StoremanagerType, ninjas: Array[ActorRef] = null)
+class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (String, String), storemanagerType: StoremanagerType, ninjas: Array[ActorRef]=null)
   extends ReplyActor {
 
   /**
@@ -178,11 +178,11 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (Str
     val index2 = (midElement, index._2)
     // Creates two ninjas array
     val ninjas1 = new Array[ActorRef](StaticSettings.ninjaNumber)
-    for (i <- 0 to ninjas1.length) {
+    for (i <- 0 until ninjas1.length) {
       ninjas1(i) = context.actorOf(Props(new Storemanager(map1, index1, StorekeeperNinjaType)))
     }
     val ninjas2 = new Array[ActorRef](StaticSettings.ninjaNumber)
-    for (i <- 0 to ninjas2.length) {
+    for (i <- 0 until ninjas2.length) {
       ninjas2(i) = context.actorOf(Props(new Storemanager(map2, index2, StorekeeperNinjaType)))
     }
     // Creates two children with the created maps and pass the ninjas to them
@@ -237,7 +237,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (Str
         //  list used to save all the keys of the map. initially Empty
         var keys = List[String]()
         // for every storekeeper in 'storekeeper' map
-        for (i <- 0 to children.length) {
+        for (i <- 0 until children.length ) {
           val sk = children(i).actor
           // send the message to the storekeeper and save the reply in a Future
           val future = sk ? message
@@ -302,7 +302,8 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (Str
     // save the original sender
     val origSender = sender
     // send the message to the storekeeper and save the reply in a Future
-    for (i <- 0 to sk.ninjas.length) {
+    var i=0
+    for (i <- 0 until sk.ninjas.length ) {
       sk.ninjas(i) ! message
     }
     val future = sk.actor ? message

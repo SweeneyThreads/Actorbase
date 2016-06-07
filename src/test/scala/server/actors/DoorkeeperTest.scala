@@ -97,6 +97,7 @@ class DoorkeeperTest extends FlatSpec with Matchers with MockFactory {
     val nowString = nowFormat.format(today)
     //regular expression that match the error log produced by the doorkeeper
     val Pattern = (nowString + ".+\\s.+\\sINFO\\s\\sserver\\.actors\\.Doorkeeper\\s\\-\\s0\\.0\\.0\\.0\\sconnected").r
+    println(Pattern)
     //if it doesn't find the line the log didn't happened correctly
     Pattern.findFirstIn(lines) shouldNot be(None)
   }
