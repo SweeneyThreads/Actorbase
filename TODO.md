@@ -51,3 +51,4 @@ Robe da sviluppare
 * Fare comando refresh config
 * Fare test Main e Storemanager
 * Leggere proprietà attori da file
+* Mettere scaladoc mancanti nel Main e controllare altri.

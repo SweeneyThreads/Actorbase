@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap
 import akka.actor.{ActorRef, Deploy, Props}
 import akka.pattern.ask
 import akka.remote.RemoteScope
+import server.StaticSettings
 import server.enums.EnumStoremanagerType
 import server.messages.query.ReplyMessage
 import server.messages.query.user.RowMessages.RowMessage
@@ -16,7 +17,7 @@ import scala.util.{Failure, Success}
 /**
   * Created by matteobortolazzo on 04/06/2016.
   */
-class IndexManager(warehousemenNumber: Integer) extends ReplyActor {
+class IndexManager() extends ReplyActor {
 
   // The main Storemanager actor reference
   val storemanager = context.actorOf(Props(
@@ -25,7 +26,7 @@ class IndexManager(warehousemenNumber: Integer) extends ReplyActor {
   val warehousemen = new util.ArrayList[ActorRef]()
   // Adds Warehouseman actors
   var i = 0
-  for(i <- 0 to warehousemenNumber) {
+  for(i <- 0 to StaticSettings.warehousemanNumber) {
     warehousemen.add(context.actorOf(Props(new Warehouseman("file"))))
   }
 
@@ -51,7 +52,7 @@ class IndexManager(warehousemenNumber: Integer) extends ReplyActor {
     * @see Warehouseman
     * @see RowMessage
     */
-  def handleRowMessage(message: RowMessage): Unit = {
+  private def handleRowMessage(message: RowMessage): Unit = {
     val origSender = sender
     // Send the message to the Storemanager actor and save the reply in a future
     val future = storemanager ? message

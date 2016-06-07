@@ -65,7 +65,7 @@ class Usermanager extends ReplyActor {
     *
     * @param data The bytes coming from the client.
     */
-  def receiveData(data: ByteString): Unit = {
+  private def receiveData(data: ByteString): Unit = {
     builder.putBytes(data.toArray)
     var message = builder.result()
     // If the message has at least 8 bytes
@@ -96,7 +96,7 @@ class Usermanager extends ReplyActor {
     *
     * @param request The bytes request from the client.
     */
-  def processRequest(request: ByteString): Unit = {
+  private def processRequest(request: ByteString): Unit = {
     builder.clear()
     // Gets the operation type
     val operation = request(0)

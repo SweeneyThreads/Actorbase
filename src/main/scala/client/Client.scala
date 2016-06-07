@@ -10,7 +10,7 @@ import driver.{Connection, Driver}
   */
 object Client {
 
-  var connection: Connection = null
+  private var connection: Connection = null
 
   def main(args: Array[String]): Unit = {
     Welcome.printWelcomeMessage

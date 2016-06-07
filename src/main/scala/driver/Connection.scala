@@ -29,11 +29,11 @@ trait Connection {
   */
 class ConcreteConnection(val host: String, val port: Integer, val username: String, val password: String) extends Connection {
 
-  val socket = new Socket(InetAddress.getByName(host), port)
-  socket.setSoTimeout(10000)
-  val out = new PrintStream(socket.getOutputStream)
-  val in = socket.getInputStream
+  private val socket = new Socket(InetAddress.getByName(host), port)
+  private val out = new PrintStream(socket.getOutputStream)
+  private val in = socket.getInputStream
 
+  socket.setSoTimeout(10000)
   login(username,password)
   /**
     * Closes the connection, after invoking this method the connection cannot be used anymore.

@@ -26,8 +26,8 @@ class MapManager(database: String) extends ReplyActor {
   // Add a default map (Storefinder). If the present Soremanager represents the Master database, it
   // does not create the default map, instead it creates the users map and the permissions map
   if(database == "master") {
-    indexManagers.put("users",       context.actorOf(Props(new IndexManager(1)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="users"))
-    indexManagers.put("permissions", context.actorOf(Props(new IndexManager(1)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="permissions"))
+    indexManagers.put("users",       context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="users"))
+    indexManagers.put("permissions", context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="permissions"))
     val actor = indexManagers.get("users")
     actor.tell(new InsertRowMessage("admin", "admin".getBytes("UTF-8")), self)
   }
@@ -66,7 +66,7 @@ class MapManager(database: String) extends ReplyActor {
     * @see DeleteMapMessage
     * @see ReplyMessage
     */
-  def handleMapMessage(message: MapMessage): Unit = {
+  private def handleMapMessage(message: MapMessage): Unit = {
     message match {
       // If the user types 'listmap'
       case ListMapMessage() => {
@@ -88,7 +88,7 @@ class MapManager(database: String) extends ReplyActor {
         // If the storefinder doesn't exists
         else {
           // Add the storefinder
-          indexManagers.put(name, context.actorOf(Props(new IndexManager(1)).withDeploy(Deploy(scope = RemoteScope(nextAddress)))))
+          indexManagers.put(name, context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress)))))
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }

@@ -23,17 +23,19 @@ import server.messages.internal.LinkMessages.{BecomeStorefinderNinjaMessage, Lin
 
 /**
   * A Storemanager manages data stored in RAM
-  * @param data the data to manage
+  *
+  * @param map the data to manage
   * @param index the index of data
   * @param storemanagerType the behaviour of the storemanager
-  * @param n the ninjas of the storemanager
+  * @param ninjas the ninjas of the storemanager
   */
-class Storemanager(data: ConcurrentHashMap[String,  Array[Byte]],index: (String, String), storemanagerType: StoremanagerType, n: Array[ActorRef] = null)
+class Storemanager(map: ConcurrentHashMap[String,  Array[Byte]], index: (String, String), storemanagerType: StoremanagerType, ninjas: Array[ActorRef] = null)
   extends ReplyActor {
 
   /**
     * Class that represents a child of a storemanager. A parent must have references of his children ref, index and
     * ninjas (to do the replacement if the main child deads)
+    *
     * @param a The child ActorRef
     * @param i The Child index
     * @param n The Child array of ninjas
@@ -43,11 +45,7 @@ class Storemanager(data: ConcurrentHashMap[String,  Array[Byte]],index: (String,
     val index = i
     val ninjas = n
   }
-
-  val map = data
   val children = new Array[Child](2)
-  val ninjas = n
-
 
   if(map.keySet().size() >= StaticSettings.maxRowNumber)
     divideActor()
