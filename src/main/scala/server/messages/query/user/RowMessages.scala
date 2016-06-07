@@ -116,9 +116,4 @@ object RowMessages {
     * @see ReplyInfo
     */
   case class FindInfo(value: Array[Byte]) extends ReplyInfo
-
-  /**
-    * A FullMap is used as response to an insert item request if the Storekeeper has reached his maximum size.
-    */
-  case class FullMap() extends ReplyInfo
 }

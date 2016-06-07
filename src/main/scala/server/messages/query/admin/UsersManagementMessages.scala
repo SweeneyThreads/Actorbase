@@ -44,10 +44,10 @@ object UsersManagementMessages {
   case class RemoveUserMessage(username : String) extends UsersManagementMessage
 
   case class ListUserInfo(userList : List[String]) extends ReplyInfo
+
   case class NoUserInfo() extends ReplyInfo
 
   case class AddUserInfo() extends ReplyInfo
 
   case class RemoveUserInfo() extends ReplyInfo
-
 }

@@ -52,3 +52,4 @@ Robe da sviluppare
 * Fare test Main e Storemanager
 * Leggere proprietà attori da file
 * Mettere scaladoc mancanti nel Main e controllare altri.
+* Togliere info inutili nei messaggi.
