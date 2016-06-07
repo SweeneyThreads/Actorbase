@@ -1,15 +1,20 @@
-/*
+
 
 package server.actors
 
-import akka.actor.{ActorSystem, Props}
+import java.util.concurrent.ConcurrentHashMap
+
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
 import akka.testkit.TestActorRef
+import com.typesafe.config.ConfigFactory
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
-import server.enums.EnumReplyResult
+import server.ClusterListener
+import server.enums.{EnumStoremanagerType, EnumReplyResult}
 import server.enums.EnumReplyResult.Done
+import server.enums.EnumStoremanagerType.StoremanagerType
 import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.ReplyMessage
 import server.messages.query.user.MapMessages._
@@ -20,7 +25,7 @@ import scala.language.postfixOps
 /**
   * Created by mattia on 27/05/2016.
   */
-class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
+class MapManagerTest extends FlatSpec with Matchers with MockFactory {
 
   import akka.dispatch.ExecutionContexts._
   import akka.pattern.ask
@@ -32,7 +37,11 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   var log: LoggingAdapter = Logging.getLogger(System, this)
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
-  implicit val system = ActorSystem()
+  val newconf =ConfigFactory.parseString("akka.remote.netty.tcp.port=0")
+  val conf = ConfigFactory.load()
+  val merge = newconf.withFallback(conf)
+  val complete = ConfigFactory.load(merge)
+  implicit val system = ActorSystem("System",complete)
 
   /*########################################################################
     Testing AskMapMessage() receiving TU52
@@ -43,11 +52,13 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   "StoremanagerActor" should "actually return true if the storemanager contains the map asked with an AskMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef=TestActorRef(new Storemanager("test"))
+    val actorRef=TestActorRef(new MapManager("test"))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     //put a storefinder in storefinders map
-    actor.storefinders.put("defaultMap", system.actorOf(Props[Storefinder]))
+    val index1= ("","d")
+    val aux =new ConcurrentHashMap[String, Array[Byte]]()
+    actor.indexManagers.put("defaultMap", system.actorOf(Props(classOf[FakeStoremanagerStorefinder],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)))
     // now I send the message
     val future = actorRef ? AskMapMessage("defaultMap")
     //when the message is completed i check that the StoremanagerActor reply correctly
@@ -71,12 +82,14 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   it should "actually return correct maplist when receiving a ListMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef=TestActorRef(new Storemanager("test"))
+    val actorRef=TestActorRef(new MapManager("test"))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     // putting extra maps in the storefinders map
-    actor.storefinders.put("map1",System.actorOf(Props[Storefinder]))
-    actor.storefinders.put("map2",System.actorOf(Props[Storefinder]))
+    val index1= ("","d")
+    val aux =new ConcurrentHashMap[String, Array[Byte]]()
+    actor.indexManagers.put("map1",System.actorOf(Props(classOf[FakeStoremanagerStorefinder],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)))
+    actor.indexManagers.put("map2",System.actorOf(Props(classOf[FakeStoremanagerStorefinder],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)))
     // now I send the message
     val future = actorRef ? ListMapMessage()
     //when the message is completed i check that the StoremanagerActor reply correctly
@@ -92,15 +105,16 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   it should "create the correct map and reply correctly or send the correct error when receving a CreateMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef=TestActorRef(new Storemanager("test"))
+    val actorRef=TestActorRef(new MapManager("test"))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
+    actor.clusterListener=System.actorOf(Props[ClusterListener])
     // now I send the message
     val future = actorRef ? CreateMapMessage("map1")
     //when the message is completed i check that the StoremanagerActor reply correctly and delete correctly
     ScalaFutures.whenReady(future) {
       //check if the map was correctly created
-      actor.storefinders.containsKey("map1") should be (true)
+      actor.indexManagers.containsKey("map1") should be (true)
       result => result should be(new ReplyMessage (EnumReplyResult.Done,new CreateMapMessage("map1"),null))
     }
     val future2 = actorRef ? CreateMapMessage("map1")
@@ -121,17 +135,20 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   it should "delete the correct map and reply correctly or send the correct error when receving a DeleteMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef=TestActorRef(new Storemanager("test"))
+    val actorRef=TestActorRef(new MapManager("test"))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     // putting extra maps in the storefinders map
-    actor.storefinders.put("map1",System.actorOf(Props[Storefinder]))
-    actor.storefinders.put("map2",System.actorOf(Props[Storefinder]))
+    val index1= ("","d")
+    val aux =new ConcurrentHashMap[String, Array[Byte]]()
+    actor.indexManagers.put("map1",System.actorOf(Props(classOf[FakeStoremanagerStorefinder],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)))
+    actor.indexManagers.put("map2",System.actorOf(Props(classOf[FakeStoremanagerStorefinder],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)))
+
     // now I send the message
     val future = actorRef ? DeleteMapMessage("map1")
     //when the message is completed i check that the StoremanagerActor reply correctly and delete correctly
     ScalaFutures.whenReady(future) {
-      actor.storefinders.contains("map1") should be (false)
+      actor.indexManagers.contains("map1") should be (false)
       result => result should be(new ReplyMessage (EnumReplyResult.Done,new DeleteMapMessage("map1"),null))
     }
     val future2 = actorRef ? DeleteMapMessage("NotExistingMap")
@@ -151,12 +168,14 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
   it should "actually return the FakeStorefinder answer" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef=TestActorRef(new Storemanager("test"))
+    val actorRef=TestActorRef(new MapManager("test"))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     val value=new Array[Byte](123)
     // putting extra FakeStorefinder map in the storefinders map
-    actor.storefinders.put("map1",System.actorOf(Props(classOf[FakeStorefinder],value)))
+    val index1= ("","d")
+    val aux =new ConcurrentHashMap[String, Array[Byte]]()
+    actor.indexManagers.put("map1",System.actorOf(Props(classOf[FakeStoremanagerStorefinder],aux, index1, EnumStoremanagerType.StorekeeperType,value,null)))
     // now I send the message
     val future = actorRef ? StorefinderRowMessage("map1", FindRowMessage("1"))
     //when the message is completed i check that the StoremanagerActor reply correctly
@@ -170,11 +189,11 @@ class StoremanagerTest extends FlatSpec with Matchers with MockFactory {
     }
   }
 }
-
 /**fake storefinder for receiving RowMessage test,
   * it builds with the value it has to return
   * */
-class FakeStorefinder(returnInfo: Array[Byte]) extends Storefinder{
+class FakeStoremanagerStorefinder(data: ConcurrentHashMap[String,  Array[Byte]],index: (String, String), storemanagerType: StoremanagerType,returnInfo: Array[Byte]=new Array[Byte](135),ninjas: Array[ActorRef]) extends Storemanager(data,index,storemanagerType,ninjas){
+
 
   override def receive = {
     case m:RowMessage => {
@@ -182,7 +201,4 @@ class FakeStorefinder(returnInfo: Array[Byte]) extends Storefinder{
       reply(ReplyMessage(Done, new FindRowMessage("1"), FindInfo(returnInfo)), origSender)
     }
   }
-
 }
-
-*/
