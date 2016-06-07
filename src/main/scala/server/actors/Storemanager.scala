@@ -1,5 +1,6 @@
 package server.actors
 
+import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, Props}
@@ -29,7 +30,7 @@ import server.messages.internal.LinkMessages.{BecomeStorefinderNinjaMessage, Lin
   * @param storemanagerType the behaviour of the storemanager
   * @param ninjas the ninjas of the storemanager
   */
-class Storemanager(map: ConcurrentHashMap[String,  Array[Byte]], index: (String, String), storemanagerType: StoremanagerType, ninjas: Array[ActorRef] = null)
+class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (String, String), storemanagerType: StoremanagerType, ninjas: Array[ActorRef] = null)
   extends ReplyActor {
 
   /**
