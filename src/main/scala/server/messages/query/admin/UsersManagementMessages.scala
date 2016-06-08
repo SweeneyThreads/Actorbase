@@ -43,11 +43,29 @@ object UsersManagementMessages {
     */
   case class RemoveUserMessage(username : String) extends UsersManagementMessage
 
+  /**
+    * A ListUserInfo is used as a ReplyInfo to format the response from a ListUserMessage. The ReplyBuilder
+    * print on the console the list wrapped in this ReplyInfo class.
+    *
+    * @param userList the List containing the usernames of the users
+    */
   case class ListUserInfo(userList : List[String]) extends ReplyInfo
 
+  /**
+    * A NoUserInfo is user as a ReplyInfo to handle a request that need to modify something of a user that does
+    * not exist in the 'users' map in the 'master' database.
+    */
   case class NoUserInfo() extends ReplyInfo
 
+  /**
+    * An AddUserInfo is a ReplyInfo containing the response to print on the console when an AddUserMessage has
+    * been processed.
+    */
   case class AddUserInfo() extends ReplyInfo
 
+  /**
+    * A RemoveUserInfo is a ReplyInfo containing the response to print on the console when a RemoveUserMessage has
+    * been processed.
+    */
   case class RemoveUserInfo() extends ReplyInfo
 }

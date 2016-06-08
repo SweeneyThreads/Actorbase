@@ -356,11 +356,15 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     }
   }
 
+  /**
+    * This method handle a 'listuser' command of admin. This command lets the admin have a list of all the user
+    * in the 'users' map in the 'master' database. It through the list of users, printing the username of each one.
+    * The command takes no parameters, as it just print the whole list of users.
+    * @param message The ListUserMessage to process.
+    */
   private def handleListUserMessage(message: ListUserMessage): Unit = {
     val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
-    // Save the original sender
     val origSender = sender
-    // Send a StorefinderRowMessage to the storemanager and save the reply in a future
     val future = sm ? StorefinderRowMessage(selectedMap, new ListKeysMessage())
     future.onComplete {
       // Reply the usermanager with the reply from the storemanager
@@ -392,8 +396,11 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
   }
 
   /**
-    *
-    *
+    * This method add a user to the 'users' map in the 'master' database. It takes 3 parameters: an AddUserMessage
+    * an username and a password.
+    * Username & password are store in the map mentioned before. This method also add a List on 'permissions' map,
+    * always in the 'master' database. The added List refer to the new user, and it's empty, so the user has no permissions
+    * on any database.
     *
     * @param message The AddUser message to precess.
     * @param username The name of new user to be add
@@ -429,8 +436,8 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
   }
 
   /**
-    *
-    *
+    * This method remove a user form the 'users' map in the 'master' database. It takes two parameters: the message to handle
+    * and the username of the user to be removed.
     *
     * @param message The RemoveUser message to precess.
     * @param username The name of user to be remove
@@ -468,7 +475,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * AddPermissionMessage messages adding an user's permission in the map and
     * RemovePermissionMessage messages removing the user's permission from the map.
     *
-    * @param message The PermissionsManagementMessage message to precess.
+    * @param message The PermissionsManagementMessage message to process.
     * @see PermissionsManagementMessage
     * @see ListPermissionMessage
     * @see AddPermissionMessage
@@ -491,6 +498,14 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     }
   }
 
+  /**
+    * This handle a ListPermissionMessage, it query the 'permission' map in the 'master database.
+    * The message it handles has a parameter, which is the name of the user of which we want to show the list
+    * of permissions.
+    * This method, send a ReplyMessage which will print a list of databases with the permission of the user on each one.
+    *
+    * @param message the ListPermissionMessage to process.
+    */
   private def handlePermissionsListMessage(message: ListPermissionMessage): Unit = {
     val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
     val origSender = sender
@@ -540,14 +555,18 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     }
   }
 
+  /**
+    * This query the 'permissions' map in 'master' database and add a permission related to a database and to a user.
+    * The user gains the permission on that database. For example, if a user has no permission on a database, adding a Read
+    * permission let the user query that database, getting info.
+    *
+    * @param message The AddPermissionMessage to process.
+    */
   private def handleAddPermissionMessage(message: AddPermissionMessage): Unit = {
     val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
-    // Save the original sender
     val origSender = sender
-    // Send a StorefinderRowMessage to the storemanager and save the reply in a future
     val future = sm ? StorefinderRowMessage(selectedMap, new FindRowMessage(message.username))
     future.onComplete {
-      // Reply the usermanager with the reply from the storemanager
       case Success(result) => {
         result.asInstanceOf[ReplyMessage].result match {
           case EnumReplyResult.Done => {
@@ -595,14 +614,17 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     }
   }
 
+  /**
+    * This method handle a RemovePermissionMessage, which is going to remove permissions of a user on a given database.
+    * Removing a user permission on a database means the user can no longer query or see the database.
+    *
+    * @param message The RemovePermissionMessage to process.
+    */
   private def handleRemovePermissionsMessage(message: RemovePermissionMessage): Unit = {
     val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
-    // Save the original sender
     val origSender = sender
-    // Send a StorefinderRowMessage to the storemanager and save the reply in a future
     val future = sm ? StorefinderRowMessage(selectedMap, new FindRowMessage(message.username))
     future.onComplete {
-      // Reply the usermanager with the reply from the storemanager
       case Success(result) => {
         result.asInstanceOf[ReplyMessage].result match {
           case EnumReplyResult.Done => {
