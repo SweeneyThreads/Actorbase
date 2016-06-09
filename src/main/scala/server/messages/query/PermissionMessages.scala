@@ -3,10 +3,34 @@ package server.messages.query
 /**
   * Created by matteobortolazzo on 04/05/2016.
   */
+
+/**
+  * PermissionMessages are used to express permissions level requests.
+  */
 object PermissionMessages {
+
+  /**
+    * Trait that every message that defines operations that doesn't need specific permissions has to extend.
+    */
   trait NoPermissionMessage
+
+  /**
+    * Trait that every message that defines an operation that needs read permissions has to extend.
+    *
+    * @see NoPermissionMessage
+    */
   trait ReadMessage extends NoPermissionMessage
+
+  /**
+    * Trait that every message that defines an operation that needs write permissions has to extend.
+    *
+    * @see ReadMessage
+    */
   trait ReadWriteMessage extends ReadMessage
+
+  /**
+    * Trait that every message that defines an admin operation with permissions has to extend.
+    */
   trait AdminPermissionMessage
 
   /**

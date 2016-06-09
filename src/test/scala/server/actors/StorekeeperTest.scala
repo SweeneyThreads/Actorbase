@@ -2,7 +2,6 @@ package server.actors
 
 import com.typesafe.config.ConfigFactory
 import server.enums.{EnumStoremanagerType, EnumReplyResult}
-import server.messages.internal.BecomeStorekeeperMessage
 import server.messages.query.ReplyMessage
 
 import scala.language.postfixOps

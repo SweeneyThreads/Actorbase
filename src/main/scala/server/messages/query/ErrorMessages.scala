@@ -27,5 +27,5 @@ object ErrorMessages {
     *
     * @see ReplyInfo
     */
-  case class QueryErrorInfo() extends ReplyInfo
+  case class QueryErrorInfo() extends ReplyInfo with ErrorMessage
 }
