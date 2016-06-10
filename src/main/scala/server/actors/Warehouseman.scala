@@ -9,6 +9,7 @@ import server.messages.internal.StorageMessages._
 import server.messages.query.ReplyMessage
 import server.messages.query.user.RowMessages.{InsertRowMessage, RemoveRowMessage, RowMessage, UpdateRowMessage}
 import server.utils.FileManager
+import server.utils.fileManagerLibrary.SingleFileManager
 
 /**
   * Created by lucan on 11/05/2016.
@@ -19,8 +20,10 @@ import server.utils.FileManager
   */
 class Warehouseman(path : String) extends ReplyActor {
 
+  val valueFilePath : String = ""
+
   // The object to interact with the filesystem
-  val fileManager = new FileManager(path)
+  val fileManager: FileManager = new SingleFileManager(path,valueFilePath)
 
   /**
     * Processes all incoming messages.
@@ -45,7 +48,6 @@ class Warehouseman(path : String) extends ReplyActor {
     * Handles RemoveRowMessage messages removing the entry from the file.
     *
     * @param message The RowMessage message to precess.
-    *
     * @see RowMessage
     * @see InsertRowMessage
     * @see UpdateRowMessage
