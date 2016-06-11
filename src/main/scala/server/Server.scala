@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.dispatch.ExecutionContexts._
 import akka.event.{Logging, LoggingAdapter}
+import akka.remote.RemoteTransportException
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import server.actors.{Doorkeeper, MapManager}
@@ -38,16 +39,26 @@ object Server {
 
   def main(args: Array[String]) {
     val conf = ConfigFactory.load()
-    val system = ActorSystem("System", conf)
-    log = Logging.getLogger(system, this)
+    try {
+      val system = ActorSystem("System", conf)
+      log = Logging.getLogger(system, this)
 
-    clusterListener= system.actorOf(Props[ClusterListener])
-    sFclusterListener= system.actorOf(Props[ClusterListener])
-    sKclusterListener= system.actorOf(Props[ClusterListener])
+      clusterListener = system.actorOf(Props[ClusterListener])
+      sFclusterListener = system.actorOf(Props[ClusterListener])
+      sKclusterListener = system.actorOf(Props[ClusterListener])
 
-    loadDatabases(system)
-    createDoorkeepers(system)
-    log.info("Server started")
+      loadDatabases(system)
+      createDoorkeepers(system)
+      log.info("Server started")
+    }
+      //TODO REMOVE that shit, it ain't workin'
+    catch {
+      case e: Exception => {
+        Console.println("[ERROR]: Port already in use, please change the " +
+          "configuration file and try again.")
+        System.exit(1);
+      }
+    }
   }
 
   /**
@@ -69,9 +80,8 @@ object Server {
   private def createDoorkeepers(system: ActorSystem): Unit ={
     val confManager = new ConfigurationManager
     try {
-      val accesses = confManager.readDoorkeepersSettings("conf/accesses.json")
-      for (address <- accesses.keySet()) {
-        val port = accesses.get(address)
+      val accesses = confManager.readDoorkeepersSettings("conf/ports.json")
+      for (port <- accesses) {
         system.actorOf(Props(classOf[Doorkeeper], port))
       }
     }

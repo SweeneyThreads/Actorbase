@@ -29,6 +29,8 @@ Robe da sviluppare
 * Crezione dinamica storekeeper
 * Creazione dinamica storefinder
 * Creazione dinamica storemanager
+* Azzerare selectmap quando viene eliminata la mappa
+* Mettere selectmap quando viene creata
 
 ## DA FINIRE
 
@@ -44,8 +46,6 @@ Robe da sviluppare
 * Spegnimento server (con salvataggio configurazione)
 * Gestire errore porta occupata
 * Gestire application.conf esterno (non compilato)
-* Azzerare selectmap quando viene eliminata la mappa
-* Mettere selectmap quando viene creata
 * Fare help specifici più lunghi con anche le stringhe in caso di errore
 * Mostrare tipo di errore di connessione
 * Controllare currentMethodName nel log

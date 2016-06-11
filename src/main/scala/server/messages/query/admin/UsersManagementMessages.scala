@@ -53,7 +53,8 @@ object UsersManagementMessages {
 
   /**
     * A NoUserInfo is user as a ReplyInfo to handle a request that need to modify something of a user that does
-    * not exist in the 'users' map in the 'master' database.
+    * not exist
+    * in the 'users' map in the 'master' database.
     */
   case class NoUserInfo() extends ReplyInfo
 

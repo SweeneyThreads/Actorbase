@@ -59,17 +59,16 @@ class ConfigurationManager() {
     * @param fileName The name of the file that contains the doorkeeper configuration.
     * @return A list with addresses and ports.
     */
-  def readDoorkeepersSettings(fileName: String): util.HashMap[String, Integer] = {
-    val toReturn: util.HashMap[String, Integer] = new util.HashMap[String, Integer]()
+  def readDoorkeepersSettings(fileName: String): util.ArrayList[Integer] = {
+    val toReturn : util.ArrayList[Integer] = new util.ArrayList[Integer]()
     val source = scala.io.Source.fromFile(fileName)
     val list = try source.getLines().mkString finally source.close()
     val jsonObject = new JSONObject(list)
-    val accesses = jsonObject.getJSONArray("accesses")
+    val accesses = jsonObject.getJSONArray("ports")
     for (i <- 0 until accesses.length()) {
-      val singleAccessPoint = accesses.getJSONObject(i)
-      val ip = singleAccessPoint.getString("address")
-      val port = singleAccessPoint.getInt("port")
-      toReturn.put(ip, port)
+      val port = accesses.getInt(i)
+      if (!toReturn.contains(port))
+        toReturn.add(port)
     }
     return toReturn
   }

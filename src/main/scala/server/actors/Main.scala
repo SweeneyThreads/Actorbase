@@ -8,6 +8,7 @@ import akka.dispatch.ExecutionContexts._
 import akka.pattern.ask
 import akka.remote.RemoteScope
 import akka.util.Timeout
+//import org.apache.tools.ant.taskdefs.Delete
 import server.StaticSettings
 import server.enums.EnumPermission.UserPermission
 import server.enums.EnumReplyResult.Done
@@ -262,7 +263,21 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
         val future = sm ? message
         future.onComplete {
           // Reply the usermanger with the reply from the storemanager
-          case Success(result) => logAndReply(result.asInstanceOf[ReplyMessage], origSender)
+          case Success(result) => {
+            result.asInstanceOf[ReplyMessage].result match {
+              case EnumReplyResult.Done => {
+                // Get which was the request ( CreateMapMessage or DeleteMapMessage )
+                val whoAsked = result.asInstanceOf[ReplyMessage].question
+                // If it was a CreateMapMessage, we mark that map as the selected map
+                if (whoAsked.isInstanceOf[CreateMapMessage])
+                  selectedMap = whoAsked.asInstanceOf[CreateMapMessage].name
+                else if (whoAsked.isInstanceOf[DeleteMapMessage])
+                // Otherwise, if it was a DeleteMapMessage, we unmark that map as the selected one
+                  selectedMap = ""
+              }
+            }
+            logAndReply(result.asInstanceOf[ReplyMessage], origSender)
+          }
           case Failure(t) => log.error("Error sending message: " + t.getMessage)
         }
       }

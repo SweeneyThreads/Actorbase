@@ -17,7 +17,12 @@ import Tcp._
 class Doorkeeper(port: Integer) extends Actor with akka.actor.ActorLogging {
 
   import context.system
-  IO(Tcp) ! Bind(self, new InetSocketAddress(port))
+  try {
+    IO(Tcp) ! Bind(self, new InetSocketAddress(port))
+  }
+  catch {
+    case e: java.net.BindException => log.error("Error, port already in use.")
+  }
 
   /**
     * Processes all incoming messages.
