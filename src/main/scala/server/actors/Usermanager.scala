@@ -128,7 +128,7 @@ class Usermanager extends ReplyActor {
       case m: InvalidQueryMessage => replyToClient("Invalid query")
       // If the user command is a valid query
       case m: QueryMessage => handleQueryMessage(m)
-      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString, currentMethodName()))
+      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString, "parseQuery"))
     }
   }
 

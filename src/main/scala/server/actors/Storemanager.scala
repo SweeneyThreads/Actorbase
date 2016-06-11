@@ -89,7 +89,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   def receive = {
     // StoreFinder should receive and handle only RowMessages
     case m:RowMessage => handleRowMessageAsStorekeeper(m)
-    case other => log.error(replyBuilder.unhandledMessage(self.path.toString,currentMethodName()))
+    case other => log.error(replyBuilder.unhandledMessage(self.path.toString,"receive"))
   }
 
   /**
@@ -158,7 +158,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
         // Reply with the list
         reply(ReplyMessage(EnumReplyResult.Done,message,ListKeyInfo(keys)))
       }
-      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString,currentMethodName()))
+      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString, "handleRowMessageAsStorekeeper"))
     }
   }
 
@@ -218,7 +218,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   private def receiveAsStoreFinder: Receive = {
     // If it's a row level message
     case m: RowMessage => handleRowMessageAsStorefinder(m)
-    case other => log.error(replyBuilder.unhandledMessage(self.path.toString, currentMethodName()))
+    case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receiveAsStoreFinder"))
   }
 
   /**
@@ -333,7 +333,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
       // if the message type is FindRowMessage, forward it to the storekeeper
       case FindRowMessage(key: String) => sendToStorekeeper(key, message)
       // if the message type is not a RowMessage, log an error
-      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString,currentMethodName()))
+      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString,"handleRowMessageAsStorefinder"))
     }
   }
 
@@ -378,7 +378,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     // If it's a row level message
     case m: RowMessage => handleRowMessagesAsStorekeeperNinja(m)
     case m: LinkMessage => handleLinkMessagesAsStorekeeperNinja(m)
-    case other => log.error(replyBuilder.unhandledMessage(self.path.toString, currentMethodName()))
+    case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receiveAsStorekeeperNinja"))
   }
 
   /**
@@ -442,7 +442,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   private def receiveAsStorefinderNinja: Receive = {
     // If it's a row level message
     case m: RowMessage => handleRowMessagesAsStorefinderNinja(m)
-    case other => log.error(replyBuilder.unhandledMessage(self.path.toString, currentMethodName()))
+    case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receiveAsStorefinderNinja"))
   }
 
   /**

@@ -50,7 +50,7 @@ EXAMPLES of JSON files nedeed by these methods
 class ConfigurationManager() {
 
   /**
-    * Reads from file doorkeepers' start address and port.
+    * Reads from file doorkeepers' start port.
     * Whenever anyone call this method, it needs to catch the following Exceptions
     *
     * @throws IOException

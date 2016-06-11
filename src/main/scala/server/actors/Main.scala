@@ -8,6 +8,7 @@ import akka.dispatch.ExecutionContexts._
 import akka.pattern.ask
 import akka.remote.RemoteScope
 import akka.util.Timeout
+import server.utils.ConfigurationManager
 //import org.apache.tools.ant.taskdefs.Delete
 import server.StaticSettings
 import server.enums.EnumPermission.UserPermission

@@ -38,7 +38,7 @@ class Warehouseman(path : String) extends ReplyActor {
   def receive = {
     // If it's a row level message
     case m: RowMessage => handleRowMessages(m)
-    case other => log.error(replyBuilder.unhandledMessage(self.path.toString, currentMethodName()))
+    case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receive"))
   }
 
   /**
@@ -68,7 +68,7 @@ class Warehouseman(path : String) extends ReplyActor {
       case RemoveRowMessage(key: String) => {
         //TODO
       }
-      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString,currentMethodName()))
+      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString,"handleRowMessages"))
     }
   }
 }

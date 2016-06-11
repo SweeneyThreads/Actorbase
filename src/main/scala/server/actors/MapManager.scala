@@ -48,7 +48,7 @@ class MapManager(database: String) extends ReplyActor {
     case m:MapMessage => handleMapMessage(m)
     // If it's a row level message
     case m:RowMessage => handleRowMessage(m)
-    case other => log.error(replyBuilder.unhandledMessage(self.path.toString(), currentMethodName()))
+    case other => log.error(replyBuilder.unhandledMessage(self.path.toString(), "receive"))
   }
 
   /**
@@ -102,7 +102,7 @@ class MapManager(database: String) extends ReplyActor {
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }
-      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), currentMethodName()))
+      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleMapMessage"))
     }
   }
 
@@ -124,7 +124,7 @@ class MapManager(database: String) extends ReplyActor {
         // Forward the message to the IndexManager
         else im forward  m.rowMessage
       }
-      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), currentMethodName()))
+      case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handleRowMessage"))
     }
   }
 }
