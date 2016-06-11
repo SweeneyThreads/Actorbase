@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{Props, ActorSystem}
 import akka.event.{Logging, LoggingAdapter}
 import akka.io.Tcp.{Connected, Bound}
 import akka.testkit.TestActorRef
@@ -76,7 +76,7 @@ class DoorkeeperTest extends FlatSpec with Matchers with MockFactory {
   "DoorkeeperActor" should "create the correct log line whan receinving a connected message" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef = System.actorOf(Props(classOf[Doorkeeper],5151))
+    val actorRef = System.actorOf(Props(classOf[Doorkeeper],3131))
     // now I send the message
     actorRef ! Connected(new InetSocketAddress(2121),new InetSocketAddress(5151))
     // a take the time now

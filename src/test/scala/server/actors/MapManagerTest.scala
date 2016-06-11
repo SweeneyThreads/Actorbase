@@ -33,15 +33,15 @@ class MapManagerTest extends FlatSpec with Matchers with MockFactory {
 
   import scala.concurrent.duration._
 
-  var System: ActorSystem = ActorSystem("System")
+  var configString = ConfigFactory.parseString("akka.loggers = [\"akka.event.slf4j.Slf4jLogger\"][\"akka.event.Logging$DefaultLogger\"]")
+  var config = ConfigFactory.load(configString)
+  configString = ConfigFactory.parseString("akka.loglevel = \"DEBUG\"")
+  config = configString.withFallback(config)
+  val System = ActorSystem("System",ConfigFactory.load(config))
   var log: LoggingAdapter = Logging.getLogger(System, this)
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
-  val newconf =ConfigFactory.parseString("akka.remote.netty.tcp.port=0")
-  val conf = ConfigFactory.load()
-  val merge = newconf.withFallback(conf)
-  val complete = ConfigFactory.load(merge)
-  implicit val system = ActorSystem("System",complete)
+  implicit val system = ActorSystem("System",ConfigFactory.load(config))
 
   /*########################################################################
     Testing AskMapMessage() receiving TU52
