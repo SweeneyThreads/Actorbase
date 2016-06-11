@@ -3,16 +3,14 @@ package server.actors
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, Deploy, Props}
+import akka.remote.RemoteScope
 import server.StaticSettings
 import server.enums.EnumReplyResult
 import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.ReplyMessage
 import server.messages.query.user.MapMessages.{DeleteMapMessage, MapAlreadyExistInfo, MapDoesNotExistInfo, _}
 import server.messages.query.user.RowMessages.{InsertRowMessage, RowMessage, StorefinderRowMessage}
-import akka.pattern.ask
-import akka.remote.RemoteScope
 
-import scala.util.{Failure, Success}
 import scala.collection.JavaConversions._
 
 /**
@@ -121,19 +119,10 @@ class MapManager(database: String) extends ReplyActor {
       // If it's a StorefinderRowMessage
       case m: StorefinderRowMessage => {
         // Get the storefinder
-        val sf = indexManagers.get(m.mapName)
-        if (sf == null) reply(ReplyMessage(EnumReplyResult.Error, message, MapDoesNotExistInfo()))
-        else {
-          // Save the original sender
-          val oldSender = sender
-          // Send the message to the storefinder and save the reply in a future
-          val future = sf ? m.rowMessage
-          future.onComplete {
-            // Reply the storemanager with the reply from the storekeeper
-            case Success(result) => reply(result.asInstanceOf[ReplyMessage], oldSender)
-            case Failure(t) => log.error("Error sending message: " + t.getMessage)
-          }
-        }
+        val im = indexManagers.get(m.mapName)
+        if (im == null) reply(ReplyMessage(EnumReplyResult.Error, message, MapDoesNotExistInfo()))
+        // Forward the message to the IndexManager
+        else im forward  m.rowMessage
       }
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), currentMethodName()))
     }

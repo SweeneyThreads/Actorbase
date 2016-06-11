@@ -4,15 +4,12 @@ import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, Deploy, Props}
-import akka.pattern.ask
 import akka.remote.RemoteScope
 import server.StaticSettings
 import server.enums.EnumStoremanagerType
-import server.messages.query.ReplyMessage
 import server.messages.query.user.RowMessages.RowMessage
 
 import scala.collection.JavaConversions._
-import scala.util.{Failure, Success}
 
 /**
   * Created by matteobortolazzo on 04/06/2016.
@@ -54,13 +51,8 @@ class IndexManager() extends ReplyActor {
     */
   private def handleRowMessage(message: RowMessage): Unit = {
     val origSender = sender
-    // Send the message to the Storemanager actor and save the reply in a future
-    val future = storemanager ? message
-    future.onComplete {
-      // Reply to the Main actor with the reply from the Storemanager actor
-      case Success(result) => reply(result.asInstanceOf[ReplyMessage], origSender)
-      case Failure(t) => log.error("Error sending message: " + t.getMessage)
-    }
+    // Forward the message to the Storemanager
+    storemanager forward  message
     // Send the message to all Warehouseman actors
     for(wh <- warehousemen) wh.tell(message, self)
   }

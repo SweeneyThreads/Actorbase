@@ -1,7 +1,7 @@
 package server.actors
 
-import java.util
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorRef, Props}
 import server.enums.EnumReplyResult
@@ -13,9 +13,13 @@ import server.messages.query.user.RowMessages._
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
-import akka.pattern.ask
 import server.StaticSettings
 import server.messages.internal.LinkMessages.{BecomeStorefinderNinjaMessage, LinkMessage}
+
+import akka.util.Timeout
+import scala.concurrent.duration._
+import akka.pattern.ask
+import akka.dispatch.ExecutionContexts._
 
 
 /**
@@ -30,7 +34,10 @@ import server.messages.internal.LinkMessages.{BecomeStorefinderNinjaMessage, Lin
   * @param storemanagerType the behaviour of the storemanager
   * @param ninjas the ninjas of the storemanager
   */
-class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (String, String), storemanagerType: StoremanagerType, ninjas: Array[ActorRef]=null)
+class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
+    val index: (String, String),
+    val storemanagerType: StoremanagerType,
+    val ninjas: Array[ActorRef] = null)
   extends ReplyActor {
 
   /**
@@ -46,7 +53,9 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (Str
     val index = i
     val ninjas = n
   }
-  val children = new Array[Child](2)
+
+  var leftChild: Child = null;
+  var rightChild: Child = null;
 
   if(map.keySet().size() >= StaticSettings.maxRowNumber)
     divideActor()
@@ -99,6 +108,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (Str
     message match {
       // If the user types "insert '<key>' <value>"
       case InsertRowMessage(key: String, value: Array[Byte]) => {
+        println(sender())
         // If the storekeeper already contains that key
         if (map.containsKey(key)) reply(ReplyMessage(EnumReplyResult.Error,message,KeyAlreadyExistInfo()))
         // If the storekeeper doesn't have that key
@@ -189,8 +199,8 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (Str
     val actor1 = context.actorOf(Props(new Storemanager(map1, index1, StorekeeperType, ninjas1)))
     val actor2 = context.actorOf(Props(new Storemanager(map2, index2, StorekeeperType, ninjas2)))
     // Adds children
-    children(0) = new Child(actor1, index1, ninjas1)
-    children(1) = new Child(actor2, index2, ninjas2)
+    leftChild = new Child(actor1, index1, ninjas1)
+    rightChild = new Child(actor2, index2, ninjas2)
     // Erase the map
     map.clear()
     log.info("Storekeeper split")
@@ -233,26 +243,25 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (Str
         // save the original sender
         val origSender = sender
         // messages received back from storekeepers, initially 0
-        var messagesReceived = 0
+        val messagesReceived = new AtomicInteger(0);
         //  list used to save all the keys of the map. initially Empty
         var keys = List[String]()
-        // for every storekeeper in 'storekeeper' map
-        for (i <- 0 until children.length ) {
-          val sk = children(i).actor
-          // send the message to the storekeeper and save the reply in a Future
-          val future = sk ? message
-          // when the reply arrives
-          future.onComplete {
-            // if it's successful
-            case Success(result) => {
-              // increment the number of messages returned
-              messagesReceived = messagesReceived + 1
-              // the reply of a storekeeper contains the list of his keys(as a ListKeyInfo) in info field.
-              val ris = result.asInstanceOf[ReplyMessage].info.asInstanceOf[ListKeyInfo].keys
+
+        val leftFuture = leftChild.actor ? message
+        val rightFuture = leftChild.actor ? message
+
+        leftFuture.onComplete {
+          // if it's successful
+          case Success(result) => {
+            // increment the number of messages returned
+            messagesReceived.incrementAndGet()
+            // the reply of a storekeeper contains the list of his keys(as a ListKeyInfo) in info field.
+            val ris = result.asInstanceOf[ReplyMessage].info.asInstanceOf[ListKeyInfo].keys
+            this.synchronized {
               // if this partial list is not empty it's added to the main list
-              if(ris.nonEmpty) keys = keys ::: ris
+              if (ris.nonEmpty) keys = keys ::: ris
               // if messages received back is equal to the number of storekeeper the main list should be complete
-              if (messagesReceived == children.length) {
+              if (messagesReceived == 2) {
                 // if the main list is empty the reply to the sender is an "Error"
                 if (keys.isEmpty) reply(ReplyMessage(Error, message, NoKeyInfo()), origSender)
                 // if the main list is not empty the reply to the sender is "Done" and the list id returned as a ListKeyInfo
@@ -260,20 +269,57 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (Str
                 else reply(ReplyMessage(Done, message, ListKeyInfo(keys.sorted)), origSender)
               }
             }
-            // NB: the method returns the keys he manage to get. If a Failure occurs it is logged, but the user is not informed.
-            case Failure(t) => {
-              // messages are incremented to complete the loop
-              messagesReceived = messagesReceived + 1
-              // the error is logged
-              log.error("Error sending message: " + t.getMessage)
+          }
+          // NB: the method returns the keys he manage to get. If a Failure occurs it is logged, but the user is not informed.
+          case Failure(t) => {
+            // messages are incremented to complete the loop
+            messagesReceived.incrementAndGet()
+            // the error is logged
+            log.error("Error sending message: " + t.getMessage)
+            // if messages received back is equal to the number of storekeeper the main list should be complete
+            if (messagesReceived == 2) {
+              // if the main list is empty the reply to the sender is an "Error"
+              if (keys.isEmpty) reply(ReplyMessage(Error, message, NoKeyInfo()), origSender)
+              // if the main list is not empty the reply to the sender is "Done" and the list id returned as a ListKeyInfo
+              // keys list can be unsorted, cause the order of storekeeper's response is unknown. So keys is sorted before the reply
+              else reply(ReplyMessage(Done, message, ListKeyInfo(keys.sorted)), origSender)
+            }
+          }
+        }
+
+        rightFuture.onComplete {
+          // if it's successful
+          case Success(result) => {
+            // increment the number of messages returned
+            messagesReceived.incrementAndGet()
+            // the reply of a storekeeper contains the list of his keys(as a ListKeyInfo) in info field.
+            val ris = result.asInstanceOf[ReplyMessage].info.asInstanceOf[ListKeyInfo].keys
+            this.synchronized  {
+              // if this partial list is not empty it's added to the main list
+              if (ris.nonEmpty) keys = keys ::: ris
               // if messages received back is equal to the number of storekeeper the main list should be complete
-              if (messagesReceived == children.length) {
+              if (messagesReceived == 2) {
                 // if the main list is empty the reply to the sender is an "Error"
                 if (keys.isEmpty) reply(ReplyMessage(Error, message, NoKeyInfo()), origSender)
                 // if the main list is not empty the reply to the sender is "Done" and the list id returned as a ListKeyInfo
                 // keys list can be unsorted, cause the order of storekeeper's response is unknown. So keys is sorted before the reply
                 else reply(ReplyMessage(Done, message, ListKeyInfo(keys.sorted)), origSender)
               }
+            }
+          }
+          // NB: the method returns the keys he manage to get. If a Failure occurs it is logged, but the user is not informed.
+          case Failure(t) => {
+            // messages are incremented to complete the loop
+            messagesReceived.incrementAndGet()
+            // the error is logged
+            log.error("Error sending message: " + t.getMessage)
+            // if messages received back is equal to the number of storekeeper the main list should be complete
+            if (messagesReceived == 2) {
+              // if the main list is empty the reply to the sender is an "Error"
+              if (keys.isEmpty) reply(ReplyMessage(Error, message, NoKeyInfo()), origSender)
+              // if the main list is not empty the reply to the sender is "Done" and the list id returned as a ListKeyInfo
+              // keys list can be unsorted, cause the order of storekeeper's response is unknown. So keys is sorted before the reply
+              else reply(ReplyMessage(Done, message, ListKeyInfo(keys.sorted)), origSender)
             }
           }
         }
@@ -299,19 +345,13 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (Str
     */
   private def sendToStorekeeper(key: String, message: RowMessage): Unit = {
     val sk = findRightStorekeeper(key)
-    // save the original sender
-    val origSender = sender
     // send the message to the storekeeper and save the reply in a Future
     var i=0
     for (i <- 0 until sk.ninjas.length ) {
       sk.ninjas(i) ! message
     }
-    val future = sk.actor ? message
-    future.onComplete {
-      // reply the storemanager with the reply from the storekeeper
-      case Success(result) => reply(result.asInstanceOf[ReplyMessage], origSender)
-      case Failure(t) => log.error("Error sending message: " + t.getMessage)
-    }
+    // Forewards the message to the storekeeper
+    sk.actor forward message
   }
 
   /**
@@ -321,15 +361,12 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (Str
     * @return The Storekeeper actor reference.
     */
   private def findRightStorekeeper(key:String): Child = {
-    val firstChild = children(0)
-    val secondChild = children(1)
-    if(key <= firstChild.index._2)
-      return firstChild
-    return secondChild
+    if(key <= leftChild.index._2)
+      return leftChild
+    return rightChild
   }
 
   // StorekeeperNinja behaviour
-
   /**
     * Processes all incoming messages behaving like a Ninja actor.
     * It handles only RowMessage messages.
@@ -387,8 +424,8 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]], index: (Str
       case BecomeStorefinderNinjaMessage(c : Array[ActorRef], i : Array[(String, String)], n : Array[Array[ActorRef]]) => {
         context.become(receiveAsStorefinderNinja)
         map.clear()
-        children(0) = new Child(c(0), i(0), n(0))
-        children(1) = new Child(c(1), i(1), n(1))
+        leftChild = new Child(c(0), i(0), n(0))
+        rightChild = new Child(c(1), i(1), n(1))
       }
     }
   }

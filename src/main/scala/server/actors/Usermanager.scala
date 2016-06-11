@@ -8,13 +8,13 @@ import akka.io.Tcp
 import akka.pattern.ask
 import akka.remote.RemoteScope
 import akka.util.{ByteString, ByteStringBuilder}
+import server.StaticSettings
 import server.enums.EnumPermission.UserPermission
 import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.user.RowMessages.{FindInfo, FindRowMessage, KeyAlreadyExistInfo, StorefinderRowMessage}
 import server.messages.query.{LoginMessage, QueryMessage, ReplyMessage, ServiceErrorInfo}
 import server.utils.{Parser, Serializer}
-import server.{StaticSettings, Server}
 
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
