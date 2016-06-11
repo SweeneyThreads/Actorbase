@@ -31,6 +31,7 @@ Robe da sviluppare
 * Creazione dinamica storemanager
 * Azzerare selectmap quando viene eliminata la mappa
 * Mettere selectmap quando viene creata
+* Fare help specifici più lunghi con anche le stringhe in caso di errore
 
 ## DA FINIRE
 
@@ -46,7 +47,6 @@ Robe da sviluppare
 * Spegnimento server (con salvataggio configurazione)
 * Gestire errore porta occupata
 * Gestire application.conf esterno (non compilato)
-* Fare help specifici più lunghi con anche le stringhe in caso di errore
 * Mostrare tipo di errore di connessione
 * Controllare currentMethodName nel log
 * Fare comando refresh config
