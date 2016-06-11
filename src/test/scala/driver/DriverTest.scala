@@ -11,126 +11,75 @@ import org.scalatest.{FlatSpec, Matchers}
   */
 class DriverTest  extends FlatSpec with Matchers with MockFactory{
 
-  //FakeServerLogin is a runnable that is used to simulate Actorbase server for the entire login process
-  class FakeServerLogin extends Runnable{
+  //FakeServer is a runnable that is used to simulate Actorbase server
+  class FakeServer(val queryString: String= "a query") extends Runnable{
     //port number of the fake server
     val portNumber: Integer = 8080
+    var stopped: Boolean = false
+    var fakeSocket: ServerSocket = null
+    var clientSocket: Socket = null
+    var out: PrintStream = null
+    var in: BufferedInputStream = null
+    // value of the expected first byte. 1 for query
+    val firstByte = 0
+
+    try {
+      // build a ServerSocket with the given portNumber
+      fakeSocket = new ServerSocket(portNumber)
+    }
+    catch {
+      case e: Exception =>
+    }
 
     //overriding the run function of Runnable
     override def run(): Unit ={
-      try {
-        // build a ServerSocket with the given portNumber
-        val fakeSocket: ServerSocket = new ServerSocket(portNumber)
-        // Accepting a clientSocket
-        val clientSocket = fakeSocket.accept()
-        // Initialize the output on socket
-        val out = new PrintStream(clientSocket.getOutputStream)
-        // Initializing the input from socket
-        val in = new BufferedInputStream(clientSocket.getInputStream)
+      // Accepting a clientSocket
+      clientSocket = fakeSocket.accept()
+      // Initialize the output on socket
+      out = new PrintStream(clientSocket.getOutputStream)
+      // Initializing the input from socket
+      in = new BufferedInputStream(clientSocket.getInputStream)
+      while (!stopped) {
         // while there is nothing in the buffer sleep
-        while (in.available < 1) Thread.sleep(100)
+        while (in.available < 8) Thread.sleep(100)
         // put the content of the buffer in the Array of Byte "buf"
         val buf = new Array[Byte](in.available())
         in.read(buf)
-        // value of the expected first byte. 1 for query
-        val firstByte: Byte = 1
         // creating a byte array without the first byte and cast it to String
-        val bufQuery = buf.slice(1, buf.length)
+        val bufQuery = buf.slice(7, buf.length-2)
         val query: String = new String(bufQuery)
-        // chec if the first byte and the query are correct
-        if (buf(0) == firstByte && query == "login admin admin") {
-          out.print("Y")
-          out.flush()
-          //closing socket
-          in.close()
-          out.close()
-          fakeSocket.close()
-        }
-        else {
-          out.print("N")
-          out.flush()
-          //closing socket
-          in.close()
-          out.close()
-          fakeSocket.close()
-        }
-      }
-      catch {
-        case e: Exception =>
-      }
-    }
-  }
-
-  //FakeServerLogin is a runnable that is used to simulate Actorbase server for the entire login process
-  class FakeServer2 extends Runnable{
-    //port number of the fake server
-    val portNumber: Integer = 8080
-
-    //overriding the run function of Runnable
-    override def run(): Unit ={
-      try {
-        // build a ServerSocket with the given portNumber
-        val fakeSocket: ServerSocket = new ServerSocket(portNumber)
-        // Accepting a clientSocket
-        val clientSocket = fakeSocket.accept()
-        // Initialize the output on socket
-        val out = new PrintStream(clientSocket.getOutputStream)
-        // Initializing the input from socket
-        val in = new BufferedInputStream(clientSocket.getInputStream)
-        // while there is nothing in the buffer sleep
-        while (in.available < 1) Thread.sleep(100)
-        // put the content of the buffer in the Array of Byte "buf"
-        var buf = new Array[Byte](in.available())
-        in.read(buf)
-        // value of the expected first byte. 1 for query
-        val firstByte: Byte = 1
-        // creating a byte array without the first byte and cast it to String
-        var bufQuery = buf.slice(1, buf.length)
-        var query: String = new String(bufQuery)
-        // chec if the first byte and the query are correct
+        println(query)
         if (buf(0) == firstByte && query == "login admin admin") {
           out.print("Y")
           out.flush()
         }
+        else if (buf(0) == firstByte && query == "disconnect") {
+          stopped = true
+          out.print("Logout OK")
+          out.flush()
+        }
+        // check if the first byte and the query are correct
+        else if (buf(0) == firstByte && query == queryString) {
+          out.print("Query OK")
+          out.flush()
+        }
         else {
           out.print("N")
           out.flush()
         }
-        while (in.available < 1) Thread.sleep(100)
-        // put the content of the buffer in the Array of Byte "buf"
-        buf = new Array[Byte](in.available())
-        in.read(buf)
-        // creating a byte array without the first byte and cast it to String
-        bufQuery = buf.slice(1, buf.length)
-        query = new String(bufQuery)
-        // chec if the first byte and the query are correct
-        if (buf(0) == firstByte && query == "random query") {
-          out.print("Y")
-          out.flush()
-          //closing socket
-          in.close()
-          out.close()
-          fakeSocket.close()
-        }
-        else {
-          out.print("N")
-          out.flush()
-          //closing socket
-          in.close()
-          out.close()
-          fakeSocket.close()
-        }
       }
-      catch {
-        case e: Exception =>
-      }
+      out.close()
+      in.close()
+      clientSocket.close()
+      fakeSocket.close()
     }
   }
 
   "Driver connect method" should "create a new connection and return it with if a valid 'connect' command is given" in {
-    val thread:Thread = new Thread(new FakeServerLogin())
+    val thread:Thread = new Thread(new FakeServer())
     thread.start()
     val conn:Connection = Driver.connect("localhost", 8080, "admin", "admin")
+    conn.executeQuery("disconnect")
     conn match {
       case c: ConcreteConnection => {
         c.host should be("localhost")
@@ -142,17 +91,23 @@ class DriverTest  extends FlatSpec with Matchers with MockFactory{
   }
 
   "Driver connect method" should "return null if an invalid 'connect' command is given" in {
-    val thread:Thread = new Thread(new FakeServerLogin())
+    val thread:Thread = new Thread(new FakeServer())
     thread.start()
-    val conn:Connection = Driver.connect("localhost", 8080, "ad", "admin")
+    val conn:Connection = Driver.connect("localht", 8080, "admin", "admin")
+    //we must stop the server if we don't want to block the port so:
+    val conn2 = new ConcreteConnection("localhost", 8080, "admin", "admin")
+    conn2.executeQuery("disconnect")
     conn should be (null)
   }
 
   "ConcreteConnection executeQuery method" should "send a correct string to server" in {
-    val thread:Thread = new Thread(new FakeServer2())
+    val randomQuery:String = "a query"
+    Thread.sleep(1000)
+    val thread:Thread = new Thread(new FakeServer(randomQuery))
     thread.start()
     val conn:Connection = new ConcreteConnection("localhost", 8080, "admin", "admin")
-    val response = conn.executeQuery("random query")
-    response should be ("Y")
+    val response = conn.executeQuery(randomQuery)
+    conn.executeQuery("disconnect")
+    response should be ("Query OK")
   }
 }
