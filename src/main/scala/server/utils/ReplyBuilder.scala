@@ -10,6 +10,7 @@ import scala.collection.JavaConversions._
 import server.messages.query.PermissionMessages.{NoReadPermissionInfo, NoWritePermissionInfo}
 import server.messages.query.admin.AdminMessage
 import server.messages.query.admin.PermissionsManagementMessages._
+import server.messages.query.admin.SettingsMessages.{RefreshSettingsInfo, RefreshSettingsMessage, SettingMessage}
 import server.messages.query.admin.UsersManagementMessages._
 import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.HelpMessages._
@@ -84,6 +85,7 @@ class ReplyBuilder {
     reply.question match {
       case m: UsersManagementMessage => UserManagementMessageReply(reply)
       case m: PermissionsManagementMessage => PermissionsManagementMessageReply(reply)
+      case m: SettingMessage => SettingMessagesReply(reply)
       case _ => "Unknown question AdminMessage" //TODO
     }
   }
@@ -178,6 +180,20 @@ class ReplyBuilder {
       case RemovePermissionMessage(username: String, database: String) => {
         return "Removed all permissions of " + username + " on DB " + database;
       }
+      case _ => "" //TODO
+    }
+  }
+
+  /**
+    * Build string replies from a ReplyMessage message.
+    * Handles reply for RefreshSettingsMessage message.
+    *
+    * @param reply the ReplyMessage message
+    * @return The reply string.
+    */
+  private def SettingMessagesReply(reply: ReplyMessage) : String = {
+    reply.question match {
+      case RefreshSettingsMessage() => return "Permissions has been updated."
       case _ => "" //TODO
     }
   }

@@ -10,37 +10,25 @@ import server.enums.EnumActorsProperties.ActorProperties
 
 EXAMPLES of JSON files nedeed by these methods
 {
-  "accesses": [
-    {
-      "address": "localhost",
-      "port": "8181"
-    },
-    {
-      "address": "127.0.0.1",
-      "port": "8282"
-    }
-  ]
-
+  "ports": [ 8181, 8080, 1024 ]
 }
 
 {
   "properties": [
     {
-      "name" : "numberofninja",
-      "value" : 4
+      "name" : "maxRowNumber",
+      "value" : 2
     },
     {
-      "name" : "numberofwarehouseman",
-      "value" : 4
+      "name" : "ninjaNumber",
+      "value" : 1
     },
     {
-      "name" : "maxstorekeeper",
-      "value" : 4
-    },
-    {
-      "name" : "maxstorefinder",
-      "value" : 4
+      "name" : "warehousemanNumber",
+      "value" : 1
     }
+  ]
+}
 */
 
 /**
@@ -60,7 +48,7 @@ class ConfigurationManager() {
     * @return A list with addresses and ports.
     */
   def readDoorkeepersSettings(fileName: String): util.ArrayList[Integer] = {
-    val toReturn : util.ArrayList[Integer] = new util.ArrayList[Integer]()
+    val toReturn: util.ArrayList[Integer] = new util.ArrayList[Integer]()
     val source = scala.io.Source.fromFile(fileName)
     val list = try source.getLines().mkString finally source.close()
     val jsonObject = new JSONObject(list)
@@ -83,24 +71,23 @@ class ConfigurationManager() {
     * @param fileName The name of the file that contains the actors properties.
     */
   def readActorsProperties(fileName: String = "actor_properties.json"): util.HashMap[ActorProperties, Integer] = {
-    val toReturn : util.HashMap[ActorProperties, Integer] = new util.HashMap[ActorProperties, Integer]()
+    val toReturn: util.HashMap[ActorProperties, Integer] = new util.HashMap[ActorProperties, Integer]()
 
-      val source = scala.io.Source.fromFile(fileName)
-      val list = try source.getLines().mkString finally source.close()
-      val jsonObject = new JSONObject(list)
-      val properties = jsonObject.getJSONArray("properties")
-      for( i <- 0 until properties.length()){
-        val singleProperty = properties.getJSONObject(i)
-        val name = singleProperty.getString("name")
-        val prop = name match {
-          case "numberofninja" => EnumActorsProperties.NumberOfNinjas
-          case "numberofwarehouseman" => EnumActorsProperties.NumberOfWarehouseman
-          case "maxstorefinder" => EnumActorsProperties.MaxStorefinderNumber
-          case "maxstorekeeper" => EnumActorsProperties.MaxStorekeeperNumber
-        }
-        val num = singleProperty.getInt("value")
-        toReturn.put(prop, num)
+    val source = scala.io.Source.fromFile("conf/"+fileName)
+    val list = try source.getLines().mkString finally source.close()
+    val jsonObject = new JSONObject(list)
+    val properties = jsonObject.getJSONArray("properties")
+    for (i <- 0 until properties.length()) {
+      val singleProperty = properties.getJSONObject(i)
+      val name = singleProperty.getString("name")
+      val prop = name match {
+        case "maxRowNumber" => EnumActorsProperties.MaxRowNumber
+        case "ninjaNumber" => EnumActorsProperties.NinjaNumber
+        case "warehousemanNumber" => EnumActorsProperties.WarehousemanNumber
       }
+      val num = singleProperty.getInt("value")
+      toReturn.put(prop, num)
+    }
 
     return toReturn
   }

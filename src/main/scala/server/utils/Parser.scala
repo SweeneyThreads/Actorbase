@@ -4,6 +4,7 @@ import server.enums.EnumPermission
 import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.user.HelpMessages.{CompleteHelpMessage, SpecificHelpMessage}
 import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, RemovePermissionMessage}
+import server.messages.query.admin.SettingsMessages.RefreshSettingsMessage
 import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage}
 import server.messages.query.user.DatabaseMessages.{CreateDatabaseMessage, DeleteDatabaseMessage, ListDatabaseMessage, SelectDatabaseMessage}
 import server.messages.query.user.MapMessages.{CreateMapMessage, DeleteMapMessage, ListMapMessage, SelectMapMessage}
@@ -95,6 +96,7 @@ class Parser {
       case "listmap" =>  new ListMapMessage
       case "keys" =>  new ListKeysMessage
       case "help" =>  new CompleteHelpMessage
+      case "refreshsettings" => new RefreshSettingsMessage
 
       case _ =>  new InvalidQueryMessage
     }

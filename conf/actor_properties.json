@@ -1,0 +1,16 @@
+{
+  "properties": [
+    {
+      "name" : "maxRowNumber",
+      "value" : 20
+    },
+    {
+      "name" : "ninjaNumber",
+      "value" : 8
+    },
+    {
+      "name" : "warehousemanNumber",
+      "value" : 10
+    }
+  ]
+}

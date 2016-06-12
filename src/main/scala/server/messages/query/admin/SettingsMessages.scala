@@ -1,5 +1,7 @@
 package server.messages.query.admin
 
+import server.messages.query.ReplyInfo
+
 /**
   * Created by eliamaino on 02/06/16.
   */
@@ -20,4 +22,9 @@ object SettingsMessages {
     * @see SettingMessage
     */
   case class RefreshSettingsMessage () extends SettingMessage
+
+  /**
+    * A RefreshSettingsInfo is a ReplyInfo used by ReplyBuilder to handle the response to a RefreshSettingsMessage
+    */
+  case class RefreshSettingsInfo() extends ReplyInfo
 }

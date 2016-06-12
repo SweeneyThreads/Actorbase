@@ -43,4 +43,20 @@ object EnumActorsProperties {
     * @see Storefinder
     */
   case object MaxStorefinderNumber extends ActorProperties
+
+  /**
+    * Represent the max number of Row that a Storekeeper actor can handle
+    */
+  case object MaxRowNumber extends ActorProperties
+
+  /**
+    * Represents the number of Ninja for each actor.
+    */
+  case object NinjaNumber extends ActorProperties
+
+  /**
+    * Represents the number of Warehouseman for each Storekeeper actor.
+    */
+  case object WarehousemanNumber extends ActorProperties
+
 }

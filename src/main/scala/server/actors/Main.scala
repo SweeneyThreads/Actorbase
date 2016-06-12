@@ -1,19 +1,14 @@
 package server.actors
 
 import java.util
-import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{ActorRef, Deploy, Props}
-import akka.dispatch.ExecutionContexts._
+import akka.actor.{Deploy, Props}
 import akka.pattern.ask
 import akka.remote.RemoteScope
-import akka.util.Timeout
-import server.utils.ConfigurationManager
-//import org.apache.tools.ant.taskdefs.Delete
 import server.StaticSettings
+import server.enums.EnumActorsProperties.ActorProperties
 import server.enums.EnumPermission.UserPermission
-import server.enums.EnumReplyResult.Done
-import server.enums.{EnumPermission, EnumReplyResult}
+import server.enums.{EnumActorsProperties, EnumPermission, EnumReplyResult}
 import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.PermissionMessages._
 import server.messages.query.admin.AdminMessage
@@ -26,12 +21,9 @@ import server.messages.query.user.MapMessages._
 import server.messages.query.user.RowMessages._
 import server.messages.query.user.UserMessage
 import server.messages.query.{QueryMessage, ReplyErrorInfo, ReplyMessage, ServiceErrorInfo}
-import server.utils.{Helper, Serializer}
-import sun.net.ftp.FtpDirEntry.Permission
+import server.utils.{ConfigurationManager, Helper, Serializer}
 
 import scala.collection.JavaConversions._
-import scala.concurrent.Await
-import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
@@ -50,6 +42,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
 
   // Instance of Helper class
   val helper = new Helper
+
   // Values for selected database and selected map
   var selectedDatabase = ""
   var selectedMap = ""
@@ -72,7 +65,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * Handles UserMessage messages and AdminMessage ones
     * calling the right method for each one.
     *
-    * @param message The QueryMessage message to precess.
+    * @param message The QueryMessage message to process.
     * @see QueryMessage
     * @see UserMessage
     * @see AdminMessage
@@ -94,7 +87,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * Handles HelpMessage, DatabaseMessage, MapMessage and RowMessage
     * messages calling the right method for each one.
     *
-    * @param message The UserMessage message to precess.
+    * @param message The UserMessage message to process.
     * @see UserMessage
     * @see HelpMessage
     * @see DatabaseMessage
@@ -124,7 +117,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * Handles CompleteHelpMessage messages returning the list commands given by the Helper class and
     * SpecificHelpMessage messages returning the description of single command given by the Helper class.
     *
-    * @param message The HelpMessage message to precess.
+    * @param message The HelpMessage message to process.
     * @see CompleteHelpMessage
     * @see SpecificHelpMessage
     * @see ReplyMessage
@@ -147,7 +140,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * Handles CreateDatabaseMessage messages creating a new Storemanager actor which represents the new database.
     * Handles DeleteDatabaseMessage messages deleting Storemanager actors that represent the database.
     *
-    * @param message The DatabaseMessage message to precess.
+    * @param message The DatabaseMessage message to process.
     * @see DatabaseMessage
     * @see ListDatabaseMessage
     * @see SelectDatabaseMessage
@@ -191,7 +184,8 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
         // If the selected database doesn't exist
         else {
           // Add the new database
-          context.system.actorOf(Props[MapManager].withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
+          selectedDatabase = dbName
+          context.system.actorOf(Props(new MapManager()).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }
@@ -221,7 +215,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * if it contains the asked map, if so it saves the selected map.
     * All other MapMessage messages are sent to the right Storemanager.
     *
-    * @param message The MapMessage message to precess.
+    * @param message The MapMessage message to process.
     * @see MapMessage
     * @see SelectMapMessage
     * @see Storemanager
@@ -293,7 +287,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * Processes RowMessage messages if a a database and a map are selected.
     * All RowMessage messages are sent to the right Storemanager.
     *
-    * @param message The RowMessage message to precess.
+    * @param message The RowMessage message to process.
     * @see RowMessage
     * @see Storemanager
     */
@@ -327,7 +321,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * Handles UsersManagementMessage, PermissionsManagementMessage and SettingMessage
     * messages calling the right method for each one.
     *
-    * @param message The AdminMessage message to precess.
+    * @param message The AdminMessage message to process.
     * @see AdminMessage
     * @see UsersManagementMessage
     * @see PermissionsManagementMessage
@@ -354,7 +348,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * AddUserMessage messages adding an user in the map and
     * RemoveUserMessage messages removing from the map the user.
     *
-    * @param message The UsersManagementMessage message to precess.
+    * @param message The UsersManagementMessage message to process.
     * @see UsersManagementMessage
     * @see ListUserMessage
     * @see AddUserMessage
@@ -422,7 +416,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * always in the 'master' database. The added List refer to the new user, and it's empty, so the user has no permissions
     * on any database.
     *
-    * @param message The AddUser message to precess.
+    * @param message The AddUser message to process.
     * @param username The name of new user to be add
     * @param password The password of new user to be add
     * @see RowMessage
@@ -459,7 +453,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * This method remove a user form the 'users' map in the 'master' database. It takes two parameters: the message to handle
     * and the username of the user to be removed.
     *
-    * @param message The RemoveUser message to precess.
+    * @param message The RemoveUser message to process.
     * @param username The name of user to be remove
     * @see RowMessage
     * @see Storemanager
@@ -692,13 +686,16 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * Processes SettingMessages messages.
     * Handles RefreshSettings message, reloading settings parameters from the configuration file
     *
-    * @param message The SettingMessage message to precess.
+    * @param message The SettingMessage message to process.
     * @see SettingMessages
     */
   private def handleSettingMessage(message: SettingMessage): Unit = {
     message match {
       // Refresh the settings from the conf file if requested
-      case RefreshSettingsMessage() => //TODO
+      case RefreshSettingsMessage() => {
+        refreshStaticSetting()
+        reply(new ReplyMessage(EnumReplyResult.Done, message, new RefreshSettingsInfo))
+      }
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString(), "handlePermissionsManagementMessage"))
     }
   }
@@ -742,6 +739,24 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
       }
       // If the message doesn't require permissions
       case n: NoPermissionMessage => true
+    }
+  }
+
+  /**
+    * This method updates the Static settings values with the values return by ConfigurationManager.readActorProperties
+    * which read the configuration file on disk. This method is being called when the admin changes that files and
+    * afterwards type 'updatesettings' on console.
+    */
+  private def refreshStaticSetting(): Unit = {
+    var newSettings : util.HashMap[ActorProperties, Integer] = new util.HashMap[ActorProperties, Integer]()
+    val confManager = new ConfigurationManager
+    newSettings = confManager.readActorsProperties();
+    for (k <- newSettings.keySet() ){
+      k match {
+        case EnumActorsProperties.MaxRowNumber => StaticSettings.maxRowNumber = newSettings.get(k)
+        case EnumActorsProperties.NinjaNumber => StaticSettings.ninjaNumber = newSettings.get(k)
+        case EnumActorsProperties.WarehousemanNumber => StaticSettings.warehousemanNumber = newSettings.get(k)
+      }
     }
   }
 }
