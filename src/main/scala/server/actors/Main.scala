@@ -276,6 +276,10 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
                 // Otherwise, if it was a DeleteMapMessage, we unmark that map as the selected one
                   selectedMap = ""
               }
+              case EnumReplyResult.Error => {
+                // Do nothing at the moment, if this match case does not exist the Main will fail when receiving an
+                // EnumReplyResult.Error as response
+              }
             }
             logAndReply(result.asInstanceOf[ReplyMessage], origSender)
           }

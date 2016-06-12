@@ -68,14 +68,15 @@ class MapManager(database: String) extends ReplyActor {
     message match {
       // If the user types 'listmap'
       case ListMapMessage() => {
-        // Create a list
-        var maps = List[String]()
-        // For each storekeeper adds the map name to the list
-        for (k: String <- indexManagers.keySet()) maps = maps.::(k)
-        // If the map is empty reply with an error
-        if (maps.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoMapInfo()))
-        // If the map is not empty
-        else reply(ReplyMessage(EnumReplyResult.Done, message, ListMapInfo(maps)))
+        if (indexManagers.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoMapInfo()))
+        else {
+          // Create a list
+          var maps = List[String]()
+          // For each storekeeper adds the map name to the list
+          for (k: String <- indexManagers.keySet()) maps = maps.::(k)
+          // If the map is not empty
+          reply(ReplyMessage(EnumReplyResult.Done, message, ListMapInfo(maps)))
+        }
       }
       // If the user types 'createmap <map_name>'
       case CreateMapMessage(name: String) => {
