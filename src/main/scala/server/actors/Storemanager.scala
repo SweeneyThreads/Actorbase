@@ -58,10 +58,12 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   var leftChild: Child = null
   var rightChild: Child = null
 
-  /*if(map.keySet().size() > StaticSettings.maxRowNumber) {
+
+  if (map.keySet().size() > StaticSettings.maxRowNumber) {
     log.info("Trying to create a Storemanager with too big map, Storemanager splitted automatically")
     divideActor()
-  }*/
+  }
+
 
 
   /**
@@ -229,6 +231,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   /**
     * Handles a ListKeyMessage as a storefinder (normal or ninja). It sends the message to his children, first the left
     * child and second the right one. It randomizes the selection of the main child actor or one of his ninjas.
+    *
     * @param message
     */
   private def handleKeysMessageAsStorefinder(message: RowMessage) : Unit = {

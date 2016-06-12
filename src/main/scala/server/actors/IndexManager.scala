@@ -36,17 +36,15 @@ class IndexManager() extends ReplyActor {
     }
     val mapDirectory = new File(StaticSettings.dataPath+"\\"+context.parent.path.name+"\\"+self.path.name)
     if (mapDirectory.exists) {
-      var map: ConcurrentHashMap[String,Array[Byte]] = null
       println(s"IndexManager::message sended to the warehouseman 0")
       val future = warehousemen(0) ? ReadMapMessage
       future.onSuccess {
         case result =>
           println("IndexManager::Future received")
           val msg = result.asInstanceOf[ReadMapReply]
-          map = msg.map
+          storemanager = context.actorOf(Props(
+            new Storemanager(msg.map, ("", null), EnumStoremanagerType.StorekeeperType)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
       }
-      storemanager = context.actorOf(Props(
-        new Storemanager(map, ("", null), EnumStoremanagerType.StorekeeperType)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
     } else {
       // The main Storemanager actor reference
       storemanager = context.actorOf(Props(
