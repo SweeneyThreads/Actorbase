@@ -52,8 +52,6 @@ import scala.language.postfixOps
   */
 class Warehouseman(dbName: String, mapName: String) extends ReplyActor {
 
-  println(s"Warehouseman created. dbName=$dbName, mapName=$mapName")
-
   // The object to interact with the filesystem
   val fileManager: FileManager = new SingleFileManager(dbName,mapName)
 
@@ -107,18 +105,7 @@ class Warehouseman(dbName: String, mapName: String) extends ReplyActor {
 
   private def giveMap(ar: ActorRef): Unit = {
     val storedMap =  fileManager.ReadMap()
-    printMap(storedMap)
     ar ! ReadMapReply(storedMap)
   }
 
-
-  private def printMap(map: ConcurrentHashMap[String,Array[Byte]]): Unit = {
-    val i = map.keySet.iterator
-    println("CULOCULOCULO")
-    while (i hasNext) {
-      val k = i.next
-      val value = new String(map get k)
-      println(s"$k => $value")
-    }
-  }
 }

@@ -132,7 +132,6 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     message match {
       // If the user types "insert '<key>' <value>"
       case InsertRowMessage(key: String, value: Array[Byte]) => {
-        println(sender())
         // If the storekeeper already contains that key
         if (map.containsKey(key)) reply(ReplyMessage(EnumReplyResult.Error,message,KeyAlreadyExistInfo()))
         // If the storekeeper doesn't have that key

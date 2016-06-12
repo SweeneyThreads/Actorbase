@@ -29,14 +29,9 @@
 
 package server.messages.query.admin
 
-<<<<<<< Updated upstream
+
 import server.messages.query.ReplyInfo
 
-/**
-  * Created by eliamaino on 02/06/16.
-  */
-=======
->>>>>>> Stashed changes
 
 /**
   * SettingMessages are used to manage settings properties.

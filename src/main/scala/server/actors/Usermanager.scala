@@ -54,8 +54,6 @@ import scala.util.{Failure, Success}
   */
 class Usermanager extends ReplyActor {
 
-  println(s"Usermanager Created with name: ${self.path.name}")
-
   import Tcp._
 
   // The parser instance

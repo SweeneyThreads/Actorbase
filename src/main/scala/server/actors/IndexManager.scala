@@ -57,19 +57,15 @@ class IndexManager() extends ReplyActor {
 
 
   override def preStart {
-    println(s"IndexManager::preStart")
     // Adds Warehouseman actors
     for(i <- 0 until StaticSettings.warehousemanNumber) {
-      println(s"IndexManager::createWarehousemanLoop, i=$i")
       warehousemen.add(context.actorOf(Props(new Warehouseman(context.parent.path.name,self.path.name))))
     }
     val mapDirectory = new File(StaticSettings.dataPath+"\\"+context.parent.path.name+"\\"+self.path.name)
     if (mapDirectory.exists) {
-      println(s"IndexManager::message sended to the warehouseman 0")
       val future = warehousemen(0) ? ReadMapMessage
       future.onSuccess {
         case result =>
-          println("IndexManager::Future received")
           val msg = result.asInstanceOf[ReadMapReply]
           storemanager = context.actorOf(Props(
             new Storemanager(msg.map, ("", null), EnumStoremanagerType.StorekeeperType)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
@@ -93,7 +89,6 @@ class IndexManager() extends ReplyActor {
   def receive ={
     case m:RowMessage => handleRowMessage(m)
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receive"))
-      println(other.toString)
   }
 
   /**
