@@ -1,7 +1,6 @@
 package server.actors
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorRef, Props}
 import server.enums.EnumReplyResult
@@ -12,9 +11,11 @@ import server.messages.query.user.RowMessages._
 
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Random, Success}
 import server.StaticSettings
 import server.messages.internal.LinkMessages.{BecomeStorefinderNinjaMessage, LinkMessage}
+import akka.actor.OneForOneStrategy
+import akka.actor.SupervisorStrategy._
 import akka.util.Timeout
 
 import scala.concurrent.duration._
@@ -298,20 +299,37 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   }
 
   /**
-    * Sends the message to the right Storekeeper.
+    * Sends the message to the right Storekeeper. If it's a FindRowMessage the method selects one random child between
+    * the correct child and his ninjas.
     *
     * @param key The key to user.
     * @param message The message to send.
     */
   private def sendToStorekeeper(key: String, message: RowMessage): Unit = {
     val sk = findRightStorekeeper(key)
-    // send the message to the storekeeper and save the reply in a Future
-    var i=0
-    for (i <- 0 until sk.ninjas.length ) {
-      sk.ninjas(i) ! message
+    message match {
+      // If the message is a FindRowMessage send it to a random actor between the child and his ninjas
+      case FindRowMessage(key: String) => {
+        // Generate a random Int between 0 and the number of child's ninjas + 1
+        val random = new Random()
+        val randomNumber = random.nextInt(sk.ninjas.length + 1)
+        // Select the actor to send the message based on the random number
+        if (randomNumber < sk.ninjas.length) {
+          sk.ninjas(randomNumber) forward message
+        }
+        else {
+          sk.actor forward message
+        }
+      }
+      case _ => {
+        // send the message to the storekeeper and save the reply in a Future
+        for (i <- sk.ninjas.indices ) {
+          sk.ninjas(i) ! message
+        }
+        // Forewards the message to the storekeeper
+        sk.actor forward message
+      }
     }
-    // Forewards the message to the storekeeper
-    sk.actor forward message
   }
 
   /**
@@ -346,6 +364,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     * Handles InsertRowMessage messages adding an entry in the map.
     * Handles UpdateRowMessage messages updating an entry in the map.
     * Handles RemoveRowMessage messages removing an entry with the given key.
+    * Handles FindRowMessage message replying to the sender
     *
     * @param message The RowMessage message to precess.
     * @see RowMessage
@@ -359,21 +378,25 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
         if (map.containsKey(key)) return
         // If the key doesn't exist
         map.put(key, value)
-        writeLog(ReplyMessage(EnumReplyResult.Done,message))
       }
       // If the storemanager send an update message
       case UpdateRowMessage(key: String, value: Array[Byte]) => {
         // If the key doesn't exist
-        if (map.containsKey(key)) return
+        if (!map.containsKey(key)) return
         // If the key exists
         map.put(key, value)
-        writeLog(ReplyMessage(EnumReplyResult.Done,message))
       }
       // If the storemanager send a remove message
       case RemoveRowMessage(key: String) => {
         if (!map.containsKey(key)) return
         map.remove(key)
-        writeLog(ReplyMessage(EnumReplyResult.Done,message))
+      }
+      // If the user types "find '<key>'"
+      case FindRowMessage(key: String) => {
+        // If the storekeeper doesn't have that key
+        if (!map.containsKey(key)) reply(ReplyMessage(EnumReplyResult.Error,message,KeyDoesNotExistInfo()))
+        // If the storekeeper contains that key
+        else reply(ReplyMessage(EnumReplyResult.Done,message, FindInfo(map.get(key))))
       }
       case _ => return
     }
@@ -409,7 +432,8 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     * Processes RowMessage messages as StorefinderNinja.
     * Because a parent doesn't know his children behaviour he will always forward all his messages to his children's
     * ninjas, therefore even if a StorefinderNinja is simply a copy of the Storefinder it will receive all the
-    * RowMessages and has to handle them without error.
+    * RowMessages and has to handle them without error. Futures implementations of the StorefinderNinja could add
+    * features to this method.
     *
     * @param message The RowMessage message to precess.
     * @see RowMessage
@@ -417,6 +441,11 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     */
   private def handleRowMessagesAsStorefinderNinja(message: RowMessage): Unit = {
     message match {
+      // if the message type is FindRowMessage, forward it to the storekeeper
+      case FindRowMessage(key: String) => {
+        log.info("hello i'm a storefinder message and i'm handling a findrowmessage")
+        sendToStorekeeper(key, message)
+      }
       case _ => return
     }
   }
