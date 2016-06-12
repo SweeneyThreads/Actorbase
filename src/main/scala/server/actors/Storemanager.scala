@@ -227,6 +227,75 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   }
 
   /**
+    * Handles a ListKeyMessage as a storefinder (normal or ninja). It sends the message to his children, first the left
+    * child and second the right one. It randomizes the selection of the main child actor or one of his ninjas.
+    * @param message
+    */
+  private def handleKeysMessageAsStorefinder(message: RowMessage) : Unit = {
+    // save the original sender
+    val origSender = sender
+    //  list used to save all the keys of the map. initially Empty
+    var keys = List[String]()
+
+    // Generate a random Int between 0 and the number of leftChild's ninjas + 1
+    val random = new Random()
+    val randomNumber = random.nextInt(leftChild.ninjas.length + 1)
+    // Select the actor to send the message based on the random number
+    var leftActor: ActorRef = null
+    if (randomNumber < leftChild.ninjas.length) {
+      leftActor = leftChild.ninjas(randomNumber)
+    }
+    else {
+      leftActor = leftChild.actor
+    }
+
+    val leftFuture = leftActor ? message
+
+    // When the left branch has completed the requests save results and ask the right branch
+    leftFuture.onComplete {
+      case Success(result1) => {
+        val res1 = result1.asInstanceOf[ReplyMessage].info.asInstanceOf[ListKeyInfo].keys
+        if (res1.nonEmpty) keys = keys ::: res1
+
+        // Generate a random Int between 0 and the number of leftChild's ninjas + 1
+        val random = new Random()
+        val randomNumber = random.nextInt(rightChild.ninjas.length + 1)
+        // Select the actor to send the message based on the random number
+        var rightActor: ActorRef = null
+        if (randomNumber < rightChild.ninjas.length) {
+          rightActor = rightChild.ninjas(randomNumber)
+        }
+        else {
+          rightActor = rightChild.actor
+        }
+
+        val rightFuture = rightActor ? message
+        // When the right branch has completed merge results
+        rightFuture.onComplete {
+          case Success(result2) => {
+            val res2 = result2.asInstanceOf[ReplyMessage].info.asInstanceOf[ListKeyInfo].keys
+            if (res2.nonEmpty) keys = keys ::: res2
+
+            if (keys.isEmpty) reply(ReplyMessage(Error, message, NoKeyInfo()), origSender)
+
+            else reply(ReplyMessage(Done, message, ListKeyInfo(keys.sorted)), origSender)
+          }
+          case Failure(t2) => {
+            log.error("Error sending message: " + t2.getMessage)
+            reply(new ReplyMessage(EnumReplyResult.Error, message,
+              new ServiceErrorInfo("Error sending message: " + t2.getMessage)), origSender)
+          }
+        }
+      }
+      case Failure(t1) => {
+        log.error("Error sending message: " + t1.getMessage)
+        reply(new ReplyMessage(EnumReplyResult.Error, message,
+          new ServiceErrorInfo("Error sending message: " + t1.getMessage)), origSender)
+      }
+    }
+  }
+
+  /**
     * Processes RowMessage messages.
     * Handles ListKeysMessage messages asking to every Storekeeper actor the list of keys
     * and returning the complete list.
@@ -244,47 +313,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   private def handleRowMessageAsStorefinder(message: RowMessage) : Unit = {
     message match {
       // if the user types 'keys'
-      case ListKeysMessage() => {
-        // save the original sender
-        val origSender = sender
-        //  list used to save all the keys of the map. initially Empty
-        var keys = List[String]()
-
-        // The keys request inspects the storemanager's tree in a left to right manner
-        val leftFuture = leftChild.actor ? message
-
-        // When the left branch has completed the requests save results and ask the right branch
-        leftFuture.onComplete {
-          case Success(result1) => {
-            val res1 = result1.asInstanceOf[ReplyMessage].info.asInstanceOf[ListKeyInfo].keys
-            if (res1.nonEmpty) keys = keys ::: res1
-
-            // Ask the right branch
-            val rightFuture = rightChild.actor ? message
-            // When the right branch has completed merge results
-            rightFuture.onComplete {
-              case Success(result2) => {
-                val res2 = result2.asInstanceOf[ReplyMessage].info.asInstanceOf[ListKeyInfo].keys
-                if (res2.nonEmpty) keys = keys ::: res2
-
-                if (keys.isEmpty) reply(ReplyMessage(Error, message, NoKeyInfo()), origSender)
-
-                else reply(ReplyMessage(Done, message, ListKeyInfo(keys.sorted)), origSender)
-              }
-              case Failure(t2) => {
-                log.error("Error sending message: " + t2.getMessage)
-                reply(new ReplyMessage(EnumReplyResult.Error, message,
-                  new ServiceErrorInfo("Error sending message: " + t2.getMessage)), origSender)
-              }
-            }
-          }
-          case Failure(t1) => {
-            log.error("Error sending message: " + t1.getMessage)
-            reply(new ReplyMessage(EnumReplyResult.Error, message,
-              new ServiceErrorInfo("Error sending message: " + t1.getMessage)), origSender)
-          }
-        }
-      }
+      case ListKeysMessage() => handleKeysMessageAsStorefinder(message)
       // if the message type is InsertRowMessage, forward it to the storekeeper
       case InsertRowMessage(key: String, value: Array[Byte]) => sendToStorekeeper(key, message)
       // if the message type is UpdateRowMessage, forward it to the storekeeper
@@ -365,6 +394,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     * Handles UpdateRowMessage messages updating an entry in the map.
     * Handles RemoveRowMessage messages removing an entry with the given key.
     * Handles FindRowMessage message replying to the sender
+    * Handles ListKeysMessage message replying to the sender
     *
     * @param message The RowMessage message to precess.
     * @see RowMessage
@@ -398,6 +428,16 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
         // If the storekeeper contains that key
         else reply(ReplyMessage(EnumReplyResult.Done,message, FindInfo(map.get(key))))
       }
+      // If the user types "listkey"
+      case ListKeysMessage() => {
+        if (map.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoKeyInfo()))
+        // Create the list of key
+        var keys = List[String]()
+        // For each key, add to the list
+        for (k: String <- map.keys()) keys = keys.::(k)
+        // Reply with the list
+        reply(ReplyMessage(EnumReplyResult.Done,message,ListKeyInfo(keys)))
+      }
       case _ => return
     }
   }
@@ -430,10 +470,6 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
 
   /**
     * Processes RowMessage messages as StorefinderNinja.
-    * Because a parent doesn't know his children behaviour he will always forward all his messages to his children's
-    * ninjas, therefore even if a StorefinderNinja is simply a copy of the Storefinder it will receive all the
-    * RowMessages and has to handle them without error. Futures implementations of the StorefinderNinja could add
-    * features to this method.
     *
     * @param message The RowMessage message to precess.
     * @see RowMessage
@@ -446,6 +482,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
         log.info("hello i'm a storefinder message and i'm handling a findrowmessage")
         sendToStorekeeper(key, message)
       }
+      case ListKeysMessage() => handleKeysMessageAsStorefinder(message)
       case _ => return
     }
   }
