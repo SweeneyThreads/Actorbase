@@ -1,5 +1,6 @@
 package server.actors
 
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, Deploy, Props}
@@ -16,19 +17,35 @@ import scala.collection.JavaConversions._
 /**
   * Created by matteobortolazzo on 04/06/2016.
   */
-class MapManager(database: String) extends ReplyActor {
+class MapManager extends ReplyActor {
   // Registers itself to the list of MapManager actors
-  StaticSettings.mapManagerRefs.put(database, self)
+  StaticSettings.mapManagerRefs.put(self.path.name, self)
   // The list of storefinders
   val indexManagers = new ConcurrentHashMap[String, ActorRef]()
   // Add a default map (Storefinder). If the present Soremanager represents the Master database, it
   // does not create the default map, instead it creates the users map and the permissions map
-  if(database == "master") {
-    indexManagers.put("users",       context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="users"))
-    indexManagers.put("permissions", context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="permissions"))
-    val actor = indexManagers.get("users")
-    actor.tell(new InsertRowMessage("admin", "admin".getBytes("UTF-8")), self)
+
+
+  /**
+    *
+    */
+  override def preStart(): Unit = {
+    val dbDirectory = new File(StaticSettings.dataPath+"\\"+self.path.name)
+    if(dbDirectory.exists()) {
+      val mapsDirectory = dbDirectory.listFiles()
+      for (child <- mapsDirectory) {
+        indexManagers.put(child.getName, context.actorOf(Props[IndexManager], name = child.getName))
+      }
+    } else {
+      if(self.path.name == "master") {
+        indexManagers.put("users",       context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="users"))
+        indexManagers.put("permissions", context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="permissions"))
+        val actor = indexManagers.get("users")
+        actor.tell(new InsertRowMessage("admin", "admin".getBytes("UTF-8")), self)
+      }
+    }
   }
+
 
   /**
     * Processes all incoming messages.
@@ -87,7 +104,7 @@ class MapManager(database: String) extends ReplyActor {
         // If the storefinder doesn't exists
         else {
           // Add the storefinder
-          indexManagers.put(name, context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress)))))
+          indexManagers.put(name, context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress))),name = name))
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }

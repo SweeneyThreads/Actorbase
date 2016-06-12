@@ -58,10 +58,10 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   var leftChild: Child = null
   var rightChild: Child = null
 
-  if(map.keySet().size() > StaticSettings.maxRowNumber) {
+  /*if(map.keySet().size() > StaticSettings.maxRowNumber) {
     log.info("Trying to create a Storemanager with too big map, Storemanager splitted automatically")
     divideActor()
-  }
+  }*/
 
 
   /**

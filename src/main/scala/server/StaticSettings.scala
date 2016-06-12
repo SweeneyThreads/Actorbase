@@ -10,7 +10,8 @@ import akka.actor.ActorRef
   */
 object StaticSettings   {
   var mapManagerRefs = new ConcurrentHashMap[String, ActorRef]()
-  var maxRowNumber = 2
+  var maxRowNumber = 256
   var ninjaNumber = 1
   var warehousemanNumber = 1
+  var dataPath = "d:\\data\\actorbase_data"
 }

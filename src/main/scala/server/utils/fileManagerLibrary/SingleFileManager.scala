@@ -4,6 +4,7 @@ import java.io._
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
+import server.StaticSettings
 import server.utils.FileManager
 
 /**
@@ -13,9 +14,38 @@ import server.utils.FileManager
 /**
   * il file delle key ha come prima riga il path del gifafilemagico delle value
   *
-  * @param path
+  * @param dbName the database Name.
+  * @param mapName the map Name.
+  *
   */
-class SingleFileManager (path : String, valuesPath : String) extends FileManager {
+class SingleFileManager (dbName: String, mapName: String) extends FileManager {
+
+  //checking folder tree
+  val dbFolder = new File(s"${StaticSettings.dataPath}\\$dbName")
+  if (!dbFolder.exists) dbFolder.mkdir
+  val mapFolder = new File(s"${StaticSettings.dataPath}\\$dbName\\$mapName")
+  if (!mapFolder.exists) mapFolder.mkdir
+
+
+
+  /**
+    * The absolute path of the keyFile.
+    */
+  val keyFilePath : String = s"${StaticSettings.dataPath}\\$dbName\\$mapName\\keyFile.acb"
+
+  //Create one empty map if not already exists
+  val keyFile = new File(keyFilePath)
+  if (!keyFile.exists) {
+    keyFile.createNewFile
+    val map=new ConcurrentHashMap[String,Bounds]()
+    writeMap(map)
+  }
+
+  /**
+    * The absolute path of the valueFile.
+    */
+  val valuesPath : String = s"${StaticSettings.dataPath}\\$dbName\\$mapName\\valueFile.acb"
+
 
   /**
     * sets the strategy for deleting one entry in the file that stores the values
@@ -169,7 +199,7 @@ class SingleFileManager (path : String, valuesPath : String) extends FileManager
     * @return the map of the keys.
     */
   private def readMap(): ConcurrentHashMap[String,Bounds] = {
-    val istream = new ObjectInputStream(new FileInputStream(path))
+    val istream = new ObjectInputStream(new FileInputStream(keyFilePath))
     val keyMap = istream.readObject().asInstanceOf[ConcurrentHashMap[String,Bounds]]
     istream.close()
     keyMap
@@ -181,7 +211,7 @@ class SingleFileManager (path : String, valuesPath : String) extends FileManager
     * @param map  Map of they keys to serialize.
     */
   private def writeMap(map: ConcurrentHashMap[String,Bounds]) : Unit = {
-    val ostream = new ObjectOutputStream(new FileOutputStream(path))
+    val ostream = new ObjectOutputStream(new FileOutputStream(keyFilePath))
     ostream.writeObject(map)
     ostream.close()
   }

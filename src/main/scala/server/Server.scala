@@ -1,6 +1,6 @@
 package server
 
-import java.io.FileNotFoundException
+import java.io.{File, FileNotFoundException}
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, ActorSystem, Props}
@@ -67,10 +67,28 @@ object Server {
     * @param system The actor system.
     */
   private def loadDatabases(system: ActorSystem): Unit = {
+    val folder = new File(StaticSettings.dataPath)
+    //if the root dataFolder does not exist -> create it and put inside default databases
+    if (!folder.exists) {
+      folder.mkdir
+      system.actorOf(Props[MapManager], name="test")
+      system.actorOf(Props[MapManager], name="master")
+      log.info("Generated default databases [- - - this should be the first time you launch ActorBase," +
+        " or if you changed default dataFolder in the StaticSettings - - - ]")
+    } else {
+      // save the list of the folder inside the root dataFolder
+      val dbsDirectory = folder.listFiles
+      for(child <- dbsDirectory) {
+        system.actorOf(Props[MapManager], name=child.getName)
+      }
+      log.info(s"Databases loaded from ${StaticSettings.dataPath}")
+    }
+  }
+  /*private def loadDatabases(system: ActorSystem): Unit = {
     system.actorOf(Props(new MapManager("test")), name="test")
     system.actorOf(Props(new MapManager("master")), name="master")
     log.info("Databases loaded")
-  }
+  }*/
 
   /**
     * Reads the doorkeeper's configuration file and creates the Doorkeeper

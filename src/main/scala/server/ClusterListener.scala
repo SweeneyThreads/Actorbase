@@ -105,7 +105,6 @@ class ClusterListener extends Actor with ActorLogging{
   def nextAddress(): Address = {
     // increment the number of requests
     counter=counter+1
-    println(counter)
     // counter % nNodes will select addresses in a Round Robin way and returns it
     addresses.get(counter%nNodes)
   }

@@ -50,4 +50,5 @@ trait FileManager {
     * @return The map to read.
     */
   def ReadMap() :  ConcurrentHashMap[String, Array[Byte]]
+
 }

@@ -26,6 +26,8 @@ import scala.util.{Failure, Success}
   */
 class Usermanager extends ReplyActor {
 
+  println(s"Usermanager Created with name: ${self.path.name}")
+
   import Tcp._
 
   // The parser instance
@@ -223,6 +225,7 @@ class Usermanager extends ReplyActor {
                 val array = reply.info.asInstanceOf[FindInfo].value
                 singleUserPermission =
                   serializer.deserialize(array).asInstanceOf[util.HashMap[String, UserPermission]]
+
               }
               case EnumReplyResult.Error => {
                 reply.info.asInstanceOf[KeyAlreadyExistInfo]

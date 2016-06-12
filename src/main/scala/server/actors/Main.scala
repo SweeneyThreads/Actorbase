@@ -191,7 +191,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
         // If the selected database doesn't exist
         else {
           // Add the new database
-          context.system.actorOf(Props(new MapManager(dbName)).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
+          context.system.actorOf(Props[MapManager].withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }

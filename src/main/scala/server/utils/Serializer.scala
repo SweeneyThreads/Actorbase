@@ -18,7 +18,7 @@ class Serializer {
     val o: ObjectOutputStream = new ObjectOutputStream(b)
     o.writeObject(obj)
 
-    return b.toByteArray()
+    b.toByteArray
   }
 
   /**
@@ -29,7 +29,7 @@ class Serializer {
     val b: ByteArrayInputStream = new ByteArrayInputStream(array)
 
     val o: ObjectInputStream = new ObjectInputStream(b)
-    return o.readObject();
+    o.readObject()
 
   }
 

@@ -1,5 +1,9 @@
 package server.messages.internal
 
+import java.util.concurrent.ConcurrentHashMap
+
+import server.messages.query.ReplyInfo
+
 import scala.collection.immutable.HashMap
 
 /**
@@ -18,8 +22,8 @@ object StorageMessages {
 
   /**
     * A WriteMapMessage is used to write data to disk during shut down operation.
-    * @param map The map of data that has to be written
     *
+    * @param map The map of data that has to be written
     * @see StorageMessage
     */
   case class WriteMapMessage (map: HashMap[String, Array[Byte]]) extends StorageMessage
@@ -30,4 +34,7 @@ object StorageMessages {
     * @see StorageMessage
     */
   case class ReadMapMessage () extends StorageMessage
+
+
+  case class ReadMapReply(val map: ConcurrentHashMap[String,Array[Byte]]) extends StorageMessage
 }

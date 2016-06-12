@@ -52,7 +52,7 @@ class MapManagerTest extends FlatSpec with Matchers with MockFactory {
   "StoremanagerActor" should "actually return true if the storemanager contains the map asked with an AskMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef=TestActorRef(new MapManager("test"))
+    val actorRef=TestActorRef[MapManager]
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     //put a storefinder in storefinders map
@@ -82,7 +82,7 @@ class MapManagerTest extends FlatSpec with Matchers with MockFactory {
   it should "actually return correct maplist when receiving a ListMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef=TestActorRef(new MapManager("test"))
+    val actorRef=TestActorRef[MapManager]
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     // putting extra maps in the storefinders map
@@ -105,7 +105,7 @@ class MapManagerTest extends FlatSpec with Matchers with MockFactory {
   it should "create the correct map and reply correctly or send the correct error when receving a CreateMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef=TestActorRef(new MapManager("test"))
+    val actorRef=TestActorRef[MapManager]
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     actor.clusterListener=System.actorOf(Props[ClusterListener])
@@ -135,7 +135,7 @@ class MapManagerTest extends FlatSpec with Matchers with MockFactory {
   it should "delete the correct map and reply correctly or send the correct error when receving a DeleteMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef=TestActorRef(new MapManager("test"))
+    val actorRef=TestActorRef[MapManager]
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     // putting extra maps in the storefinders map
@@ -168,7 +168,7 @@ class MapManagerTest extends FlatSpec with Matchers with MockFactory {
   it should "actually return the FakeStorefinder answer" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef=TestActorRef(new MapManager("test"))
+    val actorRef=TestActorRef[MapManager]
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     val value=new Array[Byte](123)
