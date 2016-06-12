@@ -1,3 +1,32 @@
+/*
+ * The MIT License (MIT)
+ * <p/>
+ * Copyright (c) 2016 SWEeneyThreads
+ * <p/>
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * <p/>
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * <p/>
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * <p/>
+ *
+ * @author SWEeneyThreads
+ * @version 0.0.1
+ * @since 0.0.1
+ */
+
 package server.actors
 
 import java.util.concurrent.ConcurrentHashMap
@@ -14,18 +43,7 @@ import scala.language.postfixOps
 import scala.util.{Failure, Random, Success}
 import server.StaticSettings
 import server.messages.internal.LinkMessages.{BecomeStorefinderNinjaMessage, LinkMessage}
-import akka.actor.OneForOneStrategy
-import akka.actor.SupervisorStrategy._
-import akka.util.Timeout
-
-import scala.concurrent.duration._
 import akka.pattern.ask
-import akka.dispatch.ExecutionContexts._
-
-
-/**
-  * Created by matteobortolazzo on 03/06/2016.
-  */
 
 /**
   * A Storemanager manages data stored in RAM
@@ -106,7 +124,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     * Handles RemoveRowMessage messages removing an entry with the given key.
     * Handles FindRowMessage messages returning the value of an entry with the given key.
     *
-    * @param message The RowMessage message to precess.
+    * @param message The RowMessage message to process.
     * @see RowMessage
     * @see ReplyMessage
     */
@@ -304,7 +322,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     * and returning the complete list.
     * All other RowMessage messages are sent to the right Storekeeper actor.
     *
-    * @param message The RowMessage message to precess.
+    * @param message The RowMessage message to process.
     * @see #sendToStorekeeper(String, RowMessage)
     * @see RowMessage
     * @see ListKeysMessage
@@ -399,7 +417,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     * Handles FindRowMessage message replying to the sender
     * Handles ListKeysMessage message replying to the sender
     *
-    * @param message The RowMessage message to precess.
+    * @param message The RowMessage message to process.
     * @see RowMessage
     * @see ReplyMessage
     */
@@ -474,7 +492,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   /**
     * Processes RowMessage messages as StorefinderNinja.
     *
-    * @param message The RowMessage message to precess.
+    * @param message The RowMessage message to process.
     * @see RowMessage
     * @see ReplyMessage
     */

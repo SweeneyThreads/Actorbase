@@ -25,3 +25,5 @@ out
 
 # Mac OSX
 .DS_Store
+
+*.acb

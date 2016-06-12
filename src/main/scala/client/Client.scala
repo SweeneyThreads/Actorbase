@@ -1,9 +1,36 @@
+
+/*
+ * The MIT License (MIT)
+ * <p/>
+ * Copyright (c) 2016 SWEeneyThreads
+ * <p/>
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * <p/>
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * <p/>
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * <p/>
+ *
+ * @author SWEeneyThreads
+ * @version 0.0.1
+ * @since 0.0.1
+ */
+
 package client
 import driver.{Connection, Driver}
 
-/**
-  * Created by matteobortolazzo on 01/05/2016.
-  */
 
 /**
   * A command line client instance. Contains the main method of the command line client-side of Actorbase.
@@ -13,7 +40,7 @@ object Client {
   private var connection: Connection = null
 
   def main(args: Array[String]): Unit = {
-    Welcome.printWelcomeMessage
+    Welcome.printWelcomeMessage()
     // Readline loop
     print("> ")
     for (ln <- io.Source.stdin.getLines) {
@@ -82,27 +109,4 @@ object Client {
       println("Please connect first")
     }
   }
-
-
-  /*def convertQuery(query:String): String = {
-      var command = query
-      import java.utils.Base64
-      import java.nio.charset.StandardCharsets
-
-      val keyvalue = getKeyValue(query)
-      // If the command is an insert or an udpdate, change the command to send to the server
-      if(keyvalue != null)
-        // Convert the value to Base64
-        command = keyvalue._1 + " '" + keyvalue._2 + "' " + Base64.getEncoder.encodeToString(keyvalue._3.getBytes(StandardCharsets.UTF_8))
-      return command
-    }
-
-    /** Returns the key and the value if it's an insert or update command*/
-    def getKeyValue(query:String): (String, String, String) = {
-      val pattern = "(\\S+)\\s\\'(.+)\\'\\s(\\S+)$".r
-      val result = pattern.findFirstMatchIn(query)
-      if (result.isDefined)
-        return (result.get.group(1), result.get.group(2), result.get.group(3))
-        return null
-    }*/
 }
