@@ -41,5 +41,5 @@ object StaticSettings   {
   var maxRowNumber = 2
   var ninjaNumber = 1
   var warehousemanNumber = 1
-  var dataPath = "d:\\data\\actorbase_data"
+  var dataPath = "c:\\data"
 }
