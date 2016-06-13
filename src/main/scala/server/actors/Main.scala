@@ -190,7 +190,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
         // If the database is empty it return a 'no dbs error'
         if (dbs.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoDBInfo()))
         // Otherwise it return the list of dbs
-        else reply(ReplyMessage(EnumReplyResult.Done, message, ListDBInfo(dbs)))
+        else    reply(ReplyMessage(EnumReplyResult.Done, message, ListDBInfo(dbs.sorted)))
       }
       // If the user types 'selectdb <db_name>'
       case SelectDatabaseMessage(name: String) => {
