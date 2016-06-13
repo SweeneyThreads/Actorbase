@@ -30,6 +30,7 @@
 package server.actors
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorRef, Props}
 import server.enums.EnumReplyResult
@@ -44,6 +45,10 @@ import scala.util.{Failure, Random, Success}
 import server.StaticSettings
 import server.messages.internal.LinkMessages.{BecomeStorefinderNinjaMessage, LinkMessage}
 import akka.pattern.ask
+
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 /**
   * A Storemanager manages data stored in RAM
@@ -174,7 +179,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
       }
       // If the user types "listkey"
       case ListKeysMessage() => {
-        if (map.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoKeyInfo()))
+        if (map.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoKeysInfo()))
         // Create the list of key
         var keys = List[String]()
         // For each key, add to the list
@@ -256,63 +261,47 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     val origSender = sender
     //  list used to save all the keys of the map. initially Empty
     var keys = List[String]()
-
     // Generate a random Int between 0 and the number of leftChild's ninjas + 1
     val random = new Random()
     val randomNumber = random.nextInt(leftChild.ninjas.length + 1)
-    // Select the actor to send the message based on the random number
+    // Choose a left child randomly
     var leftActor: ActorRef = null
-    if (randomNumber < leftChild.ninjas.length) {
-      leftActor = leftChild.ninjas(randomNumber)
-    }
-    else {
-      leftActor = leftChild.actor
-    }
-
+    if (randomNumber < leftChild.ninjas.length) leftActor = leftChild.ninjas(randomNumber)
+    else leftActor = leftChild.actor
+    // Choose a right child randomly
+    var rightActor: ActorRef = null
+    if (randomNumber < rightChild.ninjas.length) rightActor = rightChild.ninjas(randomNumber)
+    else rightActor = rightChild.actor
+    // Launch the two futures
+    val futures = new ListBuffer[Future[ReplyMessage]]
     val leftFuture = leftActor ? message
-
-    // When the left branch has completed the requests save results and ask the right branch
+    val rightFuture = rightActor ? message
+    futures += leftFuture.asInstanceOf[Future[ReplyMessage]]
+    futures += rightFuture.asInstanceOf[Future[ReplyMessage]]
+    // Handles the left future
     leftFuture.onComplete {
       case Success(result1) => {
-        val res1 = result1.asInstanceOf[ReplyMessage].info.asInstanceOf[ListKeyInfo].keys
-        if (res1.nonEmpty) keys = keys ::: res1
-
-        // Generate a random Int between 0 and the number of leftChild's ninjas + 1
-        val random = new Random()
-        val randomNumber = random.nextInt(rightChild.ninjas.length + 1)
-        // Select the actor to send the message based on the random number
-        var rightActor: ActorRef = null
-        if (randomNumber < rightChild.ninjas.length) {
-          rightActor = rightChild.ninjas(randomNumber)
+        val reply = result1.asInstanceOf[ReplyMessage]
+        reply.result match {
+          case Done => keys = keys ::: reply.info.asInstanceOf[ListKeyInfo].keys
         }
-        else {
-          rightActor = rightChild.actor
-        }
-
-        val rightFuture = rightActor ? message
-        // When the right branch has completed merge results
-        rightFuture.onComplete {
-          case Success(result2) => {
-            val res2 = result2.asInstanceOf[ReplyMessage].info.asInstanceOf[ListKeyInfo].keys
-            if (res2.nonEmpty) keys = keys ::: res2
-
-            if (keys.isEmpty) reply(ReplyMessage(Error, message, NoKeyInfo()), origSender)
-
-            else reply(ReplyMessage(Done, message, ListKeyInfo(keys.sorted)), origSender)
-          }
-          case Failure(t2) => {
-            log.error("Error sending message: " + t2.getMessage)
-            reply(new ReplyMessage(EnumReplyResult.Error, message,
-              new ServiceErrorInfo("Error sending message: " + t2.getMessage)), origSender)
-          }
-        }
-      }
-      case Failure(t1) => {
-        log.error("Error sending message: " + t1.getMessage)
-        reply(new ReplyMessage(EnumReplyResult.Error, message,
-          new ServiceErrorInfo("Error sending message: " + t1.getMessage)), origSender)
       }
     }
+    // Handles the right future
+    rightFuture.onComplete {
+      case Success(result1) => {
+        val reply = result1.asInstanceOf[ReplyMessage]
+        reply.result match {
+          case Done => keys = keys ::: reply.info.asInstanceOf[ListKeyInfo].keys
+        }
+      }
+    }
+    val f = Future.sequence(futures.toList)
+    Await.ready(f, Duration.Inf)
+    // If the key list is empty
+    if(keys.isEmpty)
+      reply(ReplyMessage(Error, message, new NoKeysInfo), origSender)
+    reply(ReplyMessage(Done, message, new ListKeyInfo(keys.sorted)), origSender)
   }
 
   /**
@@ -450,7 +439,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
       }
       // If the user types "listkey"
       case ListKeysMessage() => {
-        if (map.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoKeyInfo()))
+        if (map.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoKeysInfo()))
         // Create the list of key
         var keys = List[String]()
         // For each key, add to the list
