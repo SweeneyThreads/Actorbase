@@ -403,6 +403,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * This method handle a 'listuser' command of admin. This command lets the admin have a list of all the user
     * in the 'users' map in the 'master' database. It through the list of users, printing the username of each one.
     * The command takes no parameters, as it just print the whole list of users.
+    *
     * @param message The ListUserMessage to process.
     */
   private def handleListUserMessage(message: ListUserMessage): Unit = {
@@ -413,16 +414,14 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
       // Reply the usermanager with the reply from the storemanager
       case Success(result) => {
         val resultMessage = result.asInstanceOf[ReplyMessage]
+        selectedDatabase = ""
+        selectedMap = ""
         resultMessage.result match {
           case EnumReplyResult.Done => {
             val userList: List[String] = resultMessage.info.asInstanceOf[ListKeyInfo].keys
-            selectedDatabase = ""
-            selectedMap = ""
             reply(ReplyMessage(EnumReplyResult.Done, message, new ListUserInfo(userList)), origSender)
           }
           case EnumReplyResult.Error => {
-            selectedDatabase = ""
-            selectedMap = ""
             if (resultMessage.info.isInstanceOf[NoKeyInfo])
               reply(ReplyMessage(EnumReplyResult.Error, message, new NoUserInfo()), origSender)
             else
@@ -451,7 +450,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * @see RowMessage
     * @see Storemanager
     */
-  private def handleAddUserMessage(message: AddUserMessage, username: String, password : String): Unit = {
+  private def handleAddUserMessage(message: AddUserMessage, username: String, password: String): Unit = {
     val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
     // Save the original sender
     val origSender = sender
@@ -460,15 +459,23 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     future.onComplete {
       // Reply the usermanager with the reply from the storemanager
       case Success(result) => {
-        val singleUserPermissions: util.HashMap[String, EnumPermission.UserPermission] =
-          new util.HashMap[String, EnumPermission.UserPermission]()
-        val serializer: Serializer = new Serializer()
-        val mapSerialized = serializer.serialize(singleUserPermissions)
-        selectedMap = "permissions"
-        handleRowMessage(new InsertRowMessage(username, mapSerialized))
-        selectedMap = ""
-        selectedDatabase = ""
-        reply(ReplyMessage(EnumReplyResult.Error, message, new AddUserInfo()), origSender)
+        val resultMessage = result.asInstanceOf[ReplyMessage]
+        resultMessage.result match {
+          case EnumReplyResult.Done => {
+            val singleUserPermissions: util.HashMap[String, EnumPermission.UserPermission] =
+              new util.HashMap[String, EnumPermission.UserPermission]()
+            val serializer: Serializer = new Serializer()
+            val mapSerialized = serializer.serialize(singleUserPermissions)
+            selectedMap = "permissions"
+            handleRowMessage(new InsertRowMessage(username, mapSerialized))
+            reply(ReplyMessage(EnumReplyResult.Done, message, new AddUserInfo()), origSender)
+          }
+          case EnumReplyResult.Error => {
+            selectedMap = ""
+            selectedDatabase = ""
+            reply(ReplyMessage(EnumReplyResult.Error, message, new KeyAlreadyExistInfo()), origSender)
+          }
+        }
       }
       case Failure(t) => {
         log.error("Error sending message: " + t.getMessage);
@@ -497,11 +504,21 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     future.onComplete {
       // Reply the usermanager with the reply from the storemanager
       case Success(result) => {
-        selectedMap = "permissions"
-        handleRowMessage(new RemoveRowMessage(username))
-        selectedMap = ""
-        selectedDatabase = ""
-        reply(ReplyMessage(EnumReplyResult.Error, message, new RemoveUserInfo()), origSender)
+        val resultMessage = result.asInstanceOf[ReplyMessage]
+        resultMessage.result match {
+          case EnumReplyResult.Done => {
+            selectedMap = "permissions"
+            handleRowMessage(new RemoveRowMessage(username))
+            selectedMap = ""
+            selectedDatabase = ""
+            reply(ReplyMessage(EnumReplyResult.Done, message, new RemoveUserInfo()), origSender)
+          }
+          case EnumReplyResult.Error => {
+            selectedMap = ""
+            selectedDatabase = ""
+            reply(ReplyMessage(EnumReplyResult.Error, message, new KeyDoesNotExistInfo()), origSender)
+          }
+        }
       }
       case Failure(t) => {
         log.error("Error sending message: " + t.getMessage);
@@ -552,7 +569,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
   private def handlePermissionsListMessage(message: ListPermissionMessage): Unit = {
     val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
     val origSender = sender
-    val future = sm ? StorefinderRowMessage(selectedMap, new FindRowMessage(message.username))
+    val future = sm ? StorefinderRowMessage("permissions", new FindRowMessage(message.username))
     future.onComplete {
       case Success(result) => {
         val resultMessage = result.asInstanceOf[ReplyMessage]
@@ -568,25 +585,11 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
               new ListPermissionsInfo(singleUserPermissions)), origSender)
           }
           case EnumReplyResult.Error => {
-            if (resultMessage.info.isInstanceOf[KeyDoesNotExistInfo]){
-              val singleUserPermissions : util.HashMap[String, EnumPermission.UserPermission] =
-                new util.HashMap[String, EnumPermission.UserPermission]()
-              val serializer: Serializer = new Serializer()
-              val mapSerialized = serializer.serialize(singleUserPermissions)
-              val toInsert = sm ? StorefinderRowMessage(selectedMap, new InsertRowMessage(message.username, mapSerialized))
-              toInsert.onComplete{
-                case Success(result) => {
-                  handlePermissionsListMessage(message)
-                }
-                case Failure(t) => {
-                  log.error("Error sending message: " + t.getMessage);
-                  reply(new ReplyMessage(EnumReplyResult.Error, message,
-                    new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
-                }
+            resultMessage.info match {
+              case KeyDoesNotExistInfo() => {
+                reply(new ReplyMessage(EnumReplyResult.Error, message, new NoKeyInfo()), origSender )
               }
             }
-            else
-              reply(new ReplyMessage(EnumReplyResult.Error, message, new ReplyErrorInfo()), origSender)
           }
         }
       }
@@ -632,20 +635,15 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
                   case EnumReplyResult.Error => {
                     selectedDatabase = ""
                     selectedMap = ""
-                    reply(ReplyMessage(EnumReplyResult.Error, message, new ReplyErrorInfo())) // should never get there
+                    reply(ReplyMessage(EnumReplyResult.Error, message, new KeyDoesNotExistInfo())) //should never get there
                   }
                 }
               }
             }
           }
           case EnumReplyResult.Error => {
-            val serializer: Serializer = new Serializer
-            val singleUserPermissions: util.HashMap[String, EnumPermission.UserPermission] =
-              new util.HashMap[String, EnumPermission.UserPermission]
-            val permissionsSerialized: Array[Byte] = serializer.serialize(singleUserPermissions)
-            val userPermissions = sm ? StorefinderRowMessage(selectedMap,
-              new InsertRowMessage(message.username, permissionsSerialized))
-            handleAddPermissionMessage(message)
+            if (result.asInstanceOf[ReplyMessage].info.isInstanceOf[KeyDoesNotExistInfo])
+              reply(ReplyMessage(EnumReplyResult.Error, message, new KeyDoesNotExistInfo()), origSender)
           }
         }
       }
@@ -675,7 +673,8 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
             val array = result.asInstanceOf[ReplyMessage].info.asInstanceOf[FindInfo].value
             val singleUserPermissions: util.HashMap[String, EnumPermission.UserPermission] =
               serializer.deserialize(array).asInstanceOf[util.HashMap[String, UserPermission]]
-            singleUserPermissions.remove(message.database)
+            if (singleUserPermissions.remove(message.database) == null)
+              reply(ReplyMessage(EnumReplyResult.Error, message, new KeyDoesNotExistInfo()), origSender)
             val permissionsSerialized: Array[Byte] = serializer.serialize(singleUserPermissions)
             val replyMes = sm ? StorefinderRowMessage(selectedMap,
               new UpdateRowMessage(message.username, permissionsSerialized))
@@ -777,10 +776,10 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * afterwards type 'updatesettings' on console.
     */
   private def refreshStaticSetting(): Unit = {
-    var newSettings : util.HashMap[ActorProperties, Integer] = new util.HashMap[ActorProperties, Integer]()
+    var newSettings: util.HashMap[ActorProperties, Integer] = new util.HashMap[ActorProperties, Integer]()
     val confManager = new ConfigurationManager
     newSettings = confManager.readActorsProperties();
-    for (k <- newSettings.keySet() ){
+    for (k <- newSettings.keySet()) {
       k match {
         case EnumActorsProperties.MaxRowNumber => StaticSettings.maxRowNumber = newSettings.get(k)
         case EnumActorsProperties.NinjaNumber => StaticSettings.ninjaNumber = newSettings.get(k)

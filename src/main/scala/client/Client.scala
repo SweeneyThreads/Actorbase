@@ -41,6 +41,7 @@ object Client {
 
   def main(args: Array[String]): Unit = {
     Welcome.printWelcomeMessage()
+    tryFirstLoginOnLocalHost()
     // Readline loop
     print("> ")
     for (ln <- io.Source.stdin.getLines) {
@@ -107,6 +108,28 @@ object Client {
     }
     else {
       println("Please connect first")
+    }
+  }
+
+  /**
+    * Tries to connect to localhost:8181 as an admin user. This is so if you start a server on the same machine of the
+    * client, you don't need to try to connect on localhost:8181 as an admin. If connection fails, it start with the
+    * readline loop on the main thread
+    */
+  def tryFirstLoginOnLocalHost(): Unit = {
+    val pattern = "connect\\s(\\S+):([0-9]*)\\s(\\S+)\\s(\\S+)$".r
+    val result = pattern.findFirstMatchIn("connect localhost:8181 admin admin")
+    // If it's a connection command
+    if (result.isDefined) {
+      val regex = result.get
+      try {
+        connection = Driver.connect(regex.group(1), Integer.parseInt(regex.group(2)), regex.group(3), regex.group(4))
+      }catch{
+        case ie:InterruptedException => connection.closeConnection(); connection = null; println("response time expired server, please reconnect to the server")
+      }
+      if (connection != null) {
+        println("You are connected on localhost:8181 - you're the admin user.")
+      }
     }
   }
 }

@@ -55,7 +55,7 @@ class Helper {
   helpMessages.put("listuser",        "       listuser                                                    show the list of all the users")
   helpMessages.put("adduser",         "       adduser <username> <password>                               add a new user")
   helpMessages.put("removeuser",      "       removeuser <username>                                       remove an existing user")
-  helpMessages.put("listpermissions", "       listpermissions <username>                                  show the list of the permissions an user has")
+  helpMessages.put("listpermission",  "       listpermissions <username>                                  show the list of the permissions an user has")
   helpMessages.put("addpermission",   "       addpermission <username> <database_name> <permission_type>  add or update an user permission for a specific database")
   helpMessages.put("removepermission","       removepermission <username> <database_name>                 remove an existing user permission")
 

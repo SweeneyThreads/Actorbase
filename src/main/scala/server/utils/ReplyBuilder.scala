@@ -133,11 +133,11 @@ class ReplyBuilder {
       case ListUserMessage() => {
         reply.result match {
           case EnumReplyResult.Done => {
-            val list : List[String] = reply.info.asInstanceOf[ListUserInfo].userList
-            if ( list.size == 0 )
+            val list: List[String] = reply.info.asInstanceOf[ListUserInfo].userList
+            if (list.size == 0)
               return "No users at the moment, please insert some users."
-            var toReturn : String = ""
-            for (l <- list){
+            var toReturn: String = ""
+            for (l <- list) {
               toReturn = toReturn.concat(l + "\n")
             }
             toReturn = toReturn.dropRight(1)
@@ -151,8 +151,31 @@ class ReplyBuilder {
           }
         }
       }
-      case AddUserMessage(username: String, password: String) => return "User " + username + " has been added."
-      case RemoveUserMessage(username: String) => return "User " + username + " has been removed."
+      case AddUserMessage(username: String, password: String) => {
+        reply.result match {
+          case EnumReplyResult.Done => {
+            return "User " + username + " has been added."
+          }
+          case EnumReplyResult.Error => {
+            if(reply.info.isInstanceOf[KeyAlreadyExistInfo])
+              return "User " + username + " already exist."
+            else
+              return "WTF?!? Should not reach that point"
+          }
+        }
+      }
+      case RemoveUserMessage(username: String) => {
+        reply.result match {
+          case EnumReplyResult.Done => {
+            return "User " + username + " has been removed."
+          }
+          case EnumReplyResult.Error => {
+            reply.info match {
+              case KeyDoesNotExistInfo() => return "This user does not exist. You can't remove a non-existing user."
+            }
+          }
+        }
+      }
       case _ => "" //TODO
     }
   }
@@ -172,7 +195,7 @@ class ReplyBuilder {
     reply.question match {
       case ListPermissionMessage(username: String) => {
         reply.result match {
-          case Done => {
+          case EnumReplyResult.Done => {
             reply.info match {
               case ListPermissionsInfo(map: util.HashMap[String, UserPermission]) => {
                 var result: String = ""
@@ -200,12 +223,29 @@ class ReplyBuilder {
             return "Permission " + permissionType.toString + " added to user " + username + " on database " + database
           }
           case EnumReplyResult.Error => {
-            return "Something went wrong, try again."
+            reply.info match {
+              case KeyDoesNotExistInfo() => {
+                return "This user doesn't exist."
+              }
+              case _ => return "Something went wrong, try again."
+            }
           }
         }
       }
       case RemovePermissionMessage(username: String, database: String) => {
-        return "Removed all permissions of " + username + " on DB " + database;
+        reply.result match {
+          case EnumReplyResult.Done => {
+            return "Removed all permissions of " + username + " on DB " + database;
+          }
+          case EnumReplyResult.Error => {
+            reply.info match {
+              case KeyDoesNotExistInfo() => {
+                return "That user didn't have that permission on the given database."
+              }
+              case _ => return "Something went wrong, try again."
+            }
+          }
+        }
       }
       case _ => "" //TODO
     }
@@ -218,7 +258,7 @@ class ReplyBuilder {
     * @param reply the ReplyMessage message
     * @return The reply string.
     */
-  private def SettingMessagesReply(reply: ReplyMessage) : String = {
+  private def SettingMessagesReply(reply: ReplyMessage): String = {
     reply.question match {
       case RefreshSettingsMessage() => return "Permissions has been updated."
       case _ => "" //TODO
