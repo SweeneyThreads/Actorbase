@@ -403,7 +403,11 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * This method handle a 'listuser' command of admin. This command lets the admin have a list of all the user
     * in the 'users' map in the 'master' database. It through the list of users, printing the username of each one.
     * The command takes no parameters, as it just print the whole list of users.
+<<<<<<< HEAD
     *
+=======
+ *
+>>>>>>> origin/dev
     * @param message The ListUserMessage to process.
     */
   private def handleListUserMessage(message: ListUserMessage): Unit = {
@@ -422,7 +426,13 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
             reply(ReplyMessage(EnumReplyResult.Done, message, new ListUserInfo(userList)), origSender)
           }
           case EnumReplyResult.Error => {
+<<<<<<< HEAD
             if (resultMessage.info.isInstanceOf[NoKeyInfo])
+=======
+            selectedDatabase = ""
+            selectedMap = ""
+            if (resultMessage.info.isInstanceOf[NoKeysInfo])
+>>>>>>> origin/dev
               reply(ReplyMessage(EnumReplyResult.Error, message, new NoUserInfo()), origSender)
             else
               reply(ReplyMessage(EnumReplyResult.Error, message, new ReplyErrorInfo()), origSender)
@@ -698,7 +708,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
           case EnumReplyResult.Error => {
             selectedDatabase = ""
             selectedMap = ""
-            reply(ReplyMessage(EnumReplyResult.Error, message, new NoKeyInfo()), origSender)
+            reply(ReplyMessage(EnumReplyResult.Error, message, new NoKeysInfo()), origSender)
           }
         }
       }

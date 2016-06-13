@@ -133,7 +133,7 @@ object RowMessages {
     *
     * @see ReplyInfo
     */
-  case class NoKeyInfo() extends ReplyInfo
+  case class NoKeysInfo() extends ReplyInfo
 
   /**
     * A FindInfo is used as response to a find item request, returning the value of the item.

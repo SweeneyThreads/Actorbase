@@ -33,6 +33,7 @@ import java.io.{File, FileNotFoundException}
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.cluster.Cluster
 import akka.dispatch.ExecutionContexts._
 import akka.event.{Logging, LoggingAdapter}
 import akka.remote.RemoteTransportException
@@ -65,7 +66,14 @@ object Server {
   def main(args: Array[String]) {
     val conf = ConfigFactory.load()
     try {
-      val system = ActorSystem("System", conf)
+      // Create the actor system
+      val system = ActorSystem("ActorbaseSystem", conf)
+      // Create the cluster
+      val cluster = Cluster(system)
+      // If this node has a Doorkeeper node it creates doorkeepers
+      if (cluster.selfRoles contains "Doorkeeper"){
+        createDoorkeepers(system)
+      }
       log = Logging.getLogger(system, this)
 
       clusterListener = system.actorOf(Props[ClusterListener])
@@ -73,7 +81,6 @@ object Server {
       sKclusterListener = system.actorOf(Props[ClusterListener])
 
       loadDatabases(system)
-      createDoorkeepers(system)
       log.info("Server started")
     }
       //TODO REMOVE that shit, it ain't workin'

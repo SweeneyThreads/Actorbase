@@ -212,7 +212,7 @@ class ReplyBuilder {
           }
           case EnumReplyResult.Error => {
             reply.info match {
-              case NoKeyInfo() => "User does not exist."
+              case NoKeysInfo() => "User does not exist."
             }
           }
         }
@@ -531,7 +531,7 @@ class ReplyBuilder {
           case ListKeysMessage() => {
             //possible info for a failed ListKeysMessage
             reply.info match {
-              case NoKeyInfo() => "No key found"
+              case NoKeysInfo() => "No key found"
               case _ => "Unknown info for ListKeysMessage error" //TODO
             }
           }

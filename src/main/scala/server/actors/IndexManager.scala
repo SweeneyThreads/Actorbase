@@ -38,8 +38,8 @@ import akka.actor.{ActorRef, Deploy, Props}
 import akka.remote.RemoteScope
 import server.StaticSettings
 import server.enums.EnumStoremanagerType
-import server.messages.internal.StorageMessages.{ReadMapReply, ReadMapMessage}
-import server.messages.query.user.RowMessages.RowMessage
+import server.messages.internal.StorageMessages.{ReadMapMessage, ReadMapReply}
+import server.messages.query.user.RowMessages.{ListKeysMessage, RowMessage}
 
 import scala.collection.JavaConversions._
 import scala.util.{Failure, Success}
@@ -101,9 +101,8 @@ class IndexManager() extends ReplyActor {
     * @see RowMessage
     */
   private def handleRowMessage(message: RowMessage): Unit = {
-    val origSender = sender
     // Forward the message to the Storemanager
-    storemanager forward  message
+    storemanager forward message
     // Send the message to all Warehouseman actors
     for(wh <- warehousemen) wh.tell(message, self)
   }
