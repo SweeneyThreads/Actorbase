@@ -31,6 +31,7 @@ package driver
 
 import java.io._
 import java.net.{Socket, ServerSocket}
+import java.nio.{ByteOrder, ByteBuffer}
 
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FlatSpec, Matchers}
@@ -74,22 +75,33 @@ class DriverTest  extends FlatSpec with Matchers with MockFactory{
         // put the content of the buffer in the Array of Byte "buf"
         val buf = new Array[Byte](in.available())
         in.read(buf)
-        // creating a byte array without the first byte and cast it to String
+        // check if the first and last two bytes are correct
+        if(buf(0) != 0 &&
+          buf(1) != 1 &&
+          buf(buf.length - 2) != 0 &&
+          buf(buf.length - 1) != 2) throw newExpectationException("query start and end was incorrect")
+        // remove two first byte
+        val bufforlenght =buf.drop(2)
+        // compute the length of the query
+        val lengthBytes = new Array[Byte](4)
+        bufforlenght.copyToArray(lengthBytes, 0, 4)
+        val length = ByteBuffer.wrap(lengthBytes).order(ByteOrder.LITTLE_ENDIAN).getInt()
+        //create the string of the query
         val bufQuery = buf.slice(7, buf.length-2)
         val query: String = new String(bufQuery)
         println(query)
-        if (buf(0) == firstByte && query == "login admin admin") {
+        if (query == "login admin admin") {
           out.print("Y")
           out.flush()
         }
-        else if (buf(0) == firstByte && query == "disconnect") {
+        else if (query == "disconnect") {
           stopped = true
           out.print("Logout OK")
           out.flush()
         }
-        // check if the first byte and the query are correct
-        else if (buf(0) == firstByte && query == queryString) {
-          out.print("Query OK")
+        // check if the query and the query length are correct
+        else if (query == queryString) {
+          out.print(length)
           out.flush()
         }
         else {
@@ -103,13 +115,14 @@ class DriverTest  extends FlatSpec with Matchers with MockFactory{
       fakeSocket.close()
     }
   }
-
+/*TU62 and TU63 and TU64*/
   "Driver connect method" should "create a new connection and return it with if a valid 'connect' command is given" in {
     val thread:Thread = new Thread(new FakeServer())
     thread.start()
     val conn:Connection = Driver.connect("localhost", 8080, "admin", "admin")
     conn.executeQuery("disconnect")
     conn match {
+        //check if the connection is correct
       case c: ConcreteConnection => {
         c.host should be("localhost")
         c.port should be(8080)
@@ -118,7 +131,7 @@ class DriverTest  extends FlatSpec with Matchers with MockFactory{
       }
     }
   }
-
+  /*TU62*/
   "Driver connect method" should "return null if an invalid 'connect' command is given" in {
     val thread:Thread = new Thread(new FakeServer())
     thread.start()
@@ -128,15 +141,15 @@ class DriverTest  extends FlatSpec with Matchers with MockFactory{
     conn2.executeQuery("disconnect")
     conn should be (null)
   }
-
+    /*TU65*/
   "ConcreteConnection executeQuery method" should "send a correct string to server" in {
-    val randomQuery:String = "a query"
-    Thread.sleep(1000)
+    val randomQuery:String = "Random query"
     val thread:Thread = new Thread(new FakeServer(randomQuery))
     thread.start()
     val conn:Connection = new ConcreteConnection("localhost", 8080, "admin", "admin")
     val response = conn.executeQuery(randomQuery)
+    //controlling if connection send the correct query length
+    response.toInt should be (randomQuery.length())
     conn.executeQuery("disconnect")
-    response should be ("Query OK")
   }
 }
