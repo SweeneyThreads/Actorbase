@@ -29,19 +29,16 @@
 
 package server
 
-import java.io.{File, FileNotFoundException}
-import java.util.concurrent.ConcurrentHashMap
+import java.io.File
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.cluster.Cluster
 import akka.dispatch.ExecutionContexts._
 import akka.event.{Logging, LoggingAdapter}
-import akka.remote.RemoteTransportException
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
+import server.DistributionStrategy.RoundRobinAddresses
 import server.actors.{Doorkeeper, MapManager}
-import server.enums.EnumPermission
-import server.enums.EnumPermission.UserPermission
 import server.utils.ConfigurationManager
 
 import scala.collection.JavaConversions._
@@ -55,6 +52,8 @@ import scala.language.postfixOps
   */
 object Server {
   var log:LoggingAdapter = null
+  // the SettingsManager of this node
+  var settingsManager: ActorRef = null
 
   var clusterListener: ActorRef = null
   var sFclusterListener: ActorRef = null
@@ -76,9 +75,12 @@ object Server {
       }
       log = Logging.getLogger(system, this)
 
-      clusterListener = system.actorOf(Props[ClusterListener])
-      sFclusterListener = system.actorOf(Props[ClusterListener])
-      sKclusterListener = system.actorOf(Props[ClusterListener])
+      // create the SettingsManager of this node
+      settingsManager = system.actorOf(Props[SettingsManager])
+
+      clusterListener = system.actorOf(Props[RoundRobinAddresses])
+      sFclusterListener = system.actorOf(Props[RoundRobinAddresses])
+      sKclusterListener = system.actorOf(Props[RoundRobinAddresses])
 
       loadDatabases(system)
       log.info("Server started")
