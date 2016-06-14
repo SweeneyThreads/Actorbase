@@ -30,7 +30,9 @@
 package server.actors
 
 import akka.actor.{ActorRef, Actor, Address}
+import akka.cluster.Cluster
 import server.Server
+import server.messages.internal.ClusterListenerMessages.RoundRobinAddressMessage
 import scala.concurrent.duration._
 import akka.dispatch.ExecutionContexts._
 import akka.pattern.ask
@@ -62,16 +64,19 @@ trait ClusterAwareActor extends Actor {
     * @return the address of type akka.actor.Address.
     */
   def nextAddress: Address ={
+    // chances to wait for a response
+    var chances = 10
     // auxiliary variable
-    var aux :Address = null
+    var aux :Address = Cluster(context.system).selfAddress
     // send a message to the ClusterListener of this node to get an address
-    clusterListener ? "next" onSuccess {
+    clusterListener ? RoundRobinAddressMessage onSuccess {
       // save the response as an address
       case result => aux = result.asInstanceOf[Address]
     }
     // wait for the response from the ClusterListener
-    while(aux == null){
+    while(aux == Cluster(context.system).selfAddress & chances > 0){
       Thread.sleep(10)
+      chances = chances - 1
     }
     // return the address
     aux

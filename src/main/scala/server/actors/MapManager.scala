@@ -49,7 +49,8 @@ import scala.collection.JavaConversions._
   */
 class MapManager extends ReplyActor {
   // Registers itself to the list of MapManager actors
-  StaticSettings.mapManagerRefs.put(self.path.name, self)
+  StaticSettings.subscribe(self.path.name, self)
+
   // The list of storefinders
   val indexManagers = new ConcurrentHashMap[String, ActorRef]()
   // Add a default map (Storefinder). If the present Soremanager represents the Master database, it
