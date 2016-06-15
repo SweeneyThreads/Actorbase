@@ -31,34 +31,11 @@ package server.utils
 
 import java.io.{FileNotFoundException, IOException}
 import java.util
+
 import org.json.JSONObject
+import server.StaticSettings
 import server.enums.EnumActorsProperties
 import server.enums.EnumActorsProperties.ActorProperties
-
-/*
-
-EXAMPLES of JSON files nedeed by these methods
-{
-  "ports": [ 8181, 8080, 1024 ]
-}
-
-{
-  "properties": [
-    {
-      "name" : "maxRowNumber",
-      "value" : 2
-    },
-    {
-      "name" : "ninjaNumber",
-      "value" : 1
-    },
-    {
-      "name" : "warehousemanNumber",
-      "value" : 1
-    }
-  ]
-}
-*/
 
 /**
   * Reads and writes various server configurations files.
@@ -98,9 +75,7 @@ class ConfigurationManager() {
     * @throws Exception
     * @param fileName The name of the file that contains the actors properties.
     */
-  def readActorsProperties(fileName: String = "actor_properties.json"): util.HashMap[ActorProperties, Integer] = {
-    val toReturn: util.HashMap[ActorProperties, Integer] = new util.HashMap[ActorProperties, Integer]()
-
+  def readActorsProperties(fileName: String = "actor_properties.json"): Unit = {
     val source = scala.io.Source.fromFile("conf/"+fileName)
     val list = try source.getLines().mkString finally source.close()
     val jsonObject = new JSONObject(list)
@@ -108,15 +83,13 @@ class ConfigurationManager() {
     for (i <- 0 until properties.length()) {
       val singleProperty = properties.getJSONObject(i)
       val name = singleProperty.getString("name")
-      val prop = name match {
-        case "maxRowNumber" => EnumActorsProperties.MaxRowNumber
-        case "ninjaNumber" => EnumActorsProperties.NinjaNumber
-        case "warehousemanNumber" => EnumActorsProperties.WarehousemanNumber
+      name match {
+        case "maxRowNumber" => StaticSettings.maxRowNumber = singleProperty.getInt("value")
+        case "ninjaNumber" => StaticSettings.ninjaNumber = singleProperty.getInt("value")
+        case "warehousemanNumber" => StaticSettings.warehousemanNumber = singleProperty.getInt("value")
+        case "datapath" => StaticSettings.dataPath = singleProperty.getString("value")
       }
-      val num = singleProperty.getInt("value")
-      toReturn.put(prop, num)
     }
 
-    return toReturn
   }
 }

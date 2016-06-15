@@ -54,6 +54,7 @@ object Server {
   var log:LoggingAdapter = null
   // the SettingsManager of this node
   var settingsManager: ActorRef = null
+  val configurationManager = new ConfigurationManager
 
   var clusterListener: ActorRef = null
   var sFclusterListener: ActorRef = null
@@ -63,6 +64,7 @@ object Server {
   implicit val ec = global
 
   def main(args: Array[String]) {
+    configurationManager.readActorsProperties()
     // read distribution.conf file
     val newConfig = ConfigFactory.parseFile(new File("conf\\distribution.conf"))
     //merge the configurations
@@ -134,9 +136,8 @@ object Server {
     * @param system The actor system.
     */
   private def createDoorkeepers(system: ActorSystem): Unit ={
-    val confManager = new ConfigurationManager
     try {
-      val accesses = confManager.readDoorkeepersSettings("conf/ports.json")
+      val accesses = configurationManager.readDoorkeepersSettings("conf/ports.json")
       for (port <- accesses) {
         system.actorOf(Props(classOf[Doorkeeper], port))
       }

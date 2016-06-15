@@ -42,7 +42,7 @@ object StaticSettings   {
   var maxRowNumber = 2
   var ninjaNumber = 1
   var warehousemanNumber = 1
-  var dataPath = "d:\\data\\actorbase_data"
+  var dataPath = "C:\\data"
 
   /**
     * Method used to add a new database to the map.

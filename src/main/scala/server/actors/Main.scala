@@ -800,15 +800,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * afterwards type 'updatesettings' on console.
     */
   private def refreshStaticSetting(): Unit = {
-    var newSettings: util.HashMap[ActorProperties, Integer] = new util.HashMap[ActorProperties, Integer]()
     val confManager = new ConfigurationManager
-    newSettings = confManager.readActorsProperties();
-    for (k <- newSettings.keySet()) {
-      k match {
-        case EnumActorsProperties.MaxRowNumber => StaticSettings.maxRowNumber = newSettings.get(k)
-        case EnumActorsProperties.NinjaNumber => StaticSettings.ninjaNumber = newSettings.get(k)
-        case EnumActorsProperties.WarehousemanNumber => StaticSettings.warehousemanNumber = newSettings.get(k)
-      }
-    }
+    confManager.readActorsProperties()
   }
 }
