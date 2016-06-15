@@ -73,6 +73,10 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   var config = ConfigFactory.load(configString)
   configString = ConfigFactory.parseString("akka.loglevel = \"DEBUG\"")
   config = configString.withFallback(config)
+  configString = ConfigFactory.parseString("akka.actor.provider = \"akka.cluster.ClusterActorRefProvider\"")
+  config = configString.withFallback(config)
+  configString = ConfigFactory.parseString("akka.remote.netty.tcp.port = 0")
+  config = configString.withFallback(config)
   val System = ActorSystem("System",ConfigFactory.load(config))
   var log: LoggingAdapter = Logging.getLogger(System, this)
   implicit val timeout = Timeout(25 seconds)
@@ -149,7 +153,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     //clear the map containing the databases
     StaticSettings.mapManagerRefs.clear()
   }
-/*
+
   /*########################################################################
     Testing CreateDatabaseMessage() receiving TU15
     ########################################################################*/
@@ -180,7 +184,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     //clear the map containing the databases
     StaticSettings.mapManagerRefs.clear()
   }
-*/
+
   /*########################################################################
     Testing DeleteDatabaseMessage() receiving TU16
     ########################################################################*/
