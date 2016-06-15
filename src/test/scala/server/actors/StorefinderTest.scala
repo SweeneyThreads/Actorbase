@@ -100,7 +100,7 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
     //regular expression that match the error log produced by the storefinder
     val Pattern=(nowString+"\\....\\s.+\\sERROR\\sserver\\.actors\\.Storemanager\\s\\-\\sUnhandled\\smessage\\sin\\sactor;\\sakka:\\/\\/.+\\/.+\\/\\$.+,\\smethod:\\s.+").r
     //sleep for ensuring that the storefinder has product the log
-    Thread.sleep(10)
+    Thread.sleep(100)
     println(Pattern)
     //if it doesn't find the line the log didn't appened correcly
     Pattern.findFirstIn(lines) shouldNot be (None)

@@ -204,7 +204,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     ScalaFutures.whenReady(future) {
       result => result should be(new ReplyMessage (EnumReplyResult.Error,new DeleteDatabaseMessage("NotExistingDB"),DBDoesNotExistInfo()))
     }
-    StaticSettings.mapManagerRefs.put("DB",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="DB"))
+    StaticSettings.mapManagerRefs.put("DB",System.actorOf(Props(classOf[MapManager]),name="DB"))
 
     val future1 = actorRef ? DeleteDatabaseMessage("DB")
     //when the message is completed i check that the mainActor reply correctly
