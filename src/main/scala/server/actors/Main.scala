@@ -235,8 +235,8 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
           else {
             // Kills the actor and removes the reference
             val ref = StaticSettings.mapManagerRefs.get(name)
-            context.stop(ref)
-            StaticSettings.mapManagerRefs.remove(name)
+            ref forward message
+            StaticSettings.unSubscribe(name)
             // Deselect the database
             selectedDatabase = ""
             logAndReply(ReplyMessage(EnumReplyResult.Done, message))
@@ -800,15 +800,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * afterwards type 'updatesettings' on console.
     */
   private def refreshStaticSetting(): Unit = {
-    var newSettings: util.HashMap[ActorProperties, Integer] = new util.HashMap[ActorProperties, Integer]()
     val confManager = new ConfigurationManager
-    newSettings = confManager.readActorsProperties();
-    for (k <- newSettings.keySet()) {
-      k match {
-        case EnumActorsProperties.MaxRowNumber => StaticSettings.maxRowNumber = newSettings.get(k)
-        case EnumActorsProperties.NinjaNumber => StaticSettings.ninjaNumber = newSettings.get(k)
-        case EnumActorsProperties.WarehousemanNumber => StaticSettings.warehousemanNumber = newSettings.get(k)
-      }
-    }
+    confManager.readActorsProperties()
   }
 }

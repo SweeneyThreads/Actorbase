@@ -12,5 +12,10 @@
       "name" : "warehousemanNumber",
       "value" : 10
     }
+  ,
+    {
+      "name" : "datapath",
+      "value" : "C:\\data"
+    }
   ]
 }
