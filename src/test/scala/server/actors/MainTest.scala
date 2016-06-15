@@ -30,10 +30,14 @@
 
 package server.actors
 
+import java.util
+
 import com.typesafe.config.ConfigFactory
 import server.DistributionStrategy.RoundRobinAddresses
+import server.enums.EnumPermission.UserPermission
+import server.messages.query.PermissionMessages.{NoReadPermissionInfo, NoWritePermissionInfo}
 import server.{SettingsManager, Server, ClusterListener, StaticSettings}
-import server.enums.{EnumReplyResult, EnumStoremanagerType}
+import server.enums.{EnumPermission, EnumReplyResult, EnumStoremanagerType}
 import server.messages.query.ReplyMessage
 
 import scala.language.postfixOps
@@ -45,7 +49,7 @@ import java.util.concurrent.ConcurrentHashMap
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
 import server.messages.query.user.DatabaseMessages._
-import server.messages.query.user.MapMessages.{ListMapInfo, ListMapMessage, MapDoesNotExistInfo, SelectMapMessage}
+import server.messages.query.user.MapMessages._
 import akka.testkit.TestActorRef
 import server.enums.EnumReplyResult.Done
 import server.enums.EnumStoremanagerType.StoremanagerType
@@ -76,7 +80,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   implicit val system = ActorSystem("System",ConfigFactory.load(config))
   Server.settingsManager = System.actorOf(Props[SettingsManager])
 
-
+/*
   /*########################################################################
     Testing ListDatabaseMessage() receiving TU13
     ########################################################################*/
@@ -250,8 +254,6 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     ########################################################################*/
 
   "main actor" should "actually return correct information when receiving a CompleteHelpMessage() or a SpecificHelpMessage()" in {
-    // TestActorRef is a exoteric function provided by akka-testkit
-    // it creates a special actorRef that could be used for test purpose
     val actorRef=system.actorOf(Props(classOf[Main],null))
     //clear the map containing the databases
     StaticSettings.mapManagerRefs.clear()
@@ -300,6 +302,86 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   }
 
 
+  /*########################################################################
+    Testing UserMessage() write permission receiving TU20
+    ########################################################################*/
+
+  "main actor" should "reply with an error when the user try to do a query that needs write permmission without having them" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val userperm = new util.HashMap[String, UserPermission]
+    userperm.put("nowritedatabase", EnumPermission.Read)
+    val actorRef = TestActorRef(new Main(userperm))
+    // retrieving the underlying actor
+    val actor = actorRef.underlyingActor
+
+    StaticSettings.mapManagerRefs.put("nowritedatabase", System.actorOf(Props(classOf[FakeMapManager],null), name = "nowritedatabase"))
+    actor.selectedDatabase = "nowritedatabase"
+
+    val future = actorRef ? DeleteDatabaseMessage("nowritedatabase")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new DeleteDatabaseMessage("nowritedatabase"), NoWritePermissionInfo()))
+    }
+    val future1 = actorRef ? CreateMapMessage("map")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future1) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new CreateMapMessage("map"), NoWritePermissionInfo()))
+    }
+    val future2 = actorRef ? DeleteMapMessage("map")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future2) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new DeleteMapMessage("map"), NoWritePermissionInfo()))
+    }
+    actor.selectedMap = "existingmap"
+    val value=new Array[Byte](2345)
+    val future3 = actorRef ? InsertRowMessage("key",value )
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future3) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new InsertRowMessage("key",value ), NoWritePermissionInfo()))
+    }
+    val future4 = actorRef ? UpdateRowMessage("key",value )
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future4) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new UpdateRowMessage("key",value ), NoWritePermissionInfo()))
+    }
+    val future5 = actorRef ? RemoveRowMessage("key")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future5) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new RemoveRowMessage("key"), NoWritePermissionInfo()))
+    }
+    StaticSettings.mapManagerRefs.clear()
+  }*/
+
+  /*########################################################################
+    Testing UserMessage() read permission receiving TU21
+    ########################################################################*/
+
+  "main actor" should "reply with an error when the user try to do a query that needs read permission without having them" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val userperm = new util.HashMap[String, UserPermission]
+    userperm.put("nowritedatabase", EnumPermission.Read)
+    val actorRef = TestActorRef(new Main(userperm))
+    // retrieving the underlying actor
+    val actor = actorRef.underlyingActor
+
+    StaticSettings.mapManagerRefs.put("noreaddatabase", System.actorOf(Props(classOf[FakeMapManager],null), name = "noreaddatabase"))
+    StaticSettings.mapManagerRefs.put("nowritedatabase", System.actorOf(Props(classOf[FakeMapManager],null), name = "nowritedatabase"))
+
+    val future = actorRef ? SelectDatabaseMessage("noreaddatabase")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new SelectDatabaseMessage("noreaddatabase"), NoReadPermissionInfo()))
+    }
+
+    val future1 = actorRef ? ListDatabaseMessage()
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future1) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Done, new ListDatabaseMessage(), ListDBInfo(List[String]("nowritedatabase"))))
+    }
+
+  }
 }
 
 

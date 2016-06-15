@@ -182,58 +182,66 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     message match {
       // If the user types 'listdb'
       case ListDatabaseMessage() => {
-        var dbs = List[String]()
-        // Foreach database
-        for (k: String <- StaticSettings.mapManagerRefs.keys())
-        // If the user is a super admin or has permissions on the current database, add the db name to the list
-          if (perms == null || perms.get(k) != null) dbs = dbs.::(k)
-        // If the database is empty it return a 'no dbs error'
-        if (dbs.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoDBInfo()))
-        // Otherwise it return the list of dbs
-        else    reply(ReplyMessage(EnumReplyResult.Done, message, ListDBInfo(dbs.sorted)))
+
+          var dbs = List[String]()
+          // Foreach database
+          for (k: String <- StaticSettings.mapManagerRefs.keys())
+          // If the user is a super admin or has permissions on the current database, add the db name to the list
+            if (perms == null || perms.get(k) != null) dbs = dbs.::(k)
+          // If the database is empty it return a 'no dbs error'
+          if (dbs.isEmpty) reply(ReplyMessage(EnumReplyResult.Error, message, NoDBInfo()))
+          // Otherwise it return the list of dbs
+          else reply(ReplyMessage(EnumReplyResult.Done, message, ListDBInfo(dbs.sorted)))
+
       }
       // If the user types 'selectdb <db_name>'
       case SelectDatabaseMessage(name: String) => {
-        // If the selected database doesn't exists
-        if (!StaticSettings.mapManagerRefs.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
-        // If the user doesn't have at least read permissions on the selected database
-        else if (!checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
-        // If the selected database exists and the user has at least read permissions on it
-        else {
-          // Select the database and reset the selected map
-          selectedDatabase = name
-          selectedMap = ""
-          reply(ReplyMessage(EnumReplyResult.Done, message))
-        }
+
+          // If the selected database doesn't exists
+          if (!StaticSettings.mapManagerRefs.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+          // If the user doesn't have at least read permissions on the selected database
+          else if (!checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
+          // If the selected database exists and the user has at least read permissions on it
+          else {
+            // Select the database and reset the selected map
+            selectedDatabase = name
+            selectedMap = ""
+            reply(ReplyMessage(EnumReplyResult.Done, message))
+          }
+
       }
       // If the user types 'createdb <db_name>'
       case CreateDatabaseMessage(dbName: String) => {
-        // If the selected database already exists
-        if (StaticSettings.mapManagerRefs.containsKey(dbName)) reply(ReplyMessage(EnumReplyResult.Error, message, DBAlreadyExistInfo()))
-        // If the selected database doesn't exist
-        else {
-          // Add the new database
-          selectedDatabase = dbName
-          context.system.actorOf(Props(new MapManager()).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
-          logAndReply(ReplyMessage(EnumReplyResult.Done, message))
-        }
+
+          // If the selected database already exists
+          if (StaticSettings.mapManagerRefs.containsKey(dbName)) reply(ReplyMessage(EnumReplyResult.Error, message, DBAlreadyExistInfo()))
+          // If the selected database doesn't exist
+          else {
+            // Add the new database
+            selectedDatabase = dbName
+            context.system.actorOf(Props(new MapManager()).withDeploy(Deploy(scope = RemoteScope(nextAddress))), name = dbName)
+            logAndReply(ReplyMessage(EnumReplyResult.Done, message))
+          }
+
       }
       // If the user types 'deletedb <db_name>'
       case DeleteDatabaseMessage(name: String) => {
-        // If the selected database doesn't exists
-        if (!StaticSettings.mapManagerRefs.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
-        // If the user doesn't have write permissions on the selected database
-        else if (!checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoWritePermissionInfo()))
-        // If the selected database exists and the user has write permissions on it
-        else {
-          // Kills the actor and removes the reference
-          val ref = StaticSettings.mapManagerRefs.get(name)
-          context.stop(ref)
-          StaticSettings.mapManagerRefs.remove(name)
-          // Deselect the database
-          selectedDatabase = ""
-          logAndReply(ReplyMessage(EnumReplyResult.Done, message))
-        }
+
+          // If the selected database doesn't exists
+          if (!StaticSettings.mapManagerRefs.containsKey(name)) reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+          // If the user doesn't have write permissions on the selected database
+          else if (!checkPermissions(message, name)) reply(ReplyMessage(EnumReplyResult.Error, message, NoWritePermissionInfo()))
+          // If the selected database exists and the user has write permissions on it
+          else {
+            // Kills the actor and removes the reference
+            val ref = StaticSettings.mapManagerRefs.get(name)
+            context.stop(ref)
+            StaticSettings.mapManagerRefs.remove(name)
+            // Deselect the database
+            selectedDatabase = ""
+            logAndReply(ReplyMessage(EnumReplyResult.Done, message))
+          }
+
       }
     }
   }
@@ -281,32 +289,40 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
       }
       // If it's another type of map level message
       case _ => {
-        // Save the original sender
-        val origSender = sender
-        // Send the message to the storemanager and save the reply in a future
-        val future = sm ? message
-        future.onComplete {
-          // Reply the usermanger with the reply from the storemanager
-          case Success(result) => {
-            result.asInstanceOf[ReplyMessage].result match {
-              case EnumReplyResult.Done => {
-                // Get which was the request ( CreateMapMessage or DeleteMapMessage )
-                val whoAsked = result.asInstanceOf[ReplyMessage].question
-                // If it was a CreateMapMessage, we mark that map as the selected map
-                if (whoAsked.isInstanceOf[CreateMapMessage])
-                  selectedMap = whoAsked.asInstanceOf[CreateMapMessage].name
-                else if (whoAsked.isInstanceOf[DeleteMapMessage])
-                // Otherwise, if it was a DeleteMapMessage, we unmark that map as the selected one
-                  selectedMap = ""
+        if (!checkPermissions(message, selectedDatabase)) {
+          if(message.isInstanceOf[ReadWriteMessage])
+            reply(ReplyMessage(EnumReplyResult.Error, message, NoWritePermissionInfo()))
+          else
+            reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
+        }
+        else {
+          // Save the original sender
+          val origSender = sender
+          // Send the message to the storemanager and save the reply in a future
+          val future = sm ? message
+          future.onComplete {
+            // Reply the usermanger with the reply from the storemanager
+            case Success(result) => {
+              result.asInstanceOf[ReplyMessage].result match {
+                case EnumReplyResult.Done => {
+                  // Get which was the request ( CreateMapMessage or DeleteMapMessage )
+                  val whoAsked = result.asInstanceOf[ReplyMessage].question
+                  // If it was a CreateMapMessage, we mark that map as the selected map
+                  if (whoAsked.isInstanceOf[CreateMapMessage])
+                    selectedMap = whoAsked.asInstanceOf[CreateMapMessage].name
+                  else if (whoAsked.isInstanceOf[DeleteMapMessage])
+                  // Otherwise, if it was a DeleteMapMessage, we unmark that map as the selected one
+                    selectedMap = ""
+                }
+                case EnumReplyResult.Error => {
+                  // Do nothing at the moment, if this match case does not exist the Main will fail when receiving an
+                  // EnumReplyResult.Error as response
+                }
               }
-              case EnumReplyResult.Error => {
-                // Do nothing at the moment, if this match case does not exist the Main will fail when receiving an
-                // EnumReplyResult.Error as response
-              }
+              logAndReply(result.asInstanceOf[ReplyMessage], origSender)
             }
-            logAndReply(result.asInstanceOf[ReplyMessage], origSender)
+            case Failure(t) => log.error("Error sending message: " + t.getMessage)
           }
-          case Failure(t) => log.error("Error sending message: " + t.getMessage)
         }
       }
     }
@@ -326,21 +342,29 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     // If there isn't a selected map
     else if (selectedMap == "") reply(ReplyMessage(EnumReplyResult.Error, message, NoMapSelectedInfo()))
     // If the selected database doesn't exists
-    else if (!StaticSettings.mapManagerRefs.containsKey(selectedDatabase))
-      reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
-    // It gets the right storemanager
-    val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
-    // Save the original sender
-    val origSender = sender
-    // Send a StorefinderRowMessage to the storemanager and save the reply in a future
-    val future = sm ? StorefinderRowMessage(selectedMap, message)
-    future.onComplete {
-      // Reply the usermanager with the reply from the storemanager
-      case Success(result) => reply(result.asInstanceOf[ReplyMessage], origSender)
-      case Failure(t) => {
-        log.error("Error sending message: " + t.getMessage);
-        reply(new ReplyMessage(EnumReplyResult.Error, message,
-          new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
+    if (!checkPermissions(message, selectedDatabase)) {
+      if(message.isInstanceOf[ReadWriteMessage])
+        reply(ReplyMessage(EnumReplyResult.Error, message, NoWritePermissionInfo()))
+      else
+        reply(ReplyMessage(EnumReplyResult.Error, message, NoReadPermissionInfo()))
+    }
+    else {
+      if (!StaticSettings.mapManagerRefs.containsKey(selectedDatabase))
+        reply(ReplyMessage(EnumReplyResult.Error, message, DBDoesNotExistInfo()))
+      // It gets the right storemanager
+      val sm = StaticSettings.mapManagerRefs.get(selectedDatabase)
+      // Save the original sender
+      val origSender = sender
+      // Send a StorefinderRowMessage to the storemanager and save the reply in a future
+      val future = sm ? StorefinderRowMessage(selectedMap, message)
+      future.onComplete {
+        // Reply the usermanager with the reply from the storemanager
+        case Success(result) => reply(result.asInstanceOf[ReplyMessage], origSender)
+        case Failure(t) => {
+          log.error("Error sending message: " + t.getMessage);
+          reply(new ReplyMessage(EnumReplyResult.Error, message,
+            new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
+        }
       }
     }
   }
