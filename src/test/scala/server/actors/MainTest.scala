@@ -36,6 +36,7 @@ import com.typesafe.config.ConfigFactory
 import server.DistributionStrategy.RoundRobinAddresses
 import server.enums.EnumPermission.UserPermission
 import server.messages.query.PermissionMessages.{NoReadPermissionInfo, NoWritePermissionInfo}
+import server.messages.query.admin.UsersManagementMessages.{AddUserInfo, AddUserMessage, ListUserInfo, ListUserMessage}
 import server.{SettingsManager, Server, ClusterListener, StaticSettings}
 import server.enums.{EnumPermission, EnumReplyResult, EnumStoremanagerType}
 import server.messages.query.ReplyMessage
@@ -299,7 +300,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     val future = actorRef ? FindRowMessage("existingmap")
     //when the message is completed i check that the StoremanagerActor reply correctly
     ScalaFutures.whenReady(future) {
-      result => result should be(new ReplyMessage (EnumReplyResult.Done,new StorefinderRowMessage("maptest",FindRowMessage("existingmap")),FindInfo(first)))
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new FindRowMessage("existingmap"),FindInfo(first)))
     }
     //clear the map containing the databases
     StaticSettings.mapManagerRefs.clear()
@@ -387,6 +388,45 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     StaticSettings.mapManagerRefs.clear()
 
   }
+
+  /*########################################################################
+    Testing ListUserMessage() receiving TU24
+    ########################################################################*/
+
+  "main actor" should "actually return correct user list when receiving a ListUserMessage" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val actorRef=system.actorOf(Props(classOf[Main],null))
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.put("master",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="master"))
+    // now I send the message
+    val future = actorRef ? ListUserMessage()
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new ListUserMessage(),new ListUserInfo(List[String]("caio","sempronio"))))
+    }
+    //clear the map containing the databases
+  }
+
+  /*########################################################################
+    Testing AddUserMessage() receiving TU25
+    ########################################################################*/
+
+  "main actor" should "actually add correct user when receiving an AddUserMessage" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val actorRef=system.actorOf(Props(classOf[Main],null))
+    //clear the map containing the databases
+    // now I send the message
+    val future = actorRef ? AddUserMessage("user","password")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new AddUserMessage("user","password"),new AddUserInfo()))
+    }
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+  }
+
 }
 
 
@@ -398,6 +438,22 @@ class FakeMapManager(val wich:Array[Byte]=null) extends ReplyActor{
         origSender ! true
       else
         origSender ! false
+    }
+    case StorefinderRowMessage(name:String,message:RowMessage) => {
+      message match {
+        case m:ListKeysMessage=> {
+          val origSender = sender
+          reply(ReplyMessage(EnumReplyResult.Done, m, ListKeyInfo(List[String]("caio", "sempronio"))), origSender)
+        }
+        case m:InsertRowMessage=>{
+          val origSender = sender
+          reply(ReplyMessage(EnumReplyResult.Done, m, ListKeyInfo(List[String]("caio", "sempronio"))), origSender)
+        }
+        case m:FindRowMessage=>{
+          val origSender = sender
+          reply(ReplyMessage(EnumReplyResult.Done,m,FindInfo(wich)), origSender)
+        }
+      }
     }
     case m:RowMessage => {
       val origSender = sender

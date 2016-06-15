@@ -37,9 +37,11 @@ import akka.actor.{Props, ActorSystem}
 import akka.event.{Logging, LoggingAdapter}
 import akka.io.Tcp.{Connected, Bound}
 import akka.testkit.TestActorRef
+import com.typesafe.config.ConfigFactory
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
+import server.{SettingsManager, Server}
 import server.enums.EnumReplyResult
 import server.messages.query.ReplyMessage
 import server.messages.query.user.DatabaseMessages._
@@ -58,12 +60,20 @@ class DoorkeeperTest extends FlatSpec with Matchers with MockFactory {
 
   import scala.concurrent.duration._
 
-
-  var System: ActorSystem = ActorSystem("System")
+  var configString = ConfigFactory.parseString("akka.loggers = [\"akka.event.slf4j.Slf4jLogger\"][\"akka.event.Logging$DefaultLogger\"]")
+  var config = ConfigFactory.load(configString)
+  configString = ConfigFactory.parseString("akka.loglevel = \"DEBUG\"")
+  config = configString.withFallback(config)
+  configString = ConfigFactory.parseString("akka.actor.provider = \"akka.cluster.ClusterActorRefProvider\"")
+  config = configString.withFallback(config)
+  configString = ConfigFactory.parseString("akka.remote.netty.tcp.port = 0")
+  config = configString.withFallback(config)
+  val System = ActorSystem("System",ConfigFactory.load(config))
   var log: LoggingAdapter = Logging.getLogger(System, this)
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
-  //implicit val system = ActorSystem()
+  implicit val system = ActorSystem("System",ConfigFactory.load(config))
+  Server.settingsManager = System.actorOf(Props[SettingsManager])
 
   /*########################################################################
     Testing doorkeeper correct log after bound message receiving TU11
