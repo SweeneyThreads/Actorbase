@@ -38,7 +38,9 @@ import akka.actor.{ActorRef, Deploy, Props}
 import akka.remote.RemoteScope
 import server.StaticSettings
 import server.enums.EnumStoremanagerType
+import server.enums.EnumWarehousemanType.RowWarehousemanType
 import server.messages.internal.StorageMessages.{ReadMapMessage, ReadMapReply}
+import server.messages.query.user.MapMessages.{DeleteMapMessage, MapMessage}
 import server.messages.query.user.RowMessages.{ListKeysMessage, RowMessage}
 
 import scala.collection.JavaConversions._
@@ -59,7 +61,7 @@ class IndexManager() extends ReplyActor {
   override def preStart {
     // Adds Warehouseman actors
     for(i <- 0 until StaticSettings.warehousemanNumber) {
-      warehousemen.add(context.actorOf(Props(new Warehouseman(context.parent.path.name,self.path.name))))
+      warehousemen.add(context.actorOf(Props(new Warehouseman(RowWarehousemanType,context.parent.path.name,self.path.name))))
     }
     val mapDirectory = new File(StaticSettings.dataPath+"\\"+context.parent.path.name+"\\"+self.path.name)
     if (mapDirectory.exists) {
@@ -79,6 +81,7 @@ class IndexManager() extends ReplyActor {
 
 
 
+
   /**
     * Processes all incoming messages.
     * It handles only QueryMessage messages.
@@ -88,6 +91,7 @@ class IndexManager() extends ReplyActor {
     */
   def receive ={
     case m:RowMessage => handleRowMessage(m)
+    case m:MapMessage => handleMapMessage(m)
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receive"))
   }
 
@@ -105,6 +109,17 @@ class IndexManager() extends ReplyActor {
     storemanager forward message
     // Send the message to all Warehouseman actors
     for(wh <- warehousemen) wh.tell(message, self)
+  }
+
+
+  private def handleMapMessage(m: MapMessage): Unit = {
+    m match {
+      case DeleteMapMessage(name: String) =>
+        for(i <- 0 until StaticSettings.warehousemanNumber) {
+          warehousemen(i) forward m
+        }
+        context stop self
+    }
   }
 }
 

@@ -55,7 +55,7 @@ object DistributionStrategy {
     override def handleCustomMessage(msg: ClusterListenerMessage): Unit ={
       msg match {
         // if it is a RoundRobinAddress reply with next address
-        case msg: RoundRobinAddressMessage => sender() ! nextAddress()
+        case RoundRobinAddressMessage() => sender() ! nextAddress()
         //else ignore the message
         case _ => //ignore
       }

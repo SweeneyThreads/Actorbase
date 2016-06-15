@@ -36,8 +36,12 @@ import akka.actor.{ActorRef, Deploy, Props}
 import akka.remote.RemoteScope
 import server.StaticSettings
 import server.enums.EnumReplyResult
+import server.enums.EnumWarehousemanType.DatabaseWarehousemanType
 import server.messages.internal.AskMessages.AskMapMessage
+import server.messages.internal.WarehousemenMessages.EraseDatabaseMessage
 import server.messages.query.ReplyMessage
+import server.messages.query.user.DatabaseMessages
+import server.messages.query.user.DatabaseMessages.{DeleteDatabaseMessage, DatabaseMessage}
 import server.messages.query.user.MapMessages.{DeleteMapMessage, MapAlreadyExistInfo, MapDoesNotExistInfo, _}
 import server.messages.query.user.RowMessages.{InsertRowMessage, RowMessage, StorefinderRowMessage}
 
@@ -57,6 +61,9 @@ class MapManager extends ReplyActor {
   // does not create the default map, instead it creates the users map and the permissions map
 
 
+  val databaseWarehouseman = context.actorOf(Props(new Warehouseman(DatabaseWarehousemanType,self.path.name)))
+
+
   /**
     *
     */
@@ -69,13 +76,14 @@ class MapManager extends ReplyActor {
       }
     } else {
       if(self.path.name == "master") {
-        indexManagers.put("users",       context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="users"))
-        indexManagers.put("permissions", context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress))), name="permissions"))
+        indexManagers.put("users",       context.actorOf(Props[IndexManager], name="users"))
+        indexManagers.put("permissions", context.actorOf(Props[IndexManager], name="permissions"))
         val actor = indexManagers.get("users")
         actor.tell(new InsertRowMessage("admin", "admin".getBytes("UTF-8")), self)
       }
     }
   }
+
 
 
   /**
@@ -92,12 +100,27 @@ class MapManager extends ReplyActor {
   def receive = {
     // Replay to the main actor if there's a map with that name
     case AskMapMessage(mapName:String) => Some(sender).map(_ ! indexManagers.containsKey(mapName))
+    // If it's a database level message
+    case m:DatabaseMessage => handleDatabaseMessage(m)
     // If it's a map level message
     case m:MapMessage => handleMapMessage(m)
     // If it's a row level message
     case m:RowMessage => handleRowMessage(m)
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString(), "receive"))
   }
+
+
+  private def handleDatabaseMessage(m: DatabaseMessage): Unit = {
+    m match {
+      case DeleteDatabaseMessage(name: String) =>
+        for (im<-indexManagers.keys) {
+          indexManagers.get(im) ! new DeleteMapMessage(im)
+        }
+        databaseWarehouseman ! EraseDatabaseMessage
+        context stop self
+    }
+  }
+
 
   /**
     * Processes only MapMessage messages.
@@ -135,7 +158,7 @@ class MapManager extends ReplyActor {
         // If the storefinder doesn't exists
         else {
           // Add the storefinder
-          indexManagers.put(name, context.actorOf(Props[IndexManager].withDeploy(Deploy(scope = RemoteScope(nextAddress))),name = name))
+          indexManagers.put(name, context.actorOf(Props[IndexManager], name = name))
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }
       }
@@ -147,6 +170,7 @@ class MapManager extends ReplyActor {
         // If the storefinder doesn't exists
         else {
           // Remove the storefinder
+          sf forward message
           indexManagers.remove(name)
           logAndReply(ReplyMessage(EnumReplyResult.Done, message))
         }

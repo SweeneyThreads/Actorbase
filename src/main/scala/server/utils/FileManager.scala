@@ -78,4 +78,10 @@ trait FileManager {
     */
   def ReadMap() :  ConcurrentHashMap[String, Array[Byte]]
 
+  /**
+    * Erases the whole map.
+    */
+  def EraseMap() : Unit
+
+
 }

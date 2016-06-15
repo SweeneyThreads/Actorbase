@@ -29,12 +29,15 @@
 
 package server.utils.fileManagerLibrary
 
+import java.io.File
 import java.io._
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
+
 import server.StaticSettings
 import server.utils.FileManager
+
 
 
 /**
@@ -242,6 +245,37 @@ class SingleFileManager (dbName: String, mapName: String) extends FileManager {
     ostream.close()
   }
 
+  /**
+    * Erases the whole map.
+    */
+  override def EraseMap(): Unit = {
+    valuesFile.close()
+    removeDirectory(new File(s"${StaticSettings.dataPath}\\$dbName\\$mapName"))
+  }
+
+  def removeDirectory(directory: File) : Boolean = {
+    if (directory == null)
+      return false
+    if (!directory.exists)
+      return true
+    if (!directory.isDirectory)
+      return false
+    val list = directory.list
+    if (list != null) {
+      var i = 0
+      for ( i <- 0 until list.length) {
+        val entry = new File(directory, list(i))
+        if (entry.isDirectory) {
+          if (!removeDirectory(entry))
+            return false
+        } else {
+          if (!entry.delete)
+            return false
+        }
+      }
+    }
+    directory.delete
+  }
 
 }
 

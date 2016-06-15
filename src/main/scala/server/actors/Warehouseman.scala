@@ -29,31 +29,58 @@
 
 package server.actors
 
-import java.util
-import java.util.concurrent.ConcurrentHashMap
-
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor.ActorRef
 import server.StaticSettings
-import server.enums.EnumReplyResult
-import server.messages.internal.ScalabilityMessages._
+import server.enums.EnumWarehousemanType.{DatabaseWarehousemanType, MapWarehousemanType, RowWarehousemanType, WarehousemanType}
 import server.messages.internal.StorageMessages._
-import server.messages.query.ReplyMessage
+import server.messages.internal.WarehousemenMessages.EraseDatabaseMessage
+import server.messages.query.user.MapMessages.{DeleteMapMessage, MapMessage}
 import server.messages.query.user.RowMessages.{InsertRowMessage, RemoveRowMessage, RowMessage, UpdateRowMessage}
-import server.utils.{Serializer, FileManager}
+import server.utils.FileManager
 import server.utils.fileManagerLibrary.SingleFileManager
+
+
 import scala.language.postfixOps
+import scala.reflect.io.File
 
 /**
   * Manages the filesystem writing and reading on the sisk.
   *
   * @constructor create a new Warehouseman actor instance from a String.
+  * @param warehousemanType The behaviour of theWarehouseman
   * @param dbName The database name.
   * @param mapName The map name.
   */
-class Warehouseman(dbName: String, mapName: String) extends ReplyActor {
+class Warehouseman(warehousemanType: WarehousemanType, dbName: String, mapName: String = null) extends ReplyActor {
 
   // The object to interact with the filesystem
-  val fileManager: FileManager = new SingleFileManager(dbName,mapName)
+  var fileManager: FileManager = null
+
+
+
+  /**
+    * Override of the actor's preStart method.
+    * Changes the actor's behaviour based on the constructor.
+    *
+    * @see #become(Actor.receive)
+    */
+  override def preStart(): Unit = {
+    warehousemanType match {
+      case RowWarehousemanType => //standard behaviour
+        fileManager = new SingleFileManager(dbName,mapName)
+      case DatabaseWarehousemanType => context.become(receiveDbMsg)
+      case _ =>
+    }
+  }
+
+
+  private def handleMapMessages(m: MapMessage): Unit = {
+    m match {
+      case DeleteMapMessage(mapName: String) =>
+        fileManager.EraseMap()
+        context stop self
+    }
+  }
 
   /**
     * Processes all incoming messages.
@@ -69,8 +96,19 @@ class Warehouseman(dbName: String, mapName: String) extends ReplyActor {
     // If it's a row level message
     case ReadMapMessage => giveMap(sender)
     case m: RowMessage => handleRowMessages(m)
+    case m: MapMessage => handleMapMessages(m)
+
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receive"))
   }
+
+
+
+  private def receiveDbMsg: Receive = {
+    case EraseDatabaseMessage =>
+      File(s"${StaticSettings.dataPath}\\$dbName").delete
+      context stop self
+  }
+
 
   /**
     * Processes only RowMessage messages.
@@ -107,5 +145,7 @@ class Warehouseman(dbName: String, mapName: String) extends ReplyActor {
     val storedMap =  fileManager.ReadMap()
     ar ! ReadMapReply(storedMap)
   }
+
+
 
 }

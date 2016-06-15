@@ -63,10 +63,14 @@ object Server {
   implicit val ec = global
 
   def main(args: Array[String]) {
-    val conf = ConfigFactory.load()
+    // read distribution.conf file
+    val newConfig = ConfigFactory.parseFile(new File("conf\\distribution.conf"))
+    //merge the configurations
+    val config = newConfig.withFallback(ConfigFactory.load())
+
     try {
       // Create the actor system
-      val system = ActorSystem("ActorbaseSystem", conf)
+      val system = ActorSystem("ActorbaseSystem", ConfigFactory.load(config))
       // Create the cluster
       val cluster = Cluster(system)
       // If this node has a Doorkeeper node it creates doorkeepers

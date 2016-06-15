@@ -29,10 +29,13 @@
 
 package server.actors
 
+import java.util.concurrent.TimeoutException
+
 import akka.actor.{ActorRef, Actor, Address}
 import akka.cluster.Cluster
 import server.Server
 import server.messages.internal.ClusterListenerMessages.RoundRobinAddressMessage
+import scala.concurrent.Await
 import scala.concurrent.duration._
 import akka.dispatch.ExecutionContexts._
 import akka.pattern.ask
@@ -63,22 +66,19 @@ trait ClusterAwareActor extends Actor {
     *
     * @return the address of type akka.actor.Address.
     */
-  def nextAddress: Address ={
-    // chances to wait for a response
-    var chances = 10
-    // auxiliary variable
-    var aux :Address = Cluster(context.system).selfAddress
+  def nextAddress: Address = {
     // send a message to the ClusterListener of this node to get an address
-    clusterListener ? RoundRobinAddressMessage onSuccess {
-      // save the response as an address
-      case result => aux = result.asInstanceOf[Address]
+    val future = clusterListener ? new RoundRobinAddressMessage()
+    // try to send a message to the clusterListener
+    try {
+      // wait for the response from the ClusterListener
+      val result = Await.result(future, timeout.duration)
+      // If no exception is thrown return the address
+      result.asInstanceOf[Address]
     }
-    // wait for the response from the ClusterListener
-    while(aux == Cluster(context.system).selfAddress & chances > 0){
-      Thread.sleep(10)
-      chances = chances - 1
+    catch{
+      // a Timeout exception has been thrown, so return the address of the current node
+      case ex: TimeoutException => Cluster(context.system).selfAddress
     }
-    // return the address
-    aux
   }
 }
