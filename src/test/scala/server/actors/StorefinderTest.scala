@@ -115,7 +115,7 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
   it should "return the correct concatenation of the storekeepers keys" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef = TestActorRef(new Storemanager(new ConcurrentHashMap[String, Array[Byte]](), ("", null), EnumStoremanagerType.StorefinderType,null))
+    val actorRef = TestActorRef(new Storemanager(new ConcurrentHashMap[String, Array[Byte]](), ("", null), EnumStoremanagerType.StorefinderType, null))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     //clear default storekeeper
@@ -123,8 +123,8 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
     val index2 = ("d",null)
     val aux =new ConcurrentHashMap[String, Array[Byte]]()
 
-    actor.leftChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)),index1, null)
-    actor.rightChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)),index2, null)
+    actor.leftChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)),index1,new Array[ActorRef](0))
+    actor.rightChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)),index2, new Array[ActorRef](0))
     //add two fakestorekeepers
     // now I send the message
     val future = actorRef ? ListKeysMessage()
@@ -154,8 +154,8 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
     val first =new Array[Byte](111)
     val second = new Array[Byte](222)
     val aux =new ConcurrentHashMap[String, Array[Byte]]()
-    actor.rightChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,first,new Array[ActorRef](0))),index1,new Array[ActorRef](0))
-    actor.leftChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index2, EnumStoremanagerType.StorekeeperType,second,new Array[ActorRef](0))),index2, new Array[ActorRef](0))
+    actor.leftChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,first,new Array[ActorRef](0))),index1,new Array[ActorRef](0))
+    actor.rightChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index2, EnumStoremanagerType.StorekeeperType,second,new Array[ActorRef](0))),index2, new Array[ActorRef](0))
     // now I send the message
     val InsertRowMessage1future = actorRef ? InsertRowMessage("c",value)
     //when the message is completed i check that the StorefinderActor reply correctly

@@ -31,7 +31,8 @@
 package server.actors
 
 import com.typesafe.config.ConfigFactory
-import server.{ClusterListener, StaticSettings}
+import server.DistributionStrategy.RoundRobinAddresses
+import server.{SettingsManager, Server, ClusterListener, StaticSettings}
 import server.enums.{EnumReplyResult, EnumStoremanagerType}
 import server.messages.query.ReplyMessage
 
@@ -73,6 +74,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
   implicit val system = ActorSystem("System",ConfigFactory.load(config))
+  Server.settingsManager = System.actorOf(Props[SettingsManager])
 
 
   /*########################################################################
@@ -99,9 +101,9 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
       result => result should be(new ReplyMessage (EnumReplyResult.Error,new ListDatabaseMessage(),NoDBInfo()))
     }
     StaticSettings.mapManagerRefs.clear()
-    StaticSettings.mapManagerRefs.put("test1",System.actorOf(Props[IndexManager]))
-    StaticSettings.mapManagerRefs.put("test2",System.actorOf(Props[IndexManager]))
-    StaticSettings.mapManagerRefs.put("test3",System.actorOf(Props[IndexManager]))
+    StaticSettings.mapManagerRefs.put("test1",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="test1"))
+    StaticSettings.mapManagerRefs.put("test2",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="test2"))
+    StaticSettings.mapManagerRefs.put("test3",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="test3"))
 
     val future1 = actorRef ? ListDatabaseMessage()
     //when the message is completed i check that the StoremanagerActor reply correctly
@@ -130,30 +132,30 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     ScalaFutures.whenReady(future) {
       result => result should be(new ReplyMessage (EnumReplyResult.Error,new SelectDatabaseMessage("NotExistingDB"),DBDoesNotExistInfo()))
     }
-    StaticSettings.mapManagerRefs.put("test1",System.actorOf(Props[MapManager]))
-    StaticSettings.mapManagerRefs.put("test2",System.actorOf(Props[MapManager]))
-    StaticSettings.mapManagerRefs.put("test3",System.actorOf(Props[MapManager]))
+    StaticSettings.mapManagerRefs.put("test12",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="test12"))
+    StaticSettings.mapManagerRefs.put("test22",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="test22"))
+    StaticSettings.mapManagerRefs.put("test32",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="test32"))
 
-    val future1 = actorRef ? SelectDatabaseMessage("test2")
+    val future1 = actorRef ? SelectDatabaseMessage("test22")
     //when the message is completed i check that the StoremanagerActor reply correctly
     ScalaFutures.whenReady(future1) {
-      result => result should be(new ReplyMessage (EnumReplyResult.Done,new SelectDatabaseMessage("test2")))
-        actor.selectedDatabase should be ("test2")
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new SelectDatabaseMessage("test22")))
+        actor.selectedDatabase should be ("test22")
     }
     //clear the map containing the databases
     StaticSettings.mapManagerRefs.clear()
   }
-
+/*
   /*########################################################################
     Testing CreateDatabaseMessage() receiving TU15
     ########################################################################*/
-  /*it should "create the correct database or reply with the correct error is the database already exsist" in {
+    it should "create the correct database or reply with the correct error is the database already exsist" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
     val actorRef=TestActorRef(new Main(null))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
-    actor.clusterListener=System.actorOf(Props[ClusterListener])
+    actor.clusterListener=System.actorOf(Props[RoundRobinAddresses])
     //clear the map containing the databases
     StaticSettings.mapManagerRefs.clear()
     // now I send the message
@@ -161,19 +163,20 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     //when the message is completed i check that the mainActor reply correctly
     ScalaFutures.whenReady(future) {
       result => result should be(new ReplyMessage (EnumReplyResult.Done,new CreateDatabaseMessage("NotExistingDB")))
+        actor.selectedDatabase should be ("NotExistingDB")
     }
-    StaticSettings.mapManagerRefs.put("AlreadyExistingDB",System.actorOf(Props[IndexManager]))
+    StaticSettings.mapManagerRefs.put("AlreadyExistingDB",System.actorOf(Props[MapManager],name="AlreadyExistingDB"))
 
     val future1 = actorRef ? CreateDatabaseMessage("AlreadyExistingDB")
     //when the message is completed i check that the mainActor reply correctly
     ScalaFutures.whenReady(future1) {
       result => result should be(new ReplyMessage (EnumReplyResult.Error,new CreateDatabaseMessage("AlreadyExistingDB"),DBAlreadyExistInfo()))
-        actor.selectedDatabase should be ("AlreadyExistingDB")
+        actor.selectedDatabase should not be ("AlreadyExistingDB")
     }
     //clear the map containing the databases
     StaticSettings.mapManagerRefs.clear()
-  }*/
-
+  }
+*/
   /*########################################################################
     Testing DeleteDatabaseMessage() receiving TU16
     ########################################################################*/
@@ -192,13 +195,13 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     ScalaFutures.whenReady(future) {
       result => result should be(new ReplyMessage (EnumReplyResult.Error,new DeleteDatabaseMessage("NotExistingDB"),DBDoesNotExistInfo()))
     }
-    StaticSettings.mapManagerRefs.put("AlreadyExistingDB",System.actorOf(Props[IndexManager]))
+    StaticSettings.mapManagerRefs.put("DB",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="DB"))
 
-    val future1 = actorRef ? DeleteDatabaseMessage("AlreadyExistingDB")
+    val future1 = actorRef ? DeleteDatabaseMessage("DB")
     //when the message is completed i check that the mainActor reply correctly
     ScalaFutures.whenReady(future1) {
-      result => result should be(new ReplyMessage (EnumReplyResult.Done,new DeleteDatabaseMessage("AlreadyExistingDB")))
-        StaticSettings.mapManagerRefs.containsKey("AlreadyExistingDB") should be (false)
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new DeleteDatabaseMessage("DB")))
+        StaticSettings.mapManagerRefs.containsKey("DB") should be (false)
     }
     //clear the map containing the databases
     StaticSettings.mapManagerRefs.clear()
@@ -217,14 +220,14 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     //clear the map containing the databases
     StaticSettings.mapManagerRefs.clear()
     // now I send the message
-    /*val future1 = actorRef ? SelectMapMessage("noDBselectedMap")
+    val future1 = actorRef ? SelectMapMessage("noDBselectedMap")
     //when the message is completed i check that the StoremanagerActor reply correctly
     ScalaFutures.whenReady(future1) {
       result => result should be(new ReplyMessage (EnumReplyResult.Error,new SelectMapMessage("noDBselectedMap"),NoDBSelectedInfo()))
-    }*/
+    }
 
-    StaticSettings.mapManagerRefs.put("test1",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1))))
-    actor.selectedDatabase="test1"
+    StaticSettings.mapManagerRefs.put("testdb",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="testdb"))
+    actor.selectedDatabase="testdb"
     val future2 = actorRef ? SelectMapMessage("NotExistingMap")
     //when the message is completed i check that the StoremanagerActor reply correctly
     ScalaFutures.whenReady(future2) {
@@ -283,8 +286,8 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     StaticSettings.mapManagerRefs.clear()
     // now I send the message
     val first=new Array[Byte](1)
-    StaticSettings.mapManagerRefs.put("test1",System.actorOf(Props(classOf[FakeMapManager],first)))
-    actor.selectedDatabase="test1"
+    StaticSettings.mapManagerRefs.put("test13",System.actorOf(Props(classOf[FakeMapManager],first),name="test13"))
+    actor.selectedDatabase="test13"
     actor.selectedMap="maptest"
 
     val future = actorRef ? FindRowMessage("existingmap")
@@ -296,10 +299,11 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     StaticSettings.mapManagerRefs.clear()
   }
 
+
 }
 
 
-class FakeMapManager(val wich:Array[Byte]) extends MapManager{
+class FakeMapManager(val wich:Array[Byte]=null) extends ReplyActor{
   override def receive = {
     case AskMapMessage(name:String) => {
       val origSender = sender

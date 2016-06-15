@@ -105,7 +105,7 @@ class DoorkeeperTest extends FlatSpec with Matchers with MockFactory {
   "DoorkeeperActor" should "create the correct log line whan receinving a connected message" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef = System.actorOf(Props(classOf[Doorkeeper],3131))
+    val actorRef = System.actorOf(Props(classOf[Doorkeeper],5151))
     // now I send the message
     actorRef ! Connected(new InetSocketAddress(2121),new InetSocketAddress(5151))
     // a take the time now

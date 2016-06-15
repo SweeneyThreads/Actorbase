@@ -40,7 +40,8 @@ import com.typesafe.config.ConfigFactory
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
-import server.ClusterListener
+import server.DistributionStrategy.RoundRobinAddresses
+import server.{SettingsManager, Server, ClusterListener}
 import server.enums.{EnumStoremanagerType, EnumReplyResult}
 import server.enums.EnumReplyResult.Done
 import server.enums.EnumStoremanagerType.StoremanagerType
@@ -71,6 +72,7 @@ class MapManagerTest extends FlatSpec with Matchers with MockFactory {
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
   implicit val system = ActorSystem("System",ConfigFactory.load(config))
+  Server.settingsManager = System.actorOf(Props[SettingsManager])
 
   /*########################################################################
     Testing AskMapMessage() receiving TU52
@@ -81,13 +83,13 @@ class MapManagerTest extends FlatSpec with Matchers with MockFactory {
   "StoremanagerActor" should "actually return true if the storemanager contains the map asked with an AskMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef=TestActorRef[MapManager]
+    val actorRef=TestActorRef(new MapManager,"TEST")
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
     //put a storefinder in storefinders map
     val index1= ("","d")
     val aux =new ConcurrentHashMap[String, Array[Byte]]()
-    actor.indexManagers.put("defaultMap", system.actorOf(Props(classOf[FakeStoremanagerStorefinder],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)))
+    actor.indexManagers.put("defaultMap", system.actorOf(Props(classOf[FakeStoremanagerStorefinder],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null),name="maptest1"))
     // now I send the message
     val future = actorRef ? AskMapMessage("defaultMap")
     //when the message is completed i check that the StoremanagerActor reply correctly
@@ -137,7 +139,7 @@ class MapManagerTest extends FlatSpec with Matchers with MockFactory {
     val actorRef=TestActorRef[MapManager]
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
-    actor.clusterListener=System.actorOf(Props[ClusterListener])
+    actor.clusterListener=System.actorOf(Props[RoundRobinAddresses])
     // now I send the message
     val future = actorRef ? CreateMapMessage("map1")
     //when the message is completed i check that the StoremanagerActor reply correctly and delete correctly
