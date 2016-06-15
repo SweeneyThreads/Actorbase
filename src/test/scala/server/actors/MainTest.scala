@@ -80,7 +80,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   implicit val system = ActorSystem("System",ConfigFactory.load(config))
   Server.settingsManager = System.actorOf(Props[SettingsManager])
 
-/*
+
   /*########################################################################
     Testing ListDatabaseMessage() receiving TU13
     ########################################################################*/
@@ -351,7 +351,7 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
       result => result should be(new ReplyMessage(EnumReplyResult.Error, new RemoveRowMessage("key"), NoWritePermissionInfo()))
     }
     StaticSettings.mapManagerRefs.clear()
-  }*/
+  }
 
   /*########################################################################
     Testing UserMessage() read permission receiving TU21
@@ -361,13 +361,13 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
     val userperm = new util.HashMap[String, UserPermission]
-    userperm.put("nowritedatabase", EnumPermission.Read)
+    userperm.put("nowriteperdatabase", EnumPermission.Read)
     val actorRef = TestActorRef(new Main(userperm))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
 
     StaticSettings.mapManagerRefs.put("noreaddatabase", System.actorOf(Props(classOf[FakeMapManager],null), name = "noreaddatabase"))
-    StaticSettings.mapManagerRefs.put("nowritedatabase", System.actorOf(Props(classOf[FakeMapManager],null), name = "nowritedatabase"))
+    StaticSettings.mapManagerRefs.put("nowriteperdatabase", System.actorOf(Props(classOf[FakeMapManager],null), name = "nowriteperdatabase"))
 
     val future = actorRef ? SelectDatabaseMessage("noreaddatabase")
     //when the message is completed i check that the StoremanagerActor reply correctly
@@ -378,8 +378,9 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
     val future1 = actorRef ? ListDatabaseMessage()
     //when the message is completed i check that the StoremanagerActor reply correctly
     ScalaFutures.whenReady(future1) {
-      result => result should be(new ReplyMessage(EnumReplyResult.Done, new ListDatabaseMessage(), ListDBInfo(List[String]("nowritedatabase"))))
+      result => result should be(new ReplyMessage(EnumReplyResult.Done, new ListDatabaseMessage(), ListDBInfo(List[String]("nowriteperdatabase"))))
     }
+    StaticSettings.mapManagerRefs.clear()
 
   }
 }
