@@ -91,7 +91,6 @@ object Server {
       loadDatabases(system)
       log.info("Server started")
     }
-      //TODO REMOVE that shit, it ain't workin'
     catch {
       case e: Exception => {
         Console.println("[ERROR]: Port already in use, please change the " +
@@ -147,38 +146,3 @@ object Server {
     }
   }
 }
-
-/* RICETTA PER LA FELICITA'
-
-* Fai partire il server (Debug).
-* Fai partire il client (Run).
-* Scrivi 'connect localhost:8181 admin admin'
-* Divertiti con i comandi che Borto ha implementato per te!
-*
-* listdb, selectdb nome, createdb nome, deletedb nome,
-* listmap, selectmap nome, createmap nome, deletemap nome,
-* insert 'key' value, update 'key' value, remove 'key', find 'key', keys.
-*
-* Quando vuoi disconnetterti scrivi 'disconnect'
-*
-* Il server per ora NON risponde al client MA viene tutto stampato su console.
-*
-* */
-
-/*  COME è STRUTTURAT0 IL SERVER
-*
-* Il server crea un Doorkeeper (porta 8181) e uno Storemanager ("test"). **uno storemanager rappresenta una database**
-* Il Doorkeeper, per ogni connessione, crea un Usermanager.
-*
-* Ogni stringa inviata dal un client verrà gestita dal proprio Usermanager.
-* Quest'ultimo ha il compito di creare i messaggi (con l'aiuto di una classe di parsing),
-* controllare i permessi e spedire ad un Main.
-*
-* Un Main gestisce i messaggi di un client.
-* L'attore Main ha la responsabilità di gestire i database (Storemanager).
-* L'attore Storemanager ha la responsabilità di gestire le mappe (Storefinder)*
-* Storefinder e Storekeeper li conosciamo tutti.
-*
-* Ho implementato l'indicizzazione degli Storekeeper attraverso espressioni regolari.
-*
-* */
