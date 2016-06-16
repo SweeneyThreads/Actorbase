@@ -30,6 +30,7 @@
 package server.actors
 
 import java.text.SimpleDateFormat
+import java.util
 import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
 
@@ -42,7 +43,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 import server.enums.EnumReplyResult.Done
 import server.enums.EnumStoremanagerType.StoremanagerType
-import server.enums.{EnumStoremanagerType, EnumReplyResult}
+import server.enums.{EnumReplyResult, EnumStoremanagerType}
 import server.messages.query.ReplyMessage
 import server.messages.query.user.DatabaseMessages._
 import server.messages.query.user.RowMessages._
@@ -123,8 +124,8 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
     val index2 = ("d",null)
     val aux =new ConcurrentHashMap[String, Array[Byte]]()
 
-    actor.leftChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)),index1,new Array[ActorRef](0))
-    actor.rightChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)),index2, new Array[ActorRef](0))
+    actor.leftChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)),index1,new util.ArrayList[ActorRef](0))
+    actor.rightChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,new Array[Byte](123),null)),index2, new util.ArrayList[ActorRef](0))
     //add two fakestorekeepers
     // now I send the message
     val future = actorRef ? ListKeysMessage()
@@ -154,8 +155,8 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
     val first =new Array[Byte](111)
     val second = new Array[Byte](222)
     val aux =new ConcurrentHashMap[String, Array[Byte]]()
-    actor.leftChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,first,new Array[ActorRef](0))),index1,new Array[ActorRef](0))
-    actor.rightChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index2, EnumStoremanagerType.StorekeeperType,second,new Array[ActorRef](0))),index2, new Array[ActorRef](0))
+    actor.leftChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index1, EnumStoremanagerType.StorekeeperType,first,new Array[ActorRef](0))),index1,new util.ArrayList[ActorRef](0))
+    actor.rightChild = new actor.Child(System.actorOf(Props(classOf[FakeStoremanagerStorekeeper],aux, index2, EnumStoremanagerType.StorekeeperType,second,new Array[ActorRef](0))),index2, new util.ArrayList[ActorRef](0))
     // now I send the message
     val InsertRowMessage1future = actorRef ? InsertRowMessage("c",value)
     //when the message is completed i check that the StorefinderActor reply correctly
@@ -200,7 +201,7 @@ class StorefinderTest extends FlatSpec with Matchers with MockFactory {
   }
 }
 
-class FakeStoremanagerStorekeeper(data: ConcurrentHashMap[String,  Array[Byte]],index: (String, String), storemanagerType: StoremanagerType,wich: Array[Byte]=new Array[Byte](135),ninjas: Array[ActorRef]) extends Storemanager(data,index,storemanagerType,ninjas){
+class FakeStoremanagerStorekeeper(data: ConcurrentHashMap[String,  Array[Byte]],index: (String, String), storemanagerType: StoremanagerType,wich: Array[Byte]=new Array[Byte](135),ninjas: util.ArrayList[ActorRef]) extends Storemanager(data,index,storemanagerType,ninjas){
   override def receive = {
     case m:ListKeysMessage => {
       val origSender = sender

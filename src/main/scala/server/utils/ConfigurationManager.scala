@@ -34,8 +34,6 @@ import java.util
 
 import org.json.JSONObject
 import server.StaticSettings
-import server.enums.EnumActorsProperties
-import server.enums.EnumActorsProperties.ActorProperties
 
 /**
   * Reads and writes various server configurations files.

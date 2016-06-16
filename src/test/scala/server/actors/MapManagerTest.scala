@@ -31,6 +31,7 @@
 
 package server.actors
 
+import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorRef, ActorSystem, Props}
@@ -41,8 +42,8 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 import server.DistributionStrategy.RoundRobinAddresses
-import server.{StaticSettings, SettingsManager, Server, ClusterListener}
-import server.enums.{EnumStoremanagerType, EnumReplyResult}
+import server.{ClusterListener, Server, SettingsManager, StaticSettings}
+import server.enums.{EnumReplyResult, EnumStoremanagerType}
 import server.enums.EnumReplyResult.Done
 import server.enums.EnumStoremanagerType.StoremanagerType
 import server.messages.internal.AskMessages.AskMapMessage
@@ -229,7 +230,7 @@ class MapManagerTest extends FlatSpec with Matchers with MockFactory {
 /**fake storefinder for receiving RowMessage test,
   * it builds with the value it has to return
   * */
-class FakeStoremanagerStorefinder(data: ConcurrentHashMap[String,  Array[Byte]],index: (String, String), storemanagerType: StoremanagerType,returnInfo: Array[Byte]=new Array[Byte](135),ninjas: Array[ActorRef]) extends Storemanager(data,index,storemanagerType,ninjas){
+class FakeStoremanagerStorefinder(data: ConcurrentHashMap[String,  Array[Byte]], index: (String, String), storemanagerType: StoremanagerType, returnInfo:Array[Byte] = new Array[Byte](135), ninjas: util.ArrayList[ActorRef]) extends Storemanager(data,index,storemanagerType,ninjas){
 
 
   override def receive = {

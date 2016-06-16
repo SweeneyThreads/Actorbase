@@ -33,23 +33,25 @@ import java.util
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.{ActorRef, OneForOneStrategy, Props, Terminated}
 import server.enums.EnumReplyResult
 import server.enums.EnumReplyResult.{Done, Error}
 import server.enums.EnumStoremanagerType._
-import server.messages.query.{ReplyMessage}
+import server.messages.query.{ReplyErrorInfo, ReplyMessage}
 import server.messages.query.user.RowMessages._
 
 import scala.language.postfixOps
-import scala.util.{ Random, Success}
+import scala.util.{Failure, Random, Success}
 import server.StaticSettings
-import server.messages.internal.LinkMessages.{BecomeStorefinderNinjaMessage, LinkMessage}
+import server.messages.internal.StoremanagerMessages.{BecomeMainStoremanager, BecomeStorefinderNinjaMessage, StoremanagerMessage}
 import akka.pattern.ask
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.collection.JavaConversions._
+import scala.concurrent.duration._
+
 
 /**
   * A Storemanager manages data stored in RAM
@@ -62,7 +64,7 @@ import scala.collection.JavaConversions._
 class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
                    val index: (String, String),
                    val storemanagerType: StoremanagerType,
-                   val ninjas: Array[ActorRef] = null)
+                   var ninjas: util.ArrayList[ActorRef] = null)
   extends ReplyActor {
 
   /**
@@ -73,10 +75,10 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     * @param i The Child index
     * @param n The Child array of ninjas
     */
-  class Child(a: ActorRef, i: (String, String), n: Array[ActorRef]) {
-    val actor = a
+  class Child(a: ActorRef, i: (String, String), n: util.ArrayList[ActorRef]) {
+    var actor = a
     val index = i
-    val ninjas = n
+    var ninjas = n
   }
 
   var leftChild: Child = null
@@ -111,7 +113,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     * Processes all incoming messages behaving like a Storekeeper actor.
     * It handles only RowMessage messages
     *
-    * @see #handleRowMessageAsStorefinder(RowMessage)
+    * @see #handleRowMessageAsStorekeeper(RowMessage)
     */
   def receive = {
     // StoreFinder should receive and handle only RowMessages
@@ -217,20 +219,23 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     val index1 = (index._1, midElement)
     val index2 = (midElement, index._2)
     // Creates two ninjas array
-    val ninjas1 = new Array[ActorRef](StaticSettings.ninjaNumber)
+    val ninjas1 = new util.ArrayList[ActorRef](StaticSettings.ninjaNumber)
     for (i <- ninjas1.indices) {
       ninjas1(i) = context.actorOf(Props(new Storemanager(new ConcurrentHashMap[String, Array[Byte]](map1), index1, StorekeeperNinjaType)))
     }
-    val ninjas2 = new Array[ActorRef](StaticSettings.ninjaNumber)
+    val ninjas2 = new util.ArrayList[ActorRef](StaticSettings.ninjaNumber)
     for (i <- ninjas2.indices) {
       ninjas2(i) = context.actorOf(Props(new Storemanager(new ConcurrentHashMap[String, Array[Byte]](map2), index2, StorekeeperNinjaType)))
     }
     // Creates two children with the created maps and pass the ninjas to them
-    val actor1 = context.actorOf(Props(new Storemanager(map1, index1, StorekeeperType, ninjas1)))
-    val actor2 = context.actorOf(Props(new Storemanager(map2, index2, StorekeeperType, ninjas2)))
+    val leftActor = context.actorOf(Props(new Storemanager(map1, index1, StorekeeperType, ninjas1)))
+    val rightActor = context.actorOf(Props(new Storemanager(map2, index2, StorekeeperType, ninjas2)))
+    // Watches for actors death
+    context.watch(leftActor)
+    context.watch(rightActor)
     // Adds children
-    leftChild = new Child(actor1, index1, ninjas1)
-    rightChild = new Child(actor2, index2, ninjas2)
+    leftChild = new Child(leftActor, index1, ninjas1)
+    rightChild = new Child(rightActor, index2, ninjas2)
     // Erase the map
     map.clear()
     log.info("Storekeeper splitted")
@@ -248,6 +253,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   private def receiveAsStoreFinder: Receive = {
     // If it's a row level message
     case m: RowMessage => handleRowMessageAsStorefinder(m)
+    case Terminated(actor: ActorRef) => handleDeadChild(actor)
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receiveAsStoreFinder"))
   }
 
@@ -285,8 +291,10 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
         val reply = result1.asInstanceOf[ReplyMessage]
         reply.result match {
           case Done => keys = keys ::: reply.info.asInstanceOf[ListKeyInfo].keys
+          case Error =>
         }
       }
+      case Failure(t) => reply(ReplyMessage(EnumReplyResult.Error, message, ReplyErrorInfo()))
     }
     // Handles the right future
     rightFuture.onComplete {
@@ -294,8 +302,10 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
         val reply = result1.asInstanceOf[ReplyMessage]
         reply.result match {
           case Done => keys = keys ::: reply.info.asInstanceOf[ListKeyInfo].keys
+          case Error =>
         }
       }
+      case Failure(t) => reply(ReplyMessage(EnumReplyResult.Error, message, ReplyErrorInfo()))
     }
     val f = Future.sequence(futures.toList)
     Await.ready(f, Duration.Inf)
@@ -383,7 +393,26 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     return rightChild
   }
 
+  /**
+    * Replace the dead Storekeeper actor with one of its Ninja actors
+    *
+    * @param actor The dead child actor
+    */
+  private def handleDeadChild(actor: ActorRef): Unit  = {
+    var child = leftChild
+    if(actor == rightChild.actor)
+      child = rightChild
+
+    val firstNinja = child.ninjas(0)
+    child.ninjas.drop(0)
+    child.actor = firstNinja
+    val future = child.actor ? BecomeMainStoremanager(child.ninjas)
+    val newNinja = Await.result(future, 5 seconds).asInstanceOf[ActorRef]
+    child.ninjas.add(newNinja)
+  }
+
   // StorekeeperNinja behaviour
+
   /**
     * Processes all incoming messages behaving like a Ninja actor.
     * It handles only RowMessage messages.
@@ -394,7 +423,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   private def receiveAsStorekeeperNinja: Receive = {
     // If it's a row level message
     case m: RowMessage => handleRowMessagesAsStorekeeperNinja(m)
-    case m: LinkMessage => handleLinkMessagesAsStorekeeperNinja(m)
+    case m: StoremanagerMessage => handleNinjaMessagesAsStorekeeperNinja(m)
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receiveAsStorekeeperNinja"))
   }
 
@@ -452,14 +481,28 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     }
   }
 
-  private def handleLinkMessagesAsStorekeeperNinja(message: LinkMessage): Unit = {
+  /**
+    * Processes StoremanagerMessage messages as StorekeeperNinja.
+    *
+    * @param message The StoremanagerMessage message to process
+    */
+  private def handleNinjaMessagesAsStorekeeperNinja(message: StoremanagerMessage): Unit = {
     message match {
-      case BecomeStorefinderNinjaMessage(c : Array[ActorRef], i : Array[(String, String)], n : Array[Array[ActorRef]]) => {
+      case BecomeStorefinderNinjaMessage(c: Array[ActorRef], i: Array[(String, String)], n: Array[util.ArrayList[ActorRef]]) =>
         context.become(receiveAsStorefinderNinja)
         map.clear()
         leftChild = new Child(c(0), i(0), n(0))
         rightChild = new Child(c(1), i(1), n(1))
-      }
+      case BecomeMainStoremanager(nin: util.ArrayList[ActorRef]) =>
+        ninjas = nin
+        // Change behaviour to Storekeeper
+        context.become(receive)
+        // Create a new Ninja to take its place
+        val newNinja = context.actorOf(Props(new Storemanager(map, index, StorekeeperNinjaType)))
+        // Add the new ninja to his list
+        ninjas.add(newNinja)
+        // Return the new ninja to the parent
+        Some(sender).map(_ ! newNinja)
     }
   }
 
@@ -475,6 +518,7 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   private def receiveAsStorefinderNinja: Receive = {
     // If it's a row level message
     case m: RowMessage => handleRowMessagesAsStorefinderNinja(m)
+    case m: StoremanagerMessage => handleStoremanagerMessagesAsStorefinderNinja(m)
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receiveAsStorefinderNinja"))
   }
 
@@ -494,6 +538,26 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
       }
       case ListKeysMessage() => handleKeysMessageAsStorefinder(message)
       case _ => return
+    }
+  }
+
+  /**
+    * Processes StoremanagerMessage messages as StorefinderNinja.
+    *
+    * @param message The StoremanagerMessage message to process
+    */
+  private def handleStoremanagerMessagesAsStorefinderNinja(message: StoremanagerMessage): Unit = {
+    message match {
+      case BecomeMainStoremanager(nin: util.ArrayList[ActorRef]) =>
+        ninjas = nin
+        // Change behaviour to Storekeeper
+        context.become(receiveAsStoreFinder)
+        // Create a new Ninja to take its place
+        val newNinja = context.actorOf(Props(new Storemanager(map, index, StorefinderNinjaType)))
+        // Add the new ninja to his list
+        ninjas.add(newNinja)
+        // Return the new ninja to the parent
+        Some(sender).map(_ ! newNinja)
     }
   }
 }

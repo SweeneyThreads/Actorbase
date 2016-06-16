@@ -36,9 +36,8 @@ import akka.actor.{Deploy, Props}
 import akka.pattern.ask
 import akka.remote.RemoteScope
 import server.StaticSettings
-import server.enums.EnumActorsProperties.ActorProperties
 import server.enums.EnumPermission.UserPermission
-import server.enums.{EnumActorsProperties, EnumPermission, EnumReplyResult}
+import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.query.PermissionMessages._
 import server.messages.query.admin.AdminMessage
@@ -663,6 +662,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
                   }
                 }
               }
+              case Failure(t) => reply(ReplyMessage(EnumReplyResult.Error, message, ReplyErrorInfo()))
             }
           }
           case EnumReplyResult.Error => {
@@ -717,6 +717,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
                   }
                 }
               }
+              case Failure(t) => reply(ReplyMessage(EnumReplyResult.Error, message, ReplyErrorInfo()))
             }
           }
           case EnumReplyResult.Error => {
