@@ -770,8 +770,6 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     * @see NoPermissionMessage
     */
   private def checkPermissions(message: QueryMessage, dbName: String): Boolean = {
-    //TODO admin permissions
-
     // If permissions are null the user is a super admin and has every permissions
     if (perms == null)
       return true
