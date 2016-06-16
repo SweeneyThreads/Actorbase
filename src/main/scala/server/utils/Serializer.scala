@@ -27,16 +27,39 @@
  * @since 0.0.1
  */
 
-package server.messages.query.admin
+package server.utils
 
-import server.messages.query.PermissionMessages.AdminPermissionMessage
-import server.messages.query.QueryMessage
-
+import java.io._
 
 /**
-  * Trait that every message that belongs to administration operations has to extend.
-  *
-  * @see QueryMessage
-  * @see AdminPermissionMessage
+  * This class supply the methods to manage the serialization of objects into bytes.
   */
-trait AdminMessage extends QueryMessage with AdminPermissionMessage { }
+class Serializer {
+
+  /**
+    *
+    * @param obj
+    * @return
+    */
+  def serialize(obj: Object): Array[Byte] = {
+    val b: ByteArrayOutputStream = new ByteArrayOutputStream()
+
+    val o: ObjectOutputStream = new ObjectOutputStream(b)
+    o.writeObject(obj)
+
+    b.toByteArray
+  }
+
+  /**
+    *
+    * @param array
+    */
+  def deserialize(array: Array[Byte]): Object = {
+    val b: ByteArrayInputStream = new ByteArrayInputStream(array)
+
+    val o: ObjectInputStream = new ObjectInputStream(b)
+    o.readObject()
+
+  }
+
+}

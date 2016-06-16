@@ -1,17 +1,63 @@
+
+/*
+ * The MIT License (MIT)
+ * <p/>
+ * Copyright (c) 2016 SWEeneyThreads
+ * <p/>
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * <p/>
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * <p/>
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * <p/>
+ *
+ * @author SWEeneyThreads
+ * @version 0.0.1
+ * @since 0.0.1
+ */
+
 package server.actors
+
+import java.util
+
+import com.typesafe.config.ConfigFactory
+import server.DistributionStrategy.RoundRobinAddresses
+import server.enums.EnumPermission.UserPermission
+import server.messages.query.PermissionMessages.{NoReadPermissionInfo, NoWritePermissionInfo}
+import server.messages.query.admin.UsersManagementMessages.{AddUserInfo, AddUserMessage, ListUserInfo, ListUserMessage}
+import server.{SettingsManager, Server, ClusterListener, StaticSettings}
+import server.enums.{EnumPermission, EnumReplyResult, EnumStoremanagerType}
+import server.messages.query.ReplyMessage
 
 import scala.language.postfixOps
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{Matchers, FlatSpec}
+import org.scalatest.{FlatSpec, Matchers}
 import java.util.concurrent.ConcurrentHashMap
+
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.event.{Logging, LoggingAdapter}
-import server.messages.query.user.DatabaseMessages.{DeleteDatabaseMessage, SelectDatabaseMessage, ListDatabaseMessage}
-import server.messages.query.user.MapMessages.SelectMapMessage
-import server.utils.{ServerDependencyInjector}
-
+import server.messages.query.user.DatabaseMessages._
+import server.messages.query.user.MapMessages._
 import akka.testkit.TestActorRef
+import server.enums.EnumReplyResult.Done
+import server.enums.EnumStoremanagerType.StoremanagerType
+import server.messages.internal.AskMessages.AskMapMessage
+import server.messages.query.user.HelpMessages.{CompleteHelpMessage, CompleteHelpReplyInfo, SpecificHelpMessage, SpecificHelpReplyInfo}
+import server.messages.query.user.RowMessages._
+import server.utils.Helper
 
 
 /**
@@ -24,224 +70,401 @@ class MainTest extends FlatSpec with Matchers with MockFactory{
   import akka.dispatch.ExecutionContexts._
 
 
-  var System:ActorSystem = ActorSystem("System")
-  var log:LoggingAdapter = Logging.getLogger(System, this)
+  var configString = ConfigFactory.parseString("akka.loggers = [\"akka.event.slf4j.Slf4jLogger\"][\"akka.event.Logging$DefaultLogger\"]")
+  var config = ConfigFactory.load(configString)
+  configString = ConfigFactory.parseString("akka.loglevel = \"DEBUG\"")
+  config = configString.withFallback(config)
+  configString = ConfigFactory.parseString("akka.actor.provider = \"akka.cluster.ClusterActorRefProvider\"")
+  config = configString.withFallback(config)
+  configString = ConfigFactory.parseString("akka.remote.netty.tcp.port = 0")
+  config = configString.withFallback(config)
+  val System = ActorSystem("System",ConfigFactory.load(config))
+  var log: LoggingAdapter = Logging.getLogger(System, this)
   implicit val timeout = Timeout(25 seconds)
   implicit val ec = global
-  implicit val system = ActorSystem()
+  implicit val system = ActorSystem("System",ConfigFactory.load(config))
+  Server.settingsManager = System.actorOf(Props[SettingsManager])
 
 
   /*########################################################################
-    Testing ListDatabaseMessage() receiving
+    Testing ListDatabaseMessage() receiving TU13
     ########################################################################*/
 
-  //creating a map that simulates a plausible list of databasename=>Storemanager
-  val fakeStoremanagersMap=new ConcurrentHashMap[String,ActorRef]
-  fakeStoremanagersMap.put("test", System.actorOf(Props[Storemanager]))
-  fakeStoremanagersMap.put("biggestMapEu", System.actorOf(Props[Storemanager]))
-  fakeStoremanagersMap.put("lastMapForNow", System.actorOf(Props[Storemanager]))
-  //creating a fake server
-  object FakeServer {
-    var fakeStoremanagers: ConcurrentHashMap[String, ActorRef] = fakeStoremanagersMap
-  }
-  //creating the injector (the traits that tells the main actor i'll create soon to use FakeServer instead of the real server)
-  trait FakeServerInjector extends ServerDependencyInjector {
-    override def getStoremanagers : ConcurrentHashMap[String, ActorRef] = {
-      FakeServer.fakeStoremanagers
-    }
-  }
-  /*
-  the test starts now:
-  - first of all i put inside the system a new actor of tipe Main injecting it with the directive to use our FakeServer
-  - then i send a ListDatabaseMessage to him and i store the result in a Future
-  - when future is complete (this blocks the execution and waits the future to be completed) i check that the result is
-    what i am expecting: the list of the names of the databases
-   */
-  "Main" should "reply correctly to a ListDatabaseMessage()" in {
-    //creating a MainActor into system, injecting a dependency to a fake server that is defined above
-    val main = System.actorOf(Props(new Main(null, new FakeServerInjector {})))
-    val future = main ? new ListDatabaseMessage()
-    ScalaFutures.whenReady(future) {
-      result => result should be("test\nbiggestMapEu\nlastMapForNow")
-    }
-  }
+  //save the old static setting values
+  val oldmapManagerRefs = StaticSettings.mapManagerRefs
+  val oldmaxRowNumber = StaticSettings.maxRowNumber
+  val oldninjaNumber = StaticSettings.ninjaNumber
+  val oldwarehousemanNumber = StaticSettings.warehousemanNumber
+  val olddataPath = StaticSettings.dataPath
 
-
-  //like above
-  //creating the fake server
-  object FakeEmptyServer {
-    var fakeStoremanagers=new ConcurrentHashMap[String,ActorRef] ()
-  }
-  //creating the injector for the fake server
-  trait FakeEmptyServerInjector extends ServerDependencyInjector {
-    override def getStoremanagers : ConcurrentHashMap[String, ActorRef] = {
-      FakeEmptyServer.fakeStoremanagers
-    }
-  }
-  //testing that the servers reacts well to ListDatabaseMessage even if empty
-  it should "reply 'The server is empty' to a ListDatabaseMessage() if the server is in fact empty" in {
-    val anotherMain = System.actorOf(Props(new Main(null, new FakeEmptyServerInjector {} )))
-    val future2 = anotherMain ? new ListDatabaseMessage()
-    ScalaFutures.whenReady(future2) {
-      result => result should be("The server is empty")
-    }
-  }
-
-
-
-  /*########################################################################
-    Testing SelectDatabaseMessage() receiving
-    ########################################################################*/
-  /**
-    * first of all I try to test what is possible to test without the akka-testkit, as reported
-    * on the akka-testkit best practice
-    *
-    * @see [[http://doc.akka.io/docs/akka/current/scala/testing.html]]
-   */
-  class FakeMain extends Main(null, new FakeServerInjector {})
-  it should "reply correctly when receiving a SelectDatabaseMessage(s: String) - - - database should not be actually selected, just testing correct answer" in {
-    //a fake main with the desired injector
-    val main3 = System.actorOf(Props(new FakeMain))
-    val future3 = main3 ? SelectDatabaseMessage("test")
-    ScalaFutures.whenReady(future3) {
-      result => {
-        result should be("Database test selected")
-      }
-    }
-    //now i try to select a database that isn't actually inside our FakeServer
-    val future = main3 ? SelectDatabaseMessage("aRandomDatabaseThatDontActuallyExists")
-    ScalaFutures.whenReady(future) {
-      result => {
-        result should be("Invalid operation")
-      }
-    }
-  }
-
-  /**
-    * now, using the akka-toolkit, I can test if the property of the actor actually change when
-    * he receive the message
-    * ''check this out:'' we can generate kind an actor ref from witch we can get the `underlyingActor` that
-    * can be used to acces the actor's members.
-    *
-    * @note to TestActorRef you '''must''' put this line at the beginning of the scope: `implicit val system = ActorSystem()`
-    *       @see [[http://stackoverflow.com/questions/35202570/could-not-find-implicit-value-for-parameter-system-akka-actor-actorsystem]]
-    */
-  it should "actually select the correct database when receiving a SelectDatabaseMessage(s: String)" in {
+  "main actor" should "actually return correct maplist when receiving a ListMapMessage" in {
     // TestActorRef is a exoteric function provided by akka-testkit
     // it creates a special actorRef that could be used for test purpose
-    val actorRef=TestActorRef(new FakeMain)
+    val actorRef=system.actorOf(Props(classOf[Main],null))
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+    // now I send the message
+    val future = actorRef ? ListDatabaseMessage()
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Error,new ListDatabaseMessage(),NoDBInfo()))
+    }
+    StaticSettings.mapManagerRefs.clear()
+    StaticSettings.mapManagerRefs.put("test1",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="test1"))
+    StaticSettings.mapManagerRefs.put("test2",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="test2"))
+    StaticSettings.mapManagerRefs.put("test3",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="test3"))
+
+    val future1 = actorRef ? ListDatabaseMessage()
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future1) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new ListDatabaseMessage(),ListDBInfo(List[String]("test1","test2","test3"))))
+    }
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+  }
+
+  /*########################################################################
+    Testing SelectDatabaseMessage() receiving TU14
+    ########################################################################*/
+
+  it should "actually select the correct database or reply with the correct error" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val actorRef=TestActorRef(new Main(null))
     // retrieving the underlying actor
     val actor = actorRef.underlyingActor
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
     // now I send the message
-    val future = actorRef ? SelectDatabaseMessage("biggestMapEu")
-    //when the message is completed i check that the MainActor property changed consistently
-    ScalaFutures.whenReady(future) { result => {
-      actor.selectedDatabase should be("biggestMapEu")
-      actor.selectedMap should be("")
-    }}
-    // now i try to send a message with a wrong db name, and check that the selected map is the same than before
-    val future2 = actorRef ? SelectDatabaseMessage("randomDatabaseThaDontExists")
-    ScalaFutures.whenReady(future2) { result => {
-      actor.selectedDatabase should be("biggestMapEu")
-      actor.selectedMap should be("")
-    }}
+    val future = actorRef ? SelectDatabaseMessage("NotExistingDB")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Error,new SelectDatabaseMessage("NotExistingDB"),DBDoesNotExistInfo()))
+    }
+    StaticSettings.mapManagerRefs.put("test12",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="test12"))
+    StaticSettings.mapManagerRefs.put("test22",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="test22"))
+    StaticSettings.mapManagerRefs.put("test32",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="test32"))
+
+    val future1 = actorRef ? SelectDatabaseMessage("test22")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future1) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new SelectDatabaseMessage("test22")))
+        actor.selectedDatabase should be ("test22")
+    }
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
   }
 
   /*########################################################################
-    Testing CreateDatabaseMessage() receiving
+    Testing CreateDatabaseMessage() receiving TU15
     ########################################################################*/
-  /**
-    * @todo test this soon
-    */
+    it should "create the correct database or reply with the correct error is the database already exsist" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val actorRef=TestActorRef(new Main(null))
+    // retrieving the underlying actor
+    val actor = actorRef.underlyingActor
+    actor.clusterListener=System.actorOf(Props[RoundRobinAddresses])
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+    // now I send the message
+    val future = actorRef ? CreateDatabaseMessage("NotExistingDB")
+    //when the message is completed i check that the mainActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new CreateDatabaseMessage("NotExistingDB")))
+        actor.selectedDatabase should be ("NotExistingDB")
+    }
+    StaticSettings.mapManagerRefs.put("AlreadyExistingDB",System.actorOf(Props[MapManager],name="AlreadyExistingDB"))
 
+    val future1 = actorRef ? CreateDatabaseMessage("AlreadyExistingDB")
+    //when the message is completed i check that the mainActor reply correctly
+    ScalaFutures.whenReady(future1) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Error,new CreateDatabaseMessage("AlreadyExistingDB"),DBAlreadyExistInfo()))
+        actor.selectedDatabase should not be ("AlreadyExistingDB")
+    }
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+  }
 
+  /*########################################################################
+    Testing DeleteDatabaseMessage() receiving TU16
+    ########################################################################*/
 
-    /*########################################################################
-      Testing DeleteDatabaseMessage() receiving
-      ########################################################################*/
-    it should "actually delete from the StoreManagers map the database passed to 'deletedb' command" in {
-      //refreshing the FakeServer
-      FakeServer.fakeStoremanagers=fakeStoremanagersMap
-      val actorRef=TestActorRef(new FakeMain)
-      val actor = actorRef.underlyingActor
-      //check that "test" is actually inside storemanagers map
-      FakeServer.fakeStoremanagers.containsKey("test") should be(true)
-      //issuing to remove "test"
-      val future = actorRef ? DeleteDatabaseMessage("test")
-      ScalaFutures.whenReady(future) { result => {
-        //check that is no more inside storemanagers map
-        FakeServer.fakeStoremanagers.containsKey("test") should be(false)
-        result should be("Database test deleted")
-      }}
-      val future2 = actorRef ? DeleteDatabaseMessage("thisDbDoesNotExists")
-      ScalaFutures.whenReady(future2) { result => {
-        result should be("Invalid operation")
-      }}
+    it should "delete the correct database or reply with the correct error is the database not exsist" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val actorRef=TestActorRef(new Main(null))
+    // retrieving the underlying actor
+    val actor = actorRef.underlyingActor
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+    // now I send the message
+    val future = actorRef ? DeleteDatabaseMessage("NotExistingDB")
+    //when the message is completed i check that the mainActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Error,new DeleteDatabaseMessage("NotExistingDB"),DBDoesNotExistInfo()))
+    }
+    StaticSettings.mapManagerRefs.put("DB",System.actorOf(Props(classOf[MapManager]),name="DB"))
+
+    val future1 = actorRef ? DeleteDatabaseMessage("DB")
+    //when the message is completed i check that the mainActor reply correctly
+    ScalaFutures.whenReady(future1) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new DeleteDatabaseMessage("DB")))
+        StaticSettings.mapManagerRefs.containsKey("DB") should be (false)
+    }
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+  }
+
+  /*########################################################################
+    Testing SelectMapMessage() receiving TU17
+    ########################################################################*/
+
+  it should "actually select the correct map or reply with the correct error" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val actorRef=TestActorRef(new Main(null))
+    // retrieving the underlying actor
+    val actor = actorRef.underlyingActor
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+    // now I send the message
+    val future1 = actorRef ? SelectMapMessage("noDBselectedMap")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future1) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Error,new SelectMapMessage("noDBselectedMap"),NoDBSelectedInfo()))
     }
 
+    StaticSettings.mapManagerRefs.put("testdb",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="testdb"))
+    actor.selectedDatabase="testdb"
+    val future2 = actorRef ? SelectMapMessage("NotExistingMap")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future2) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Error,new SelectMapMessage("NotExistingMap"),MapDoesNotExistInfo()))
+        actor.selectedMap should be ("")
+    }
+
+    val future3 = actorRef ? SelectMapMessage("existingmap")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future3) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new SelectMapMessage("existingmap")))
+        actor.selectedMap should be ("existingmap")
+    }
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+  }
+
+  /*########################################################################
+    Testing CompleteHelpMessage() SpecificHelpMessage() receiving TU18
+    ########################################################################*/
+
+  "main actor" should "actually return correct information when receiving a CompleteHelpMessage() or a SpecificHelpMessage()" in {
+    val actorRef=system.actorOf(Props(classOf[Main],null))
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+    // now I send the message
+    val helper= new Helper
+    val future = actorRef ? CompleteHelpMessage()
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new CompleteHelpMessage(),CompleteHelpReplyInfo(helper.completeHelp())))
+    }
+    val command:String="Selectdb"
+    val future1 = actorRef ? SpecificHelpMessage(command)
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future1) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new SpecificHelpMessage(command),SpecificHelpReplyInfo(helper.specificHelp(command))))
+    }
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+  }
+
+  /*########################################################################
+    Testing RowMessage() receiving TU19
+    ########################################################################*/
+
+  it should "actually recive RowMessage() and send them to the correct MapManager" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val actorRef=TestActorRef(new Main(null))
+    // retrieving the underlying actor
+    val actor = actorRef.underlyingActor
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+    // now I send the message
+    val first=new Array[Byte](1)
+    StaticSettings.mapManagerRefs.put("test13",System.actorOf(Props(classOf[FakeMapManager],first),name="test13"))
+    actor.selectedDatabase="test13"
+    actor.selectedMap="maptest"
+
+    val future = actorRef ? FindRowMessage("existingmap")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new FindRowMessage("existingmap"),FindInfo(first)))
+    }
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+  }
 
 
   /*########################################################################
-    Testing SelectMapMessage() receiving
+    Testing UserMessage() write permission receiving TU20
     ########################################################################*/
-  //refreshing the FakeServer
-  //FakeServer.fakeStoremanagers=fakeStoremanagersMap
-  //val actorRef=TestActorRef(new FakeMain)
-  //val actor = actorRef.underlyingActor
 
+  "main actor" should "reply with an error when the user try to do a query that needs write permmission without having them" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val userperm = new util.HashMap[String, UserPermission]
+    userperm.put("nowritedatabase", EnumPermission.Read)
+    val actorRef = TestActorRef(new Main(userperm))
+    // retrieving the underlying actor
+    val actor = actorRef.underlyingActor
 
-  //testing what happens if the mapName is valid
-  //setting some preconditions
-  val mainActorRef=TestActorRef(new FakeMain)
-  val mainActor = mainActorRef.underlyingActor
-  mainActor.selectedDatabase="test"
-  val future = mainActorRef ? SelectMapMessage("defaultMap")
-  "Main (<- selectmap <mapName>)" should "actually set the correct map in his property (if mapName is valid)" in {
-    ScalaFutures.whenReady(future) {result => {
-      mainActor.selectedDatabase should be("test")
-      mainActor.selectedMap should be("defaultMap")
-    }}
-  }
-  it should "reply affirmatively when command is valid" in {
-    ScalaFutures.whenReady(future) {result => {
-      result should be("Map defaultMap selected")
-    }}
+    StaticSettings.mapManagerRefs.put("nowritedatabase", System.actorOf(Props(classOf[FakeMapManager],null), name = "nowritedatabase"))
+    actor.selectedDatabase = "nowritedatabase"
+
+    val future = actorRef ? DeleteDatabaseMessage("nowritedatabase")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new DeleteDatabaseMessage("nowritedatabase"), NoWritePermissionInfo()))
+    }
+    val future1 = actorRef ? CreateMapMessage("map")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future1) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new CreateMapMessage("map"), NoWritePermissionInfo()))
+    }
+    val future2 = actorRef ? DeleteMapMessage("map")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future2) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new DeleteMapMessage("map"), NoWritePermissionInfo()))
+    }
+    actor.selectedMap = "existingmap"
+    val value=new Array[Byte](2345)
+    val future3 = actorRef ? InsertRowMessage("key",value )
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future3) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new InsertRowMessage("key",value ), NoWritePermissionInfo()))
+    }
+    val future4 = actorRef ? UpdateRowMessage("key",value )
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future4) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new UpdateRowMessage("key",value ), NoWritePermissionInfo()))
+    }
+    val future5 = actorRef ? RemoveRowMessage("key")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future5) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new RemoveRowMessage("key"), NoWritePermissionInfo()))
+    }
+    StaticSettings.mapManagerRefs.clear()
   }
 
-/*
-  //now testing what happens if the mapName is not valid
-  //setting some preconditions
-  actor.selectedDatabase = "test"
-  actor.selectedMap = "defaultMap"
-  val future2 = actorRef ? SelectMapMessage("imaginaryMap")
+  /*########################################################################
+    Testing UserMessage() read permission receiving TU21
+    ########################################################################*/
 
-  it should "actually dont change selectedMap property if mapName in not valid" in {
-    ScalaFutures.whenReady(future2) {result => {
-      actor.selectedDatabase should be("test")
-      actor.selectedMap should be("defaultMap")
-    }}
-  }
-  it should "reply whit error when command is not valid" in {
-    ScalaFutures.whenReady(future2) {result => {
-      result should be("Invalid map")
-    }}
+  "main actor" should "reply with an error when the user try to do a query that needs read permission without having them" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val userperm = new util.HashMap[String, UserPermission]
+    userperm.put("nowriteperdatabase", EnumPermission.Read)
+    val actorRef = TestActorRef(new Main(userperm))
+    // retrieving the underlying actor
+    val actor = actorRef.underlyingActor
+
+    StaticSettings.mapManagerRefs.put("noreaddatabase", System.actorOf(Props(classOf[FakeMapManager],null), name = "noreaddatabase"))
+    StaticSettings.mapManagerRefs.put("nowriteperdatabase", System.actorOf(Props(classOf[FakeMapManager],null), name = "nowriteperdatabase"))
+
+    val future = actorRef ? SelectDatabaseMessage("noreaddatabase")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Error, new SelectDatabaseMessage("noreaddatabase"), NoReadPermissionInfo()))
+    }
+
+    val future1 = actorRef ? ListDatabaseMessage()
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future1) {
+      result => result should be(new ReplyMessage(EnumReplyResult.Done, new ListDatabaseMessage(), ListDBInfo(List[String]("nowriteperdatabase"))))
+    }
+    StaticSettings.mapManagerRefs.clear()
+
   }
 
-  //now testing what happens if there is no DB selected
-  //setting some preconditions
-  actor.selectedDatabase = ""
-  actor.selectedMap = ""
-  val future3 = actorRef ? SelectMapMessage("defaultMap")
-  it should "if no DB selected -> dont change properties and reply with an error" in {
-    ScalaFutures.whenReady(future3) {result => {
-      actor.selectedDatabase should be("test")
-      actor.selectedMap should be("defaultMap")
-      result should be("Please select a database")
-    }}
+  /*########################################################################
+    Testing ListUserMessage() receiving TU24
+    ########################################################################*/
+
+  "main actor" should "actually return correct user list when receiving a ListUserMessage" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val actorRef=system.actorOf(Props(classOf[Main],null))
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.put("master",System.actorOf(Props(classOf[FakeMapManager],new Array[Byte](1)),name="master"))
+    // now I send the message
+    val future = actorRef ? ListUserMessage()
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new ListUserMessage(),new ListUserInfo(List[String]("caio","sempronio"))))
+    }
+    //clear the map containing the databases
   }
-*/
+
+  /*########################################################################
+    Testing AddUserMessage() receiving TU25
+    ########################################################################*/
+
+  "main actor" should "actually add correct user when receiving an AddUserMessage" in {
+    // TestActorRef is a exoteric function provided by akka-testkit
+    // it creates a special actorRef that could be used for test purpose
+    val actorRef=system.actorOf(Props(classOf[Main],null))
+    //clear the map containing the databases
+    // now I send the message
+    val future = actorRef ? AddUserMessage("user","password")
+    //when the message is completed i check that the StoremanagerActor reply correctly
+    ScalaFutures.whenReady(future) {
+      result => result should be(new ReplyMessage (EnumReplyResult.Done,new AddUserMessage("user","password"),new AddUserInfo()))
+    }
+    //clear the map containing the databases
+    StaticSettings.mapManagerRefs.clear()
+  }
+
 }
 
+
+class FakeMapManager(val wich:Array[Byte]=null) extends ReplyActor{
+  override def receive = {
+    case AskMapMessage(name:String) => {
+      val origSender = sender
+      if(name=="existingmap")
+        origSender ! true
+      else
+        origSender ! false
+    }
+    case StorefinderRowMessage(name:String,message:RowMessage) => {
+      message match {
+        case m:ListKeysMessage=> {
+          val origSender = sender
+          reply(ReplyMessage(EnumReplyResult.Done, m, ListKeyInfo(List[String]("caio", "sempronio"))), origSender)
+        }
+        case m:InsertRowMessage=>{
+          val origSender = sender
+          reply(ReplyMessage(EnumReplyResult.Done, m, ListKeyInfo(List[String]("caio", "sempronio"))), origSender)
+        }
+        case m:FindRowMessage=>{
+          val origSender = sender
+          reply(ReplyMessage(EnumReplyResult.Done,m,FindInfo(wich)), origSender)
+        }
+      }
+    }
+    case m:RowMessage => {
+      val origSender = sender
+      reply(ReplyMessage(EnumReplyResult.Done,m,FindInfo(wich)), origSender)
+    }
+    case _ =>
+      val origSender = sender
+      reply(ReplyMessage(EnumReplyResult.Done,ListKeysMessage(),FindInfo(wich)), origSender)
+  }
+
+}
 
 
 

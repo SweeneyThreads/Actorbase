@@ -27,16 +27,36 @@
  * @since 0.0.1
  */
 
-package server.messages.query.admin
-
-import server.messages.query.PermissionMessages.AdminPermissionMessage
-import server.messages.query.QueryMessage
-
+package server.enums
 
 /**
-  * Trait that every message that belongs to administration operations has to extend.
-  *
-  * @see QueryMessage
-  * @see AdminPermissionMessage
+  * Contains permissions type classes
   */
-trait AdminMessage extends QueryMessage with AdminPermissionMessage { }
+object EnumStoremanagerType {
+  val storemanagerTypes = Seq(StorefinderType, StorekeeperType, StorekeeperNinjaType)
+
+  /**
+    * Represents a Storemanager type
+    */
+  sealed trait StoremanagerType
+
+  /**
+    * Represents a Storefinder type
+    */
+  case object StorefinderType extends StoremanagerType
+
+  /**
+    * Represents a Storekeeper type
+    */
+  case object StorekeeperType extends StoremanagerType
+
+  /**
+    * Represents a StorekeeperNinja type
+    */
+  case object StorekeeperNinjaType extends StoremanagerType
+
+  /**
+    * Represents a StorefinderNinja type
+    */
+  case object StorefinderNinjaType extends StoremanagerType
+}

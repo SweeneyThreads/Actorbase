@@ -29,14 +29,29 @@
 
 package server.messages.query.admin
 
-import server.messages.query.PermissionMessages.AdminPermissionMessage
-import server.messages.query.QueryMessage
+
+import server.messages.query.ReplyInfo
 
 
 /**
-  * Trait that every message that belongs to administration operations has to extend.
-  *
-  * @see QueryMessage
-  * @see AdminPermissionMessage
+  * SettingMessages are used to manage settings properties.
   */
-trait AdminMessage extends QueryMessage with AdminPermissionMessage { }
+object SettingsMessages {
+
+  /**
+    * Trait that every message that belongs to settings operations has to extend.
+    */
+  trait SettingMessage extends AdminMessage
+
+  /**
+    * A RefreshSettingsMessage requests a reload of the settings from the configuration files.
+    *
+    * @see SettingMessage
+    */
+  case class RefreshSettingsMessage () extends SettingMessage
+
+  /**
+    * A RefreshSettingsInfo is a ReplyInfo used by ReplyBuilder to handle the response to a RefreshSettingsMessage
+    */
+  case class RefreshSettingsInfo() extends ReplyInfo
+}

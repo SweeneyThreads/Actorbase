@@ -27,16 +27,40 @@
  * @since 0.0.1
  */
 
-package server.messages.query.admin
+package server.messages.internal
 
-import server.messages.query.PermissionMessages.AdminPermissionMessage
-import server.messages.query.QueryMessage
+import java.util.concurrent.ConcurrentHashMap
+
+import server.messages.query.ReplyInfo
+
+import scala.collection.immutable.HashMap
 
 
 /**
-  * Trait that every message that belongs to administration operations has to extend.
-  *
-  * @see QueryMessage
-  * @see AdminPermissionMessage
+  * StoreMessages are used to express operations about persistence of data.
   */
-trait AdminMessage extends QueryMessage with AdminPermissionMessage { }
+object StorageMessages {
+
+  /**
+    * Trait that every message that belongs to storage operations has to extend.
+    */
+  trait StorageMessage
+
+  /**
+    * A WriteMapMessage is used to write data to disk during shut down operation.
+    *
+    * @param map The map of data that has to be written
+    * @see StorageMessage
+    */
+  case class WriteMapMessage (map: HashMap[String, Array[Byte]]) extends StorageMessage
+
+  /**
+    * A ReadMapMessage is used to read data during the start up operation.
+    *
+    * @see StorageMessage
+    */
+  case class ReadMapMessage () extends StorageMessage
+
+
+  case class ReadMapReply(val map: ConcurrentHashMap[String,Array[Byte]]) extends StorageMessage
+}

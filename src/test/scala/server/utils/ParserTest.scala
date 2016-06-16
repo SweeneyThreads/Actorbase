@@ -1,4 +1,35 @@
+/*
+ * The MIT License (MIT)
+ * <p/>
+ * Copyright (c) 2016 SWEeneyThreads
+ * <p/>
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * <p/>
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * <p/>
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * <p/>
+ *
+ * @author SWEeneyThreads
+ * @version 0.0.1
+ * @since 0.0.1
+ */
+
 package server.utils
+
+import java.util
 
 import org.scalatest.{FlatSpec, Matchers}
 import server.messages.query.ErrorMessages.InvalidQueryMessage
@@ -14,7 +45,7 @@ case class SampleCommand(command: String,strMessage: String,message1: QueryMessa
 
 class ParserTest extends FlatSpec with Matchers {
   val parser = new Parser()
-
+  //TU3
   "'login' command" should "generate a LoginMessage with 1rd and 2th param" in {
     parser.parseQuery("login admin admin") should be(new LoginMessage("admin", "admin"))
     parser.parseQuery("login tpadovan psw") should be(new LoginMessage("tpadovan", "psw"))
@@ -25,7 +56,7 @@ class ParserTest extends FlatSpec with Matchers {
     parser.parseQuery("login admin admin admin") should be(new InvalidQueryMessage)
   }
 
-  //test dei comandi a zero parametri
+  //test dei comandi a zero parametri TU4
   val zeroParamCommands = Array(
     new SampleCommand("listdb", "ListDatabaseMessage", new ListDatabaseMessage),
     new SampleCommand("listmap", "ListMapMessage", new ListMapMessage),
@@ -41,7 +72,7 @@ class ParserTest extends FlatSpec with Matchers {
     }
   }
 
-  //Testing commands with one param
+  //Testing commands with one param TU5
   val oneParamCommands = Array(
     new SampleCommand("selectdb", "SelectDatabaseMessage", new SelectDatabaseMessage("aparam"), new SelectDatabaseMessage("anotherparam")),
     new SampleCommand("createdb", "CreateDatabaseMessage", new CreateDatabaseMessage("aparam"), new CreateDatabaseMessage("anotherparam")),
@@ -62,7 +93,7 @@ class ParserTest extends FlatSpec with Matchers {
     }
   }
 
-  //Testing row level commands with one param
+  //Testing row level commands with one param TU6
   val test = Array(
     new SampleCommand("find", "FindRowMessage", new FindRowMessage("fourwordsalluppercase"), new FindRowMessage("ONE WORD ALL LOWERCASE")),
     new SampleCommand("remove", "RemoveRowMessage", new RemoveRowMessage("fourwordsalluppercase"), new RemoveRowMessage("ONE WORD ALL LOWERCASE"))
@@ -82,22 +113,42 @@ class ParserTest extends FlatSpec with Matchers {
     }
   }
 
-  //Testing row level commands with two params
+  //Testing row level commands with two params TU7
   val twoParamCommands = Array(
-    new SampleCommand("insert", "InsertRowMessage", new InsertRowMessage("aKey", "aValue"), new InsertRowMessage("one word is not enough for that key", "anotherValue")),
-    new SampleCommand("update", "UpdateRowMessage", new UpdateRowMessage("aKey", "aValue"), new UpdateRowMessage("one word is not enough for that key", "anotherValue"))
+    new SampleCommand("insert", "InsertRowMessage", new InsertRowMessage("aKey", "aValue".getBytes("UTF-8")), new InsertRowMessage("one word is not enough for that key", "anotherValue".getBytes("UTF-8"))),
+    new SampleCommand("update", "UpdateRowMessage", new UpdateRowMessage("aKey", "aValue".getBytes("UTF-8")), new UpdateRowMessage("one word is not enough for that key", "anotherValue".getBytes("UTF-8")))
   )
-  for (cmd <- twoParamCommands) {
-    "'" + cmd.command + "' command" should "generate a " + cmd.strMessage + " using first param as Key and bytes-value of second param as Value" in {
-      parser.parseQuery(cmd.command + " 'aKey' aValue") should be(cmd.message1)
+  val cmdinsert= twoParamCommands(0)
+    "'" + cmdinsert.command + "' command" should "generate a " + cmdinsert.strMessage + " using first param as Key and bytes-value of second param as Value" in {
+      val m1 = parser.parseQuery(cmdinsert.command + " 'aKey' aValue").asInstanceOf[InsertRowMessage]
+      val m2 = cmdinsert.message1.asInstanceOf[InsertRowMessage]
+      m1.key == m2.key && util.Arrays.equals(m1.value, m2.value) should be (true)
     }
     it should "accept multiple words as first param and generate the correct message" in {
-      parser.parseQuery(cmd.command + " 'one word is not enough for that key' anotherValue") should be(cmd.message2)
+      val m1 = parser.parseQuery(cmdinsert.command + " 'one word is not enough for that key' anotherValue").asInstanceOf[InsertRowMessage]
+      val m2 = cmdinsert.message2.asInstanceOf[InsertRowMessage]
+      m1.key == m2.key && util.Arrays.equals(m1.value, m2.value) should be (true)
     }
     it should "have exactly 2 parameters" in {
-      parser.parseQuery(cmd.command) should be(new InvalidQueryMessage)
-      parser.parseQuery(cmd.command + " something") should be(new InvalidQueryMessage)
-      parser.parseQuery(cmd.command + " something something something") should be(new InvalidQueryMessage)
+      parser.parseQuery(cmdinsert.command) should be(new InvalidQueryMessage)
+      parser.parseQuery(cmdinsert.command + " something") should be(new InvalidQueryMessage)
+      parser.parseQuery(cmdinsert.command + " something something something") should be(new InvalidQueryMessage)
     }
+  val cmd= twoParamCommands(1)
+  "'" + cmd.command + "' command" should "generate a " + cmd.strMessage + " using first param as Key and bytes-value of second param as Value" in {
+    val m1 = parser.parseQuery(cmd.command + " 'aKey' aValue").asInstanceOf[UpdateRowMessage]
+    val m2 = cmd.message1.asInstanceOf[UpdateRowMessage]
+    m1.key == m2.key && util.Arrays.equals(m1.value, m2.value) should be (true)
   }
+  it should "accept multiple words as first param and generate the correct message" in {
+    val m1 = parser.parseQuery(cmd.command + " 'one word is not enough for that key' anotherValue").asInstanceOf[UpdateRowMessage]
+    val m2 = cmd.message2.asInstanceOf[UpdateRowMessage]
+    m1.key == m2.key && util.Arrays.equals(m1.value, m2.value) should be (true)
+  }
+  it should "have exactly 2 parameters" in {
+    parser.parseQuery(cmd.command) should be(new InvalidQueryMessage)
+    parser.parseQuery(cmd.command + " something") should be(new InvalidQueryMessage)
+    parser.parseQuery(cmd.command + " something something something") should be(new InvalidQueryMessage)
+  }
+
 }

@@ -27,16 +27,22 @@
  * @since 0.0.1
  */
 
-package server.messages.query.admin
-
-import server.messages.query.PermissionMessages.AdminPermissionMessage
-import server.messages.query.QueryMessage
-
+package server.messages.internal
 
 /**
-  * Trait that every message that belongs to administration operations has to extend.
-  *
-  * @see QueryMessage
-  * @see AdminPermissionMessage
+  * AskMessages are used to check if an element (a database, a map, ...) is present.
   */
-trait AdminMessage extends QueryMessage with AdminPermissionMessage { }
+object AskMessages {
+
+  /**
+    * An AskDatabaseMessage is used to check the presence of a database by his name.
+    * @param dbName The database name.
+    */
+  case class AskDatabaseMessage(dbName: String)
+
+  /**
+    * An AskMapMessage is used to check the presence of a map by his name.
+    * @param mapName The map name.
+    */
+  case class AskMapMessage(mapName:String)
+}

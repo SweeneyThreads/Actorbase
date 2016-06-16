@@ -1,32 +1,63 @@
+/*
+ * The MIT License (MIT)
+ * <p/>
+ * Copyright (c) 2016 SWEeneyThreads
+ * <p/>
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * <p/>
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * <p/>
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * <p/>
+ *
+ * @author SWEeneyThreads
+ * @version 0.0.1
+ * @since 0.0.1
+ */
+
 package server.utils
 
-import akka.event.LoggingAdapter
 import server.enums.EnumPermission
 import server.messages.query.ErrorMessages.InvalidQueryMessage
-import server.messages.query.HelpMessages.{CompleteHelp, SpecificHelp}
+import server.messages.query.user.HelpMessages.{CompleteHelpMessage, SpecificHelpMessage}
 import server.messages.query.admin.PermissionsManagementMessages.{AddPermissionMessage, ListPermissionMessage, RemovePermissionMessage}
+import server.messages.query.admin.SettingsMessages.RefreshSettingsMessage
 import server.messages.query.admin.UsersManagementMessages.{AddUserMessage, ListUserMessage, RemoveUserMessage}
-import server.messages.query.{ErrorMessages, LoginMessage, QueryMessage}
 import server.messages.query.user.DatabaseMessages.{CreateDatabaseMessage, DeleteDatabaseMessage, ListDatabaseMessage, SelectDatabaseMessage}
 import server.messages.query.user.MapMessages.{CreateMapMessage, DeleteMapMessage, ListMapMessage, SelectMapMessage}
 import server.messages.query.user.RowMessages._
+import server.messages.query.{LoginMessage, QueryMessage}
 
 import scala.util.matching.Regex
 
 /**
-  * Created by matteobortolazzo on 02/05/2016.
+  * Parses user's requests into QueryMessage messages.
   */
 class Parser {
 
-  def parseQuery(query: String, log:LoggingAdapter = null) : QueryMessage = {
-    // Connect command
-    var pattern = "login\\s(\\S+)\\s(\\S+)$".r
-    var m = getMatch(pattern, query)
-    if(m != null) return new LoginMessage(m.group(1), m.group(2))
+  /**
+    * Parses the query string into a QueryMessage.
+    *
+    * @param query The string query.
+    * @return The message representing the user's query
+    */
+  def parseQuery(query: String) : QueryMessage = {
 
     // Row command (two parameters)
-    pattern = "(\\S+)\\s\\'(.+)\\'\\s(\\S+)$".r
-    m = getMatch(pattern, query)
+    var pattern = "(\\S+)\\s\\'(.+)\\'\\s(\\S+)$".r
+    var m = getMatch(pattern, query)
     if(m != null) return parseRowCommandTwoParams(m.group(1).toLowerCase(), m.group(2), m.group(3))
 
     // Row command (one parameter)
@@ -54,89 +85,170 @@ class Parser {
     m = getMatch(pattern, query)
     if(m != null) return parseCommandWithoutParam(m.group(1).toLowerCase())
 
-    return new InvalidQueryMessage
+    new InvalidQueryMessage
   }
 
-  /** Finds pattern matches on the command */
+  /**
+    * Returns the regular expression match of the given string.
+    *
+    * @param pattern The regular expression for the check.
+    * @param command The command to check.
+    * @return
+    */
   private def getMatch(pattern:Regex, command:String): Regex.Match = {
     val result = pattern.findFirstMatchIn(command)
-    if (result.isDefined) return result.get
-    return null
+    if (result.isDefined)
+      result.get
+    else null
   }
 
 
-  /** Parses commands without parameters */
+  /**
+    * Parses commands without any parameters.
+    *
+    * @param command The command to check.
+    * @return The QueryMessage message
+    *
+    * @see ListUserMessage
+    * @see ListDatabaseMessage
+    * @see ListMapMessage
+    * @see ListKeysMessage
+    * @see CompleteHelpMessage
+    * @see InvalidQueryMessage
+    */
   private def parseCommandWithoutParam(command: String): QueryMessage = {
     //renamed due to query without params for row level
     command match {
-      case "listuser" => return new ListUserMessage
-      case "listdb" => return new ListDatabaseMessage
-      case "listmap" => return new ListMapMessage
-      case "keys" => return new ListKeysMessage
-      case "help" => return new CompleteHelp
+      case "listuser" =>  new ListUserMessage
+      case "listdb" =>  new ListDatabaseMessage
+      case "listmap" =>  new ListMapMessage
+      case "keys" =>  new ListKeysMessage
+      case "help" =>  new CompleteHelpMessage
+      case "refreshsettings" => new RefreshSettingsMessage
 
-      case _ => return new InvalidQueryMessage
+      case _ =>  new InvalidQueryMessage
     }
   }
 
-  /** Parses commands with parameters */
+  /**
+    * Parses commands with one parameter.
+    *
+    * @param command The command to check.
+    * @param arg The fist parameter.
+    * @return The QueryMessage message
+    *
+    * @see SelectDatabaseMessage
+    * @see CreateDatabaseMessage
+    * @see DeleteDatabaseMessage
+    * @see SelectMapMessage
+    * @see CreateMapMessage
+    * @see DeleteMapMessage
+    * @see RemoveUserMessage
+    * @see ListPermissionMessage
+    * @see SpecificHelpMessage
+    * @see InvalidQueryMessage
+    */
   private def parseCommandWithParam(command: String, arg: String): QueryMessage = {
     command match {
-      case "selectdb" => return new SelectDatabaseMessage(arg)
-      case "createdb" => return new CreateDatabaseMessage(arg)
-      case "deletedb" => return new DeleteDatabaseMessage(arg)
+      case "selectdb" =>  new SelectDatabaseMessage(arg)
+      case "createdb" =>  new CreateDatabaseMessage(arg)
+      case "deletedb" =>  new DeleteDatabaseMessage(arg)
 
-      case "selectmap" => return new SelectMapMessage(arg)
-      case "createmap" => return new CreateMapMessage(arg)
-      case "deletemap" => return new DeleteMapMessage(arg)
+      case "selectmap" =>  new SelectMapMessage(arg)
+      case "createmap" =>  new CreateMapMessage(arg)
+      case "deletemap" =>  new DeleteMapMessage(arg)
 
-      case "removeuser" => return new RemoveUserMessage(arg)
-      case "listpermission" => return new ListPermissionMessage(arg)
+      case "removeuser" =>  new RemoveUserMessage(arg)
+      case "listpermission" =>  new ListPermissionMessage(arg)
 
-      case "help" => return new SpecificHelp(arg)
+      case "help" =>  new SpecificHelpMessage(arg)
 
-      case _ => return new InvalidQueryMessage
+      case _ =>  new InvalidQueryMessage
     }
   }
 
+  /**
+    * Parses commands with two parameters.
+    *
+    * @param command The command to check.
+    * @param arg1 The fist parameter.
+    * @param arg2 The second parameter.
+    * @return The QueryMessage message.
+    *
+    * @see AddUserMessage
+    * @see RemovePermissionMessage
+    * @see InvalidQueryMessage
+    */
   private def parseCommandWithTwoParams(command:String, arg1: String, arg2: String):QueryMessage = {
     command match {
-      case "adduser" => return new AddUserMessage(arg1, arg2)
-      case "removepermission" => return new RemovePermissionMessage(arg1, arg2)
+      case "adduser" =>  new AddUserMessage(arg1, arg2)
+      case "removepermission" =>  new RemovePermissionMessage(arg1, arg2)
+      case "login" => new LoginMessage(arg1, arg2)
 
       case _ => new InvalidQueryMessage
     }
   }
 
+  /**
+    * Parses commands with three parameters.
+    *
+    * @param command The command to check.
+    * @param arg1 The fist parameter.
+    * @param arg2 The second parameter.
+    * @param arg3 The third parameter.
+    * @return The QueryMessage message.
+    *
+    * @see AddPermissionMessage
+    * @see InvalidQueryMessage
+    */
   private def parseCommandWithThreeParams(command:String, arg1: String, arg2: String, arg3: String):QueryMessage = {
     command match {
       case "addpermission" => {
         arg3 match {
-          case "read" => return new AddPermissionMessage(arg1, arg2, EnumPermission.Read)
-          case "readwrite" => return new AddPermissionMessage(arg1, arg2, EnumPermission.ReadWrite)
-          case _ => return new InvalidQueryMessage
+          case "read" =>  new AddPermissionMessage(arg1, arg2, EnumPermission.Read)
+          case "readwrite" =>  new AddPermissionMessage(arg1, arg2, EnumPermission.ReadWrite)
+          case _ =>  new InvalidQueryMessage
         }
       }
 
-      case _ => return new InvalidQueryMessage
+      case _ =>  new InvalidQueryMessage
     }
   }
 
-  /** Parses row level commands with one parameter */
+  /**
+    * Parses row-level commands with one parameter.
+    *
+    * @param command The command to check.
+    * @param key The key of the row command.
+    *
+    * @see FindRowMessage
+    * @see RemoveRowMessage
+    * @see InvalidQueryMessage
+    */
   private def parseRowCommandOneParam(command: String, key: String): QueryMessage = {
     command match {
-      case "find" =>return new FindRowMessage(key)
-      case "remove" => return new RemoveRowMessage(key)
+      case "find" => new FindRowMessage(key)
+      case "remove" =>  new RemoveRowMessage(key)
 
-      case _ => return new InvalidQueryMessage
+      case _ =>  new InvalidQueryMessage
     }
   }
 
-  /** Parses row level commands with two parameters */
+  /**
+    * Parses row-level commands with two parameters.
+    *
+    * @param command The command to check.
+    * @param key The key of the row command.
+    * @param value The value of the row command.
+    *
+    * @see InsertRowMessage
+    * @see UpdateRowMessage
+    * @see InvalidQueryMessage
+    */
   private def parseRowCommandTwoParams(command: String, key: String, value: String): QueryMessage = {
     command match {
-      case "insert" => return new InsertRowMessage(key, value)
-      case "update" => return new UpdateRowMessage(key, value)
+      case "insert" =>  new InsertRowMessage(key, value.getBytes("UTF-8"))
+      case "update" =>  new UpdateRowMessage(key, value.getBytes("UTF-8"))
 
       case _ => new InvalidQueryMessage
     }

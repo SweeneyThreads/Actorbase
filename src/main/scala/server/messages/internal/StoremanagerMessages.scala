@@ -27,16 +27,40 @@
  * @since 0.0.1
  */
 
-package server.messages.query.admin
+package server.messages.internal
 
-import server.messages.query.PermissionMessages.AdminPermissionMessage
-import server.messages.query.QueryMessage
+import java.util
+
+import akka.actor.ActorRef
 
 
 /**
-  * Trait that every message that belongs to administration operations has to extend.
-  *
-  * @see QueryMessage
-  * @see AdminPermissionMessage
+  * NinjaMessage messages are used to control Ninja actors' behaviours.
   */
-trait AdminMessage extends QueryMessage with AdminPermissionMessage { }
+object StoremanagerMessages {
+
+  /**
+    * Trait that every message that belongs to ninja operations has to extend.
+    */
+  trait StoremanagerMessage
+
+  /**
+    * A BecomeStorefinderNinjaMessage is used by a Storemanager who has just become a Storefinder to tell his ninjas
+    * to become StorefinderNinjas
+    *
+    * @param c An array containing all the references to children
+    * @param i An array containing all the indexes of children
+    * @param n An array containing all the ninjas of children
+    * @see NinjaMessage
+    */
+  case class BecomeStorefinderNinjaMessage(c : Array[ActorRef], i : Array[(String, String)], n : Array[util.ArrayList[ActorRef]]) extends StoremanagerMessage
+
+  /**
+    * A BecomeMainStoremanager is used by a Storemanager parent if its Storemanager child dies and one of its child's Ninja actor
+    * has to take its place.
+    *
+    * @param ninjas The list of Ninja actors
+    * @see NinjaMessage
+    */
+  case class BecomeMainStoremanager(ninjas: util.ArrayList[ActorRef]) extends StoremanagerMessage
+}

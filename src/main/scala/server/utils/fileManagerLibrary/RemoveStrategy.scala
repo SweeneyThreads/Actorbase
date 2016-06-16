@@ -27,16 +27,20 @@
  * @since 0.0.1
  */
 
-package server.messages.query.admin
+package server.utils.fileManagerLibrary
 
-import server.messages.query.PermissionMessages.AdminPermissionMessage
-import server.messages.query.QueryMessage
-
+import java.io.RandomAccessFile
 
 /**
-  * Trait that every message that belongs to administration operations has to extend.
-  *
-  * @see QueryMessage
-  * @see AdminPermissionMessage
+  * Trait that every algorithm that implements the removal of a section from a file has to implement.
   */
-trait AdminMessage extends QueryMessage with AdminPermissionMessage { }
+trait RemoveStrategy {
+  /**
+    * Remove the selected section from a file.
+    *
+    * @param file The file.
+    * @param init The beginning of the section.
+    * @param off  The length of the section.
+    */
+  def remove(file: RandomAccessFile, init: Long, off: Long): Unit
+}

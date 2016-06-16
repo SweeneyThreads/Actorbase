@@ -1,0 +1,21 @@
+{
+  "properties": [
+    {
+      "name" : "maxRowNumber",
+      "value" : 20
+    },
+    {
+      "name" : "ninjaNumber",
+      "value" : 1
+    },
+    {
+      "name" : "warehousemanNumber",
+      "value" : 1
+    }
+  ,
+    {
+      "name" : "datapath",
+      "value" : "C:\\data\\actorbase"
+    }
+  ]
+}
