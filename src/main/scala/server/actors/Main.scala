@@ -776,6 +776,7 @@ class Main(perms: util.HashMap[String, UserPermission] = null) extends ReplyActo
     if (perms == null)
       return true
     return message match {
+      case n: AdminPermissionMessage => perms == null
       // If the message requires write permissions
       case n: ReadWriteMessage => {
         // Get the database permission

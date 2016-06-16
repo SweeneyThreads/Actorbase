@@ -39,6 +39,7 @@ import akka.remote.RemoteScope
 import akka.util.{ByteString, ByteStringBuilder}
 import server.StaticSettings
 import server.enums.EnumPermission.UserPermission
+import server.enums.EnumReplyResult.Done
 import server.enums.{EnumPermission, EnumReplyResult}
 import server.messages.query.ErrorMessages.InvalidQueryMessage
 import server.messages.query.user.RowMessages.{FindInfo, FindRowMessage, KeyAlreadyExistInfo, StorefinderRowMessage}
@@ -206,13 +207,17 @@ class Usermanager extends ReplyActor {
       val future = StaticSettings.mapManagerRefs.get("master") ? new StorefinderRowMessage("users", new FindRowMessage(username))
       future.onComplete {
         case Success(result) => {
-          val psw = result.asInstanceOf[ReplyMessage].info.asInstanceOf[FindInfo].value
-          val pass = new String(psw, "UTF-8")
-          handleLoginFuture(pass, username, password)
+          val reply = result.asInstanceOf[ReplyMessage]
+          reply.result match {
+            case Done => {
+              val psw = reply.info.asInstanceOf[FindInfo].value
+              val pass = new String(psw, "UTF-8")
+              handleLoginFuture(pass, username, password)
+            }
+            case EnumReplyResult.Error => replyToClient("N")
+          }
         }
-        case Failure(t) => {
-
-        }
+        case Failure(t) => replyToClient("N")
       }
     }
     else replyToClient("N")
