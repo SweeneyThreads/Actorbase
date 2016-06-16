@@ -79,9 +79,6 @@ class IndexManager() extends ReplyActor {
     }
   }
 
-
-
-
   /**
     * Processes all incoming messages.
     * It handles only QueryMessage messages.

@@ -29,19 +29,19 @@
 
 package server.actors
 
+import java.util
+import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorRef, Props}
 import server.enums.EnumReplyResult
 import server.enums.EnumReplyResult.{Done, Error}
 import server.enums.EnumStoremanagerType._
-import server.messages.query.{ReplyMessage, ServiceErrorInfo}
+import server.messages.query.{ReplyMessage}
 import server.messages.query.user.RowMessages._
 
-import scala.collection.JavaConversions._
 import scala.language.postfixOps
-import scala.util.{Failure, Random, Success}
+import scala.util.{ Random, Success}
 import server.StaticSettings
 import server.messages.internal.LinkMessages.{BecomeStorefinderNinjaMessage, LinkMessage}
 import akka.pattern.ask
@@ -49,6 +49,7 @@ import akka.pattern.ask
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
+import scala.collection.JavaConversions._
 
 /**
   * A Storemanager manages data stored in RAM
@@ -59,9 +60,9 @@ import scala.concurrent.{Await, Future}
   * @param ninjas the ninjas of the storemanager
   */
 class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
-    val index: (String, String),
-    val storemanagerType: StoremanagerType,
-    val ninjas: Array[ActorRef] = null)
+                   val index: (String, String),
+                   val storemanagerType: StoremanagerType,
+                   val ninjas: Array[ActorRef] = null)
   extends ReplyActor {
 
   /**
@@ -81,13 +82,10 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
   var leftChild: Child = null
   var rightChild: Child = null
 
-
   if (map.keySet().size() > StaticSettings.maxRowNumber) {
     log.info("Trying to create a Storemanager with too big map, Storemanager splitted automatically")
     divideActor()
   }
-
-
 
   /**
     * Override of the actor's preStart method.
@@ -162,12 +160,13 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
       // If the user types "remove '<key>'"
       case RemoveRowMessage(key: String) => {
         // If the storekeeper doesn't have that key
-        if (!map.containsKey(key)) reply(ReplyMessage(EnumReplyResult.Error,message,KeyDoesNotExistInfo()))
+        if (!map.containsKey(key))
+          reply(ReplyMessage(EnumReplyResult.Error, message, KeyDoesNotExistInfo()))
         // If the storekeeper contains that key
         else {
           // Remove the entry
           map.remove(key)
-          logAndReply(ReplyMessage(Done,message))
+          logAndReply(ReplyMessage(Done, message))
         }
       }
       // If the user types "find '<key>'"
@@ -197,13 +196,15 @@ class Storemanager(var map: ConcurrentHashMap[String,  Array[Byte]],
     */
   private def divideActor() : Unit = {
     context.become(receiveAsStoreFinder)
+    val orderedKeys = new util.ArrayList(map.keySet())
+    Collections.sort(orderedKeys)
     // Creates maps to pass at children
     val map1 = new ConcurrentHashMap[String, Array[Byte]]()
     val map2 = new ConcurrentHashMap[String, Array[Byte]]()
     // Fills the two maps and finds the mid element
     var midElement = ""
     var i = 0
-    for(key <- map.keySet()) {
+    for(key <- orderedKeys) {
       if(i < map.keySet().size() / 2) {
         map1.put(key, map.get(key))
         midElement = key

@@ -33,7 +33,6 @@ package server.enums
   * Contains permissions type classes
   */
 object EnumPermission {
-  val permissionsType = Seq(Read, ReadWrite)
 
   /**
     * Represents an user permission

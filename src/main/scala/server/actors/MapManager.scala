@@ -32,15 +32,13 @@ package server.actors
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.actor.{ActorRef, Deploy, Props}
-import akka.remote.RemoteScope
+import akka.actor.{ActorRef, Props}
 import server.StaticSettings
 import server.enums.EnumReplyResult
 import server.enums.EnumWarehousemanType.DatabaseWarehousemanType
 import server.messages.internal.AskMessages.AskMapMessage
 import server.messages.internal.WarehousemenMessages.EraseDatabaseMessage
 import server.messages.query.ReplyMessage
-import server.messages.query.user.DatabaseMessages
 import server.messages.query.user.DatabaseMessages.{DeleteDatabaseMessage, DatabaseMessage}
 import server.messages.query.user.MapMessages.{DeleteMapMessage, MapAlreadyExistInfo, MapDoesNotExistInfo, _}
 import server.messages.query.user.RowMessages.{InsertRowMessage, RowMessage, StorefinderRowMessage}
@@ -60,31 +58,27 @@ class MapManager extends ReplyActor {
   // Add a default map (Storefinder). If the present Soremanager represents the Master database, it
   // does not create the default map, instead it creates the users map and the permissions map
 
-
   val databaseWarehouseman = context.actorOf(Props(new Warehouseman(DatabaseWarehousemanType,self.path.name)))
-
 
   /**
     *
     */
   override def preStart(): Unit = {
-    val dbDirectory = new File(StaticSettings.dataPath+"\\"+self.path.name)
-    if(dbDirectory.exists()) {
+    val dbDirectory = new File(StaticSettings.dataPath + "\\" + self.path.name)
+    if (dbDirectory.exists()) {
       val mapsDirectory = dbDirectory.listFiles()
       for (child <- mapsDirectory) {
         indexManagers.put(child.getName, context.actorOf(Props[IndexManager], name = child.getName))
       }
     } else {
-      if(self.path.name == "master") {
-        indexManagers.put("users",       context.actorOf(Props[IndexManager], name="users"))
-        indexManagers.put("permissions", context.actorOf(Props[IndexManager], name="permissions"))
+      if (self.path.name == "master") {
+        indexManagers.put("users", context.actorOf(Props[IndexManager], name = "users"))
+        indexManagers.put("permissions", context.actorOf(Props[IndexManager], name = "permissions"))
         val actor = indexManagers.get("users")
         actor.tell(new InsertRowMessage("admin", "admin".getBytes("UTF-8")), self)
       }
     }
   }
-
-
 
   /**
     * Processes all incoming messages.
@@ -120,7 +114,6 @@ class MapManager extends ReplyActor {
         context stop self
     }
   }
-
 
   /**
     * Processes only MapMessage messages.

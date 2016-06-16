@@ -6,16 +6,16 @@
     },
     {
       "name" : "ninjaNumber",
-      "value" : 8
+      "value" : 1
     },
     {
       "name" : "warehousemanNumber",
-      "value" : 10
+      "value" : 1
     }
   ,
     {
       "name" : "datapath",
-      "value" : "C:\\data"
+      "value" : "C:\\data\\actorbase"
     }
   ]
 }

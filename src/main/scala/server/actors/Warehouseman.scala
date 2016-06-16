@@ -35,10 +35,9 @@ import server.enums.EnumWarehousemanType.{DatabaseWarehousemanType, MapWarehouse
 import server.messages.internal.StorageMessages._
 import server.messages.internal.WarehousemenMessages.EraseDatabaseMessage
 import server.messages.query.user.MapMessages.{DeleteMapMessage, MapMessage}
-import server.messages.query.user.RowMessages.{InsertRowMessage, RemoveRowMessage, RowMessage, UpdateRowMessage}
+import server.messages.query.user.RowMessages._
 import server.utils.FileManager
 import server.utils.fileManagerLibrary.SingleFileManager
-
 
 import scala.language.postfixOps
 import scala.reflect.io.File
@@ -56,8 +55,6 @@ class Warehouseman(warehousemanType: WarehousemanType, dbName: String, mapName: 
   // The object to interact with the filesystem
   var fileManager: FileManager = null
 
-
-
   /**
     * Override of the actor's preStart method.
     * Changes the actor's behaviour based on the constructor.
@@ -72,7 +69,6 @@ class Warehouseman(warehousemanType: WarehousemanType, dbName: String, mapName: 
       case _ =>
     }
   }
-
 
   private def handleMapMessages(m: MapMessage): Unit = {
     m match {
@@ -97,18 +93,14 @@ class Warehouseman(warehousemanType: WarehousemanType, dbName: String, mapName: 
     case ReadMapMessage => giveMap(sender)
     case m: RowMessage => handleRowMessages(m)
     case m: MapMessage => handleMapMessages(m)
-
     case other => log.error(replyBuilder.unhandledMessage(self.path.toString, "receive"))
   }
-
-
 
   private def receiveDbMsg: Receive = {
     case EraseDatabaseMessage =>
       File(s"${StaticSettings.dataPath}\\$dbName").delete
       context stop self
   }
-
 
   /**
     * Processes only RowMessage messages.
@@ -137,6 +129,8 @@ class Warehouseman(warehousemanType: WarehousemanType, dbName: String, mapName: 
       case RemoveRowMessage(key: String) => {
         fileManager.RemoveEntry(key)
       }
+      case FindRowMessage(key: String) => {  }
+      case ListKeysMessage() => { }
       case _ => log.error(replyBuilder.unhandledMessage(self.path.toString,"handleRowMessages"))
     }
   }
