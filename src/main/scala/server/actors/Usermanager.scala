@@ -46,9 +46,11 @@ import server.messages.query.user.RowMessages.{FindInfo, FindRowMessage, KeyAlre
 import server.messages.query.{LoginMessage, QueryMessage, ReplyMessage, ServiceErrorInfo}
 import server.utils.{Parser, Serializer}
 
+import scala.concurrent.Await
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
+import scala.concurrent.duration._
 /**
   * This actor handles TCP requests from the client.
   * It understands the query, sending it to the Main and giving the client the answer.
@@ -246,30 +248,19 @@ class Usermanager extends ReplyActor {
           new util.HashMap[String, EnumPermission.UserPermission]()
         val serializer: Serializer = new Serializer
         val sm = StaticSettings.mapManagerRefs.get("master")
-        val origSender = sender
         val future = sm ? StorefinderRowMessage("permissions", new FindRowMessage(username))
-        future.onComplete {
-          case Success(result) => {
-            val reply = result.asInstanceOf[ReplyMessage]
-            reply.result match {
-              case EnumReplyResult.Done => {
-                val array = reply.info.asInstanceOf[FindInfo].value
-                singleUserPermission =
-                  serializer.deserialize(array).asInstanceOf[util.HashMap[String, UserPermission]]
-
-              }
-              case EnumReplyResult.Error => {
-                reply.info.asInstanceOf[KeyAlreadyExistInfo]
-              }
-            }
+        val reply = Await.result(future, 5 seconds).asInstanceOf[ReplyMessage]
+        reply.result match {
+          case EnumReplyResult.Done => {
+            val array = reply.info.asInstanceOf[FindInfo].value
+            singleUserPermission =
+              serializer.deserialize(array).asInstanceOf[util.HashMap[String, UserPermission]]
+            mainActor = context.actorOf(Props(new Main(singleUserPermission)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
           }
-          case Failure(t) => {
-            log.error("Error sending message: " + t.getMessage);
-            reply(new ReplyMessage(EnumReplyResult.Error, new FindRowMessage(username),
-              new ServiceErrorInfo("Error sending message: " + t.getMessage)), origSender)
+          case EnumReplyResult.Error => {
+            reply.info.asInstanceOf[KeyAlreadyExistInfo]
           }
         }
-        mainActor = context.actorOf(Props(new Main(singleUserPermission)).withDeploy(Deploy(scope = RemoteScope(nextAddress))))
       }
       replyToClient("Y")
       log.info(username + " is connected")
